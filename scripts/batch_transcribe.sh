@@ -38,6 +38,10 @@ SKIPPED=0
 FAILED=0
 START_TIME=$(date +%s)
 
+# 退出兜底：正常结束/报错/Ctrl-C 都清掉当前讲的临时输出目录（成品已 cp 回课程目录）
+cleanup() { local t="${TEMP_OUTPUT:-}"; [ -n "$t" ] && rm -rf "$t"; }
+trap cleanup EXIT
+
 echo "============================================"
 echo "  高顿课程视频批量转写"
 echo "  共 $TOTAL 个视频"

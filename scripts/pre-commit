@@ -1,6 +1,7 @@
 #!/bin/bash
 # Git pre-commit hook：提交前自动检查
-# 检查内容：大文件、敏感信息、.gitignore遗漏、新文档登记/类型标注、相对链接有效性、文档类型词白名单、命名一致性提示(警告级)
+# 检查内容：大文件、敏感信息、文件类型、【运行产物误入硬拦截】、新文档登记/类型标注、相对链接有效性、文档类型词白名单、命名一致性提示(警告级)
+# 运行产物模式表 ARTIFACT_RE 与 .gitignore 互为备份、两处同步（新增一类运行产物时一起改）
 # 安装：cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 set -e
@@ -72,7 +73,34 @@ for file in $(git diff --cached --name-only --diff-filter=ACM); do
   esac
 done
 
-# 4. 检查文档关联性（新增的.md文件是否在DOCUMENTATION_MAP.md中有记录，是否有类型标注）
+# 4. 运行产物误入拦截（硬阻止）。ARTIFACT_RE 与 .gitignore 互为备份、两处同步：
+#    即使 .gitignore 漏配，这里仍按"运行产物长什么样"兜底；新增运行产物类别时两处一起改。
+echo ""
+echo "🧹 检查运行产物是否误入暂存区（硬阻止）..."
+# 虚拟环境/依赖目录、运行日志与完成哨兵、data 数据抓包、.tmp 临时中转、转写结果、缓存/字节码
+ARTIFACT_RE='(^|/)(venv|env|node_modules|__pycache__|\.tmp[^/]*|logs)(/|$)|(^|/)data/|(^|/)\.[A-Za-z0-9_]*done$|\.done$|\.pyc$|\.DS_Store$|(^|/)(transcripts_full|transcripts)(/|$)'
+ARTIFACT_WHITELIST='^transcription/requirements\.txt$'
+artifact_block=0
+for file in $(git diff --cached --name-only --diff-filter=ACM); do
+  if echo "$file" | grep -qE "$ARTIFACT_WHITELIST"; then continue; fi
+  # 4a 命中运行产物路径/命名特征
+  if echo "$file" | grep -qE "$ARTIFACT_RE"; then
+    echo "  ❌ 运行产物/环境文件不应入库: $file"
+    artifact_block=1
+  fi
+  # 4b 已被 .gitignore 忽略却被 git add -f 强塞进暂存区
+  if git check-ignore -q "$file" 2>/dev/null; then
+    echo "  ❌ 该文件已被 .gitignore 忽略，勿强制添加: $file"
+    artifact_block=1
+  fi
+done
+if [ "$artifact_block" -eq 1 ]; then
+  echo "   这些属于本地运行产物/环境/数据，应保留在本地由 .gitignore 忽略，不进仓库。"
+  echo "   若确属误判，同步更新 ARTIFACT_RE 与 .gitignore 后重试；紧急可 git commit --no-verify（不推荐）。"
+  exit 1
+fi
+
+# 5. 检查文档关联性（新增的.md文件是否在DOCUMENTATION_MAP.md中有记录，是否有类型标注）
 echo ""
 echo "📚 检查文档关联性..."
 doc_issues=0
@@ -91,7 +119,7 @@ for file in $(git diff --cached --name-only --diff-filter=A); do
   fi
 done
 
-# 5. 检查相对链接有效性 + 文档类型词白名单（针对本次暂存的 .md：新增与修改）
+# 6. 检查相对链接有效性 + 文档类型词白名单（针对本次暂存的 .md：新增与修改）
 echo ""
 echo "🔗 检查相对链接与类型词..."
 if ! python3 - <<'PYEOF'
@@ -145,7 +173,7 @@ then
   exit 1
 fi
 
-# 6. 命名一致性提示（警告级，不阻断；硬不自洽/影响面/回归请手动跑 check_naming_consistency.py）
+# 7. 命名一致性提示（警告级，不阻断；硬不自洽/影响面/回归请手动跑 check_naming_consistency.py）
 echo ""
 echo "🧭 检查命名一致性（仅提示，不阻止提交）..."
 if [ -f scripts/check_naming_consistency.py ]; then

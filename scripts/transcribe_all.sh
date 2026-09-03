@@ -13,6 +13,9 @@ COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（�
 TMPROOT="$ROOT/transcription/.tmp_transcribe"
 LOG=/tmp/transcribe_all.log
 mkdir -p "$TMPROOT"
+# 退出兜底：正常结束/报错/Ctrl-C 都清掉当前讲的中转子目录（TMPROOT 根目录保留供断点续跑）
+cleanup() { local t="${tmp:-}"; [ -n "$t" ] && rm -rf "$t"; }
+trap cleanup EXIT
 echo "==== 批量转写开始 $(date '+%F %T') ====" | tee "$LOG"
 ok=0; skip=0; fail=0; failed_list=()
 shopt -s nullglob

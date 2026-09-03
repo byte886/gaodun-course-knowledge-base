@@ -1,95 +1,68 @@
-# Video files
-*.ts
-*.mp4
-*.mov
-*.mkv
-*.m3u8
+# ============================================================
+# .gitignore — 本仓库「不入库产物」清单（按本项目实际产物梳理，只留确定会反复产生的）
+# ------------------------------------------------------------
+# 维护约定（详见 docs/project-management/standards/PROJECT_STRUCTURE_MAINTENANCE.md
+#           「2.1 产物落点与忽略模式表」）：
+#   1. 只有源码、正式文档、模板、必要配置入库；运行产物、环境、数据、高频大媒体不入库。
+#   2. 只忽略「确定反复产生且确定不入库」的；低频/几乎不产生的类型不预先忽略，
+#      真出现时作为 untracked 冒头，由 scripts/pre-commit 第 3 项警告兜底。
+#   3. 新增一类运行产物时「两处同步」：本文件加一条 + scripts/pre-commit 的 ARTIFACT_RE，
+#      不确定就跑 bash scripts/check_git_hygiene.sh 体检。
+# ============================================================
 
-# Documents (large PDFs)
-*.pdf
-*.doc
-*.docx
-*.ppt
-*.pptx
-*.xls
-*.xlsx
-
-# Segment caches
-segments/
-*.dec.ts
-
-# OS files
+# --- 操作系统 / 编辑器（固定 macOS + VSCode）---
 .DS_Store
-*.log
+.vscode/
 
-# Temporary
-test_*
-对比_*
-# 例外：测试计划/测试模板是正式文档，需要提交（test_* 在 macOS 大小写不敏感，会同时命中大写 TEST_*，需显式放行）
-!project-management/test-plans/
-!project-management/test-plans/测试计划_*.md
-!docs/development/templates/TEST_PLAN_TEMPLATE.md
-
-# Python virtual environments
-transcription/venv/
-.venv-transcribe/
+# --- 依赖与虚拟环境（任意位置都不入库，靠 requirements.txt / package.json 重建）---
+node_modules/
+venv/
 .venv/
-*.pyc
+env/
 __pycache__/
+*.pyc
 
-# Generated results (upload to Baidu Netdisk, not GitHub)
-# Audio files
-*.wav
-*.mp3
-*.aac
-
-# Transcription results
-transcription/transcripts_full/
-transcription/transcripts_test/
-transcription/transcripts/
-
-# OCR test pages
-transcription/pdf_test_pages/
-
-# Upload logs
-project-management/task-reports/upload_log_*.txt
-
-# Secrets (encrypted files are committed, plaintext are not)
+# --- 环境变量与密钥（明文不入库；.secrets 下 .enc 加密件显式放行）---
+.env
 .secrets/*.json
 .secrets/*.txt
 !*.enc
 
-# Data directory (symlink to external data directory, not committed)
-data/
+# --- 视频下载/转码链路产物（分片、解密分片、HLS、合并成品、提取音轨、segments 目录）---
+*.ts
+*.dec.ts
+*.mp4
+*.m3u8
+*.wav
+segments/
 
-# Playwright CLI 临时文件
-.playwright-cli/
+# --- 讲义原件 PDF（成品走网盘，不入库）---
+*.pdf
 
-# Node.js 依赖（未来可能有）
-node_modules/
-
-# 环境变量文件（包含敏感信息，不提交）
-.env
-.env.local
-.env.*.local
-
-# 编辑器配置（个人配置，不提交）
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# 临时文件
+# --- 通用临时 / 备份 / 合并冲突产物 ---
 *.tmp
 *.bak
 *.orig
 
-# 压缩包（不提交到仓库，放网盘）
-*.zip
-*.tar.gz
-*.rar
-*.7z
+# --- 运行日志与阶段完成哨兵（本地运行状态；进度正式记录在 project-management/active 台账）---
+*.log
+logs/
 
-# GGUF模型文件（大文件，不入库）
-transcription/.gguf_test/
-transcription/.gguf_test/**
+# --- 数据与抓包（data/ 是外部数据目录，题源 papers、cdp-sniff 等都在其内，整体不入库）---
+data/
+
+# --- 转写模块运行期产物（venv 已由通用规则忽略；成品 transcript 落外部课程库）---
+transcription/.tmp_*/
+transcription/.transcribe_done
+transcription/transcripts_full/
+transcription/transcripts/
+
+# --- 浏览器自动化运行缓存（Playwright CLI 兜底路线）---
+.playwright-cli/
+
+# --- 临时工作名默认忽略；测试计划/测试模板是正式文档，显式放行 ---
+# 注意：macOS 文件系统大小写不敏感，test_* 会同时命中大写 TEST_*，故下面逐条 ! 放行
+test_*
+!project-management/test-plans/
+!project-management/test-plans/测试计划_*.md
+!docs/development/templates/TEST_PLAN_TEMPLATE.md
