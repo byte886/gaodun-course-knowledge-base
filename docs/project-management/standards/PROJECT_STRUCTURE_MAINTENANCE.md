@@ -55,11 +55,86 @@
 | 通用规范/流程 | `docs/` 对应子目录 | 如 QUALITY_ASSURANCE.md、PROJECT_MAINTENANCE.md |
 | 通用模板 | `project-management/task-reports/` 或 `docs/` | 如 REPORT_TEMPLATE.md、VERIFICATION_TEMPLATE.md |
 | 具体课程产出物 | 对应课程目录下 | 如 video.mp4、知识拆解.md、考试指导.md、transcript.md |
-| 具体课程验证报告 | 对应课程目录下 | 如 VERIFICATION.md（综合报告）或 验证报告_<对象>_<范围>.md（专项报告） |
+| 具体课程专项质检（按需） | 对应课程目录下 | 仅视频/转写等非标准对象用 VERIFICATION.md，非每次必出；做题/同步验证默认并入任务报告 |
 | 具体课程测试计划 | `docs/project-management/` | 测试计划是项目管理文档，不是课程产出物 |
 | 具体任务报告 | `project-management/task-reports/` 或对应课程目录 | 根据报告性质决定 |
 
 **原则**：针对具体课程/讲座的产出物，放在对应课程目录下；通用模板和规范放在 `docs/` 或 `project-management/task-reports/` 下。
+
+### 2.1 产物落点与忽略模式表（运行产物不入库）
+
+只有「源码、正式文档、模板、必要配置」入库；脚本运行产生的一切（环境、数据、日志、临时中转、缓存）落本地约定目录、由 `.gitignore` 忽略，不进仓库。
+
+| 产物类别 | 落点 | 入库？ | 例子 |
+|---|---|---|---|
+| 依赖 / 虚拟环境 | 任意位置 `venv/`、`.venv/`、`env/`、`node_modules/`、`__pycache__/` | ❌ | `transcription/venv`（靠 requirements.txt 重建） |
+| 数据 / 抓包 / 题源 | `data/`（外部数据目录软链） | ❌ | papers JSON、cdp-sniff |
+| 运行日志 / 完成哨兵 | `logs/`、`*.log`、`*.done` | ❌（进度以 active 正式台账为准） | `netdisk_*.log`、`netdisk_done/*.done` |
+| 临时中转 | 系统 `/tmp` 或模块内 `.tmp_*/`，脚本退出自清 | ❌ | `transcription/.tmp_transcribe` |
+| 成品 | knowledge-base / docs / 外部课程库 | ✅ | 知识拆解.md、脚本源码、规范、模板 |
+
+**两条硬规矩**：
+
+1. **两处同步**：新增一类运行产物时，`.gitignore` 加一条规则，**同时**把同名特征补进 `scripts/pre-commit` 的 `ARTIFACT_RE` 模式表——后者是漏配 ignore 时的兜底硬拦截，二者互为备份。
+2. **脚本自清**：批处理脚本的临时中转目录用 `trap 'rm -rf "$tmp"' EXIT` 兜底，正常结束 / 报错 / Ctrl-C 都不留残；但**断点续跑凭证例外**（如外部课程库 `.vfetch/merged.ts` 要保留给下一轮续跑，禁止 trap 删）。
+
+**三个工具分工**：提交瞬间 pre-commit 自动拦截增量；`bash scripts/check_git_hygiene.sh` 随时做全量只读体检（被跟踪运行产物 / 未跟踪项分类 / 大文件 / 仓库体积）；`.gitignore` 是日常忽略清单。
+
+### 2.2 数据分层模型（L0–L4）与产物生命周期
+
+> 本节回答每一类文件"是什么、放哪、活多久、入库吗、传网盘吗、最终能否删"，是数据去留与目录位置的唯一判据源；SOP 只引用本节、不复述。
+
+#### 2.2.1 两根三线版图
+
+- **两根物理存储**：
+  1. **项目工作区 `data/`**：外部数据目录的软链，**整体不入库**。承载 B 做题线原料（`knowledge-source/papers`）、抓包侦查（`cdp-sniff`）、浏览器运行环境（L0）。
+  2. **桌面课程库**（物理 `~/Desktop/高顿/CPA/课程库/【26考季】…/讲NN_讲名/`，项目内经 `data/` 软链访问）：**按讲组织、承载成品并同步网盘**。A 视频线（video / transcript）与 C 讲义线（`docs/` PDF、`docs_text/` OCR）落这里。
+- **三线汇入 S2**：A 视频线 + B 做题线（papers）+ C 讲义线，再叠加**初始知识库 + 用户笔记**，在 S2 按讲汇聚生成知识成品（知识拆解 / 考试指导），最终进飞书知识库。冲刺模考是做题线的末期分支，不另立存储根。
+
+#### 2.2.2 L0–L4 分层定义
+
+| 层 | 定义 | 典型内容 | 本地 | 入库 | 网盘 | 终态 |
+|---|---|---|---|---|---|---|
+| **L0 工具运行环境** | 可由依赖清单/脚本重建，不含独有成果 | `venv/`、`node_modules/`、`__pycache__/`、独立 `browser-profile/` | 留 | ❌ | ❌ | 随时可删可重建；换环境靠 `requirements.txt`/`package.json` 自补 |
+| **L1 原始原料（底片）** | 重跑/溯源必需，**无法由成品逆推** | `papers/<paperId>.json`、讲义 `docs/*.pdf`、`transcript.json` | 留 | ❌（大体量） | ✅ 备份 | 定稿前保留并重传备份；长期留存作重跑保险 |
+| **L2 成品** | 面向学习者的最终交付物 | `video.mp4`、`transcript.md`、`*_OCR.md`、知识拆解.md、考试指导.md、飞书知识库 | 留 | 规范/模板入库，课程成品在外部课程库 | ✅ | 永久保留（本地 + 网盘 + 飞书） |
+| **L3 过程状态/凭证** | 可由脚本或接口重建，服务断点续跑/路由 | `papers_inventory/audit`、`.vfetch/`、`.uploaded` 哨兵、`lecture-resource-map.json` | 阶段中留 | 仅"轻量派生元数据"入库（见 2.2.3） | ❌ | 整条线完成后清；轻量派生元数据随仓库版本化保留 |
+| **L4 一次性取证** | 结论沉淀进文档后即无独立价值 | knowmap/quiz_load 侦查、截图 shots、PoC 输出、一次性抓包 | 暂留 | ❌ | ❌ | **结论入 docs 即清** |
+
+#### 2.2.3 轻量派生元数据的入库判据（L3 的唯一例外）
+
+L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"应入库版本化（与 ADR-005 决策 6 一致）：
+
+1. 是否为**文本小体量**（KB 级，而非 MB/GB 级原始数据）；
+2. 是否需要用 **git diff 追踪它随上游的变化**（如官方讲义调整后能看到改了什么）；
+3. 是否为**多个脚本共享的路由 / 索引 / 校验基线**。
+
+- 满足：入库，如 `knowledge-base/lecture-resource-map.json`（讲次→来源讲课件映射，`scripts/verify_lecture_map.py --rebuild` 可重建，入库留变化痕迹）。
+- 不满足：不入库，如 papers 正文 JSON、视频、PDF（大体量 L1，只本地 + 网盘）。
+
+#### 2.2.4 papers：物理集中存，逻辑按讲视图（存储与视图分离）
+
+- **物理集中**：做题线原料统一放 `data/knowledge-source/papers/<paperId>.json` + `paper_index.json`。理由：接口主键是 `paperId`（record/redo/submit 全按 paperId）；一讲对多套卷；章节归属（chapter）可能调整而 paperId 稳定。**不得按讲复制进课程库目录**。
+- **逻辑按讲视图**：需要"某讲有哪些卷"时，由 `paper_index.json` 的 `chapter` 字段 `group by` 现场派生只读视图，**不复制文件、不产生第二份物理副本**。
+- papers 是 **L1 底片**：网盘备份到与课程库平级的独立"知识原料区"，不混入按讲成品区；知识成品生成后题库的直接用途下降，但定稿前保留作重跑保险。
+
+#### 2.2.5 清理时机与方式
+
+- **阶段中**：L3/L4 允许存在以支撑续跑与取证，不追求时刻干净。
+- **每讲定稿**：清该讲 L4；L3 续跑凭证（如 `.vfetch/merged.ts`）保留至整条线完成。
+- **整门课定稿**（作业 + 冲刺模考 + 飞书知识库全部完成）：清 L4 全部、`cdp-sniff` 一次性侦查包、`.vfetch/`、L0 独立 browser-profile 类；L1 已网盘备份后保留；L2 为最终交付。
+- **清理方式（硬规矩）**：本地一律移 `~/.Trash/<批次目录>/` 不硬删；网盘删除走 `baidu_upload.py delete`（进回收站），删前先 list 取证、先补传标准件再删旧件，保证任何时刻不缺内容。
+- **续跑凭证保护**：禁止给 download/encode 类脚本加删除型 `trap` 误删 `.vfetch/merged.ts` 等断点续跑凭证（与 2.1"脚本自清例外"一致）。
+
+#### 2.2.6 负面清单（本次治理教训）
+
+- ❌ 把 papers 按讲复制进课程库 → 违背存储/视图分离，制造冗余且 chapter 会变。
+- ❌ 把 `venv/`、独立 `browser-profile/` 入库或传网盘 → L0 可重建，污染仓库与网盘。
+- ❌ 把 L4 截图 / PoC 侦查输出长期留在 `data/` → 结论入 docs 即清。
+- ❌ 用删除型 trap 清掉 `.vfetch/merged.ts` 续跑凭证。
+- ❌ 因"想版本化"把视频 / PDF / papers 正文等大体量 L1 入库（轻量派生元数据才走 2.2.3 例外）。
+- ❌ 清理时直接 `rm -rf` 硬删 → 必须废纸篓 / 网盘回收站可恢复。
+- ❌ 同源重复件只凭文件名或大小判断删除 → 必须 md5 / 内容 diff 取证（OCR 件可能仅标题或水印错字不同，需确认标准件等同或更优）。
 
 ---
 
@@ -76,23 +151,25 @@
 | **讲义原件** | ✅ 上传 | docs/*.pdf | 原始讲义 |
 | **讲义文字稿** | ✅ 上传 | docs_text/*_OCR.md | 讲义OCR后的文字稿（带_OCR后缀） |
 | **转写文字稿** | ✅ 上传 | transcript.md | 视频转写后的文字稿（可读） |
-| **验证报告** | ❌ 不上传 | 验证报告_*.md | 技术过程文档，仅用于质量验证 |
+| **过程留痕** | ❌ 不上传 | VERIFICATION.md、SYNC_REPORT_*.md、任务过程记录 | 技术过程文档，仅本地（验证默认并入任务报告、不单独成文） |
 | **原始数据** | ❌ 不上传 | transcript.json | 转写原始JSON，非面向使用者 |
 | **临时文件** | ❌ 不上传 | *.tmp, *.log | 临时文件和日志 |
 
 ### 3.2 原则
 
 1. **面向使用者**：网盘内容的读者是学习者，不是开发者/维护者
-2. **技术过程文档保留在本地**：验证报告、原始数据等只放在本地课程目录，不上传网盘
+2. **技术过程文档保留在本地**：任务过程记录、原始数据等只放在本地课程目录，不上传网盘
 3. **上传前检查**：批量上传前，按上表筛选，排除技术过程文档
 4. **定期清理**：定期检查网盘内容，删除误上传的技术过程文档
 
 ### 3.3 自动化
 
-上传脚本（`scripts/batch_upload.sh` 和 `scripts/baidu_upload.py`）应自动过滤以下文件：
-- `验证报告_*.md`
-- `transcript.json`
-- `*.tmp`, `*.log`
+过滤在 `scripts/upload_course.sh` 的 `SKIP_PATTERNS` 生效（并发版 `sync_course_netdisk.sh` 逐讲调用它；底层 `baidu_upload.py` 只负责单文件 API 调用、不做过滤）。当前过滤清单：
+- 验证/过程类：`VERIFICATION.md`、`VERIFICATION_*.md`、`验证报告_*.md`、`验证_*.md`、`SYNC_REPORT_*.md`、`同步报告_*.md`
+- 转写原始数据：`transcript.json`（可读版 `transcript.md` 正常上传）
+- 临时/系统：`*.tmp`、`*.log`、`.DS_Store`
+- 点开头隐藏项（`.vfetch/`、`.uploaded` 等）：遍历用 `"$dir"/*`，bash glob 默认不匹配隐藏项，天然不会被遍历上传，无需列入清单
+- 维护约定：今后凡新增"落课程目录但非面向学习者"的过程文件，必须同步把模式加入 `SKIP_PATTERNS`，并回看网盘是否已误传、及时清理
 
 ---
 
@@ -202,7 +279,7 @@
 
 ### 6.2 标准七步与每步交付物
 
-| 步 | 动作 | 交付物（落盘到 verification-reports/） | 进入下一步的门 |
+| 步 | 动作 | 交付物（落盘到 task-reports/） | 进入下一步的门 |
 |---|---|---|---|
 | 1 问题调研 | 按目录树逐文件检查，无问题也列；问题分类 | 《问题调研报告》 | 问题清单与范围经用户确认 |
 | 2 修订依据规范 | 改 SSOT 规范、消除自相矛盾、自洽复核 | 依据文档优化记录 | 规范自身 0 矛盾 |

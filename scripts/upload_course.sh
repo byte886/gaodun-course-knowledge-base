@@ -34,14 +34,23 @@ fi
 LOCAL_DIR="$1"
 REMOTE_DIR="$2"
 
-# 技术过程文档过滤模式（不上传）
-# 参考: docs/project-management/standards/PROJECT_MAINTENANCE.md 第九章
+# 技术过程文档过滤模式（不上传，只传面向使用者的成品）
+# 遍历用 "$dir"/*，bash glob 默认不匹配点开头项，故 .vfetch/、.uploaded 等隐藏项天然不遍历，无需在此列出。
+# 参考: docs/project-management/standards/PROJECT_STRUCTURE_MAINTENANCE.md（产物落点与网盘上传边界）
 SKIP_PATTERNS=(
-    "验证报告_*.md"    # 验证报告
-    "transcript.json"       # 转写原始JSON
+    # —— 过程/验证/同步类文档（课程目录成品仅 知识拆解.md / 考试指导.md / transcript.md）——
+    "VERIFICATION.md"       # 单讲验证记录（现行规范并入任务报告，不落课程目录）
+    "VERIFICATION_*.md"
+    "验证报告_*.md"
+    "验证_*.md"
+    "SYNC_REPORT_*.md"      # 网盘同步报告（已下线，历史遗留）
+    "同步报告_*.md"
+    # —— 转写/技术中间产物 ——
+    "transcript.json"       # 转写原始 JSON（可读版 transcript.md 才上传）
     "*.tmp"                 # 临时文件
     "*.log"                 # 日志文件
-    ".DS_Store"             # macOS系统文件
+    # —— 系统文件 ——
+    ".DS_Store"             # macOS 系统文件
 )
 
 # 检查本地目录是否存在

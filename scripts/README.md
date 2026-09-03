@@ -9,7 +9,7 @@
 
 ---
 
-## 脚本总览（31个）
+## 脚本总览（已登记 39 个）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
@@ -17,12 +17,14 @@
 | 视频处理 | 2 | 下载解密、压缩 |
 | 音频转写 | 3 | 单文件转写、批量转写、环境搭建 |
 | OCR文字提取 | 1 | 批量OCR |
-| 百度网盘上传 | 3 | 单文件上传、批量上传、课程上传 |
+| 百度网盘上传 | 4 | 单文件上传、批量上传、课程上传、整课程并发同步 |
 | 环境与工具 | 4 | Playwright连接、密钥管理、数据符号链接、pre-commit |
-| 检查与验证 | 3 | 目录结构检查、知识库结构检查、命名一致性巡检 |
+| 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
-| 高顿做题接口链路 | 7 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷（scripts/cdp/） |
+| 高顿做题接口链路 | 10 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做（scripts/cdp/） |
+
+> **索引盘点（2026-09-04）**：上表为**已登记**脚本（39 个）。磁盘实际 `scripts/` 顶层 36 + `scripts/cdp/` 19 = 55 个脚本；另有 **16 个历史脚本尚未补登**（顶层 10：transcribe_all/one/parallel、watch_stage_done、sync_wiki、update_wiki_content/v2、poc_persistent_browser、capture_exam_net、dump_exam_net；cdp 6：download_all、encode_all、fetch_all_videos、fetch_lecture_video、capture_video_key、collect_paper_sources），多为活跃入口脚本（顶层入口本就不被其他脚本引用，refs 低不等于废弃）。这 16 个的补登/去留判定列为独立「脚本索引补全」小任务，不在本次数据分层治理范围内，不擅自删除。
 
 ---
 
@@ -152,7 +154,7 @@
 
 ---
 
-## 五、百度网盘上传（3个）
+## 五、百度网盘上传（4个）
 
 ### `baidu_upload.py` — 单文件上传到百度网盘
 
@@ -186,6 +188,17 @@
 | **用法** | `bash scripts/upload_course.sh <course_name>` |
 | **可靠性** | ✅ 中（依赖目录结构规范） |
 | **相关文档** | `docs/development/api/netdisk-setup.md` |
+
+---
+
+### `sync_course_netdisk.sh` — 课程目录并发同步网盘
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把一整个课程根按讲并发同步到百度网盘（通用，可复用于会计等其他课程）：xargs -P 并发、断点续传（`logs/netdisk_done/` 标记成功讲、重跑自动跳过）、单讲失败不影响其他讲、百度侧已存在文件走 MD5 秒传；逐讲调用 upload_course.sh 过滤技术过程文件 |
+| **用法** | `bash scripts/sync_course_netdisk.sh <本地课程根> <网盘课程根> [并发数=3] [编号正则过滤]`（网盘 IO 建议并发 2–3） |
+| **可靠性** | ✅ 高（已用于 S1 39 讲同步；每讲独立日志 `logs/netdisk_<讲>.log`） |
+| **相关文档** | `docs/development/api/netdisk-setup.md`、standards 2.2（L1/L2 备份） |
 
 ---
 
@@ -234,7 +247,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | Git 提交前自动检查（检查项与阈值以 git-workflow 9.2 为准）：大文件 >1MB 警告 / >10MB 硬阻止；音视频、PDF 等生成文件误提交警告；敏感信息（明文 password/token/secret/key）警告；新增 .md 未登记 DOCUMENTATION_MAP 或缺头部类型标注警告；暂存 .md 相对链接断链硬阻止；文档类型词不在 7 类白名单（Task/Concept/Reference/Governance/Active/Knowledge/Template）硬阻止 |
+| **用途** | Git 提交前自动检查（检查项与阈值以 git-workflow 9.2 为准）：大文件 >1MB 警告 / >10MB 硬阻止；音视频、PDF 等生成文件误提交警告；敏感信息（明文 password/token/secret/key）警告；新增 .md 未登记 DOCUMENTATION_MAP 或缺头部类型标注警告；暂存 .md 相对链接断链硬阻止；文档类型词不在 7 类白名单（Task/Concept/Reference/Governance/Active/Knowledge/Template）硬阻止；**运行产物/环境/数据误入暂存（命中模式表 ARTIFACT_RE，或被 .gitignore 忽略却 `git add -f` 强塞）硬阻止** |
 | **用法** | 安装后每次 `git commit` 自动执行（激活副本位于 `.git/hooks/pre-commit`） |
 | **可靠性** | ✅ 高（不依赖读文档，自动执行） |
 | **相关文档** | `docs/development/guides/git-workflow.md` 第 9 节 |
@@ -243,7 +256,7 @@
 
 ---
 
-## 七、检查与验证（3个）
+## 七、检查与验证（7个）
 
 ### `check_directory_structure.sh` — 目录结构检查
 
@@ -275,6 +288,50 @@
 | **用法** | `python3 scripts/check_naming_consistency.py`（另有 `--impact NAME` / `--regression`） |
 | **可靠性** | ✅ 高（风格规则可机械判定；语义判型只列候选、通读后可维持原判，不臆断） |
 | **相关文档** | `NAMING_CONVENTION.md` 第九章、`PROJECT_STRUCTURE_MAINTENANCE.md` 第六章 SOP |
+
+---
+
+### `check_git_hygiene.sh` — Git 仓库卫生体检（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 全量只读体检：①已跟踪文件是否混入运行产物（模式表与 pre-commit 的 ARTIFACT_RE 一致）；②未跟踪项分类（像运行产物则提示补 .gitignore，否则提示确认入库）；③被跟踪的 >1MB 大文件；④`.git` 与工作区体积。不改任何文件/暂存区 |
+| **用法** | `bash scripts/check_git_hygiene.sh`（发现存量漏网退出码 1、否则 0） |
+| **可靠性** | ✅ 高（模式机械匹配；pre-commit 拦增量、本脚本查存量，互补） |
+| **相关文档** | `PROJECT_STRUCTURE_MAINTENANCE.md` 2.1、`git-workflow.md` 第 9 节 |
+
+---
+
+### `verify_lecture_map.py` — 讲次课件映射校验 / 重建
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 校验 `knowledge-base/lecture-resource-map.json`（ADR-011 跨讲取料路由表）与课程库磁盘一致：结构完整（每讲有条目）、map 逻辑路径在真实目录存在、磁盘标准件反向被 map 收录、`讲义_/课件_` 旧命名件列 legacy；`--rebuild` 保留各讲「课件来源讲次」按磁盘重建文件清单写回 |
+| **用法** | `python3 scripts/verify_lecture_map.py`（只校验，不一致退出 1）；加 `--rebuild` 重建写回；`--course-root PATH` 指定课程 |
+| **可靠性** | ✅ 高（讲00/01 去重后复验 legacy=0、退出 0；幂等；自动选含 NN_ 目录最多的课程、避开空占位课程） |
+| **相关文档** | ADR-011、standards 2.2、`lecture-knowledge-build-sop.md` 步骤0 |
+
+---
+
+### `papers_view.py` — papers 题源按讲只读视图
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 遵循 standards 2.2.4「物理集中存、逻辑按讲视图」，由 `paper_index.json` 的 chapter 字段现场 group by 出「每讲几套卷 / 多少题 / paperId」；只读，不落盘、不生成第二份物理副本 |
+| **用法** | `python3 scripts/papers_view.py`（全讲概览）；`--lecture 01` 或 `--lecture 增值税`（讲号/关键词）；`--json`（结构化输出供脚本消费） |
+| **可靠性** | ✅ 高（实测 34 讲 / 116 套 / 1296 题；chapter 前导空格自动 strip） |
+| **相关文档** | standards 2.2.4、ADR-011 |
+
+---
+
+### `check_course_lib.py` — 课程库逐讲标准构成体检（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 逐讲查标准构成与污染：A 线三件套（video.mp4/transcript.md/transcript.json）缺失、PDF 与 OCR 不成对、`讲义_/课件_` 旧命名 legacy、过程文件误入（*.log/*.tmp/*.done/VERIFICATION/SYNC/验证* 等）、未知子目录、docs 内杂项、空讲目录。与 verify_lecture_map 分工：后者管「跨讲取料路由」、本脚本管「单讲自身构成」 |
+| **用法** | `python3 scripts/check_course_lib.py`（发现问题退出 1、全干净 0）；`--course-root PATH` 指定课程 |
+| **可靠性** | ✅ 高（真实 39 讲全绿退出 0；/tmp 问题夹具 6 类问题全捕获退出 1） |
+| **相关文档** | standards 2.2、ADR-011 |
 
 ---
 
@@ -341,7 +398,7 @@
 
 ---
 
-## 十、高顿做题接口链路（8个，位于 `scripts/cdp/`）
+## 十、高顿做题接口链路（10个，位于 `scripts/cdp/`）
 
 > 「接口为主、UI 兜底」的侦查与验证脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)，过程见《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》。报文落 `data/cdp-sniff/`（不入库）。除 `answer_submit_capture.js` 走 UI 交卷外，其余只读或纯接口。
 

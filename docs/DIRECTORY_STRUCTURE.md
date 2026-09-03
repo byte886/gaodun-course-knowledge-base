@@ -14,7 +14,7 @@
 > - **脚本** `scripts/`：全小写 snake_case（`.py/.sh/.js`），Git 固定名 `pre-commit` 除外。
 > - **规范/标准/模板/状态台账/全局索引**：英文 UPPER_SNAKE_CASE（如 `NAMING_CONVENTION.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`DOCUMENTATION_MAP.md`）。
 > - **方法/操作/工具/API 文档**：英文小写 kebab-case，H1 标题仍用中文（如 `git-workflow.md`、`multi-role-collaboration.md`）。
-> - **知识库内容与中文过程报告**：中文，文件名与 H1/飞书节点对应，日期用 ISO `YYYY-MM-DD`（如 `知识拆解.md`、`验证报告_xx_2026-08-31.md`）。
+> - **知识库内容与中文过程报告**：中文，文件名与 H1/飞书节点对应，日期用 ISO `YYYY-MM-DD`（如 `知识拆解.md`、`任务报告_对象_2026-08-31.md`）。
 > - **固定名白名单**：`README.md`/`LICENSE`/`CHANGELOG.md`/`CONTRIBUTING.md`/`AGENTS.md`/`.gitignore`/`requirements.txt`/`pre-commit`/`.github/`。
 
 ---
@@ -42,16 +42,16 @@
 ├── project-management/            # 项目管理（动态内容：任务状态、问题跟踪、测试计划、报告）
 │   ├── active/                    # 活动状态（任务状态、问题跟踪、课程索引）
 │   ├── test-plans/                # 测试计划（按需生成、不常驻，无任务时可不建）
-│   ├── task-reports/              # 任务执行报告（按需生成；目录保留 README）
-│   └── verification-reports/      # 质量验证报告（按需生成、不常驻，无任务时可不建）
+│   └── task-reports/              # 任务执行报告（验证结论默认并入；目录保留 README）
 ├── knowledge-base/                # 知识库内容（本地源头，同步到飞书）
 │   ├── organized-content/         # 整理后的知识内容（成品）
 │   │   ├── 通用方法/              # 面向所有课程的通用方法论
-│   │   ├── 01税法总论/            # 各章节知识（知识拆解、考试指导、验证报告）
+│   │   ├── 01税法总论/            # 各章节知识（知识拆解、考试指导）
 │   │   └── ...
-│   └── source-materials/          # 原始素材（原材料，用于生成知识库）
-│       ├── 税法-总论/             # 各课程的做题记录、解析、用户笔记
-│       └── ...
+│   ├── source-materials/          # 原始素材（原材料，用于生成知识库）
+│   │   ├── 税法-总论/             # 各课程的解析与用户留言、用户笔记精华（题答走 data/knowledge-source）
+│   │   └── ...
+│   └── lecture-resource-map.json  # 讲次→课件/OCR/转写取料路由（ADR-011，入库，脚本可校验重建）
 ├── scripts/                       # 脚本（下载、压缩、转写、上传、做题等）
 ├── transcription/                 # 转写工作目录（.gitignore忽略）
 ├── .secrets/                      # 加密凭证（加密文件提交到仓库）
@@ -138,10 +138,8 @@ gaodun-course-knowledge-base/
 │       └── templates/        # 模板文件
 │           ├── KNOWLEDGE_BASE_TEMPLATE.md # 知识库页面模板
 │           ├── PARENT_NODE_TEMPLATE.md    # 父节点页面模板
-│           ├── EXAM_RECORD_TEMPLATE.md    # 做题记录模板
 │           ├── REPORT_TEMPLATE.md          # 任务报告模板
-│           ├── VERIFICATION_TEMPLATE.md    # 通用验证报告模板
-│           └── VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md # 知识库验证报告模板
+│           └── VERIFICATION_TEMPLATE.md    # 通用验证模板（视频/转写等专项质检按需，非每次必出）
 ├── project-management/       # 项目管理（动态内容）
 │   ├── README.md             # 项目管理目录说明
 │   ├── active/               # 活动状态（频繁更新）
@@ -151,30 +149,33 @@ gaodun-course-knowledge-base/
 │   │   └── COURSE_INDEX.md   # 课程清单索引
 │   ├── test-plans/           # 测试计划（按需生成、不常驻）
 │   │   └── 测试计划_*.md
-│   ├── task-reports/         # 任务执行报告（按需生成；目录保留 README）
-│   │   ├── README.md         # 报告目录说明
-│   │   └── 任务报告_*.md
-│   └── verification-reports/ # 质量验证报告（按需生成、不常驻）
-│       └── 验证报告_*.md
-├── knowledge-base/           # 知识库实际内容（本地）
+│   └── task-reports/         # 任务执行报告（验证结论默认并入；目录保留 README）
+│       ├── README.md         # 报告目录说明
+│       └── 任务报告_*.md
+├── knowledge-base/           # 知识库实际内容（本地，唯一源头）
 │   ├── organized-content/    # 整理后的知识内容
 │   │   ├── 通用方法/         # 面向所有课程的通用方法论
-│   │   └── 01税法总论/      # 章节知识
-│   │       ├── README.md        # 章节概览（含子节点链接）
-│   │       ├── 知识拆解.md      # 章节核心知识点
-│   │       ├── 考试指导.md      # 做题技巧/易错点/记忆口诀
-│   │       ├── 验证报告_*.md # 知识库质量验证报告
-│   │       └── 同步报告_*.md  # 飞书知识库同步报告
-│   └── source-materials/     # 原始素材
-│       └── 税法-总论/
-│           ├── 做题记录_*.md    # 各试卷做题记录
-│           ├── 解析与用户留言_*.md # 官方解析和用户留言整理
-│           └── 用户笔记精华_*.md # 高赞用户留言整理
+│   │   ├── 01税法总论/ … 15强化冲刺/  # 旧15章版（待被34讲版替换，去留见阶段计划D4）
+│   │   │   ├── README.md        # 章节概览（含子节点链接）
+│   │   │   ├── 知识拆解.md      # 章节核心知识点
+│   │   │   └── 考试指导.md      # 做题技巧/易错点/记忆口诀（验证/同步不单独成文）
+│   │   └── _34chapters/      # 新版：严格对齐官方34讲（讲01…讲34，重建中）
+│   │       └── 讲NN/ 知识拆解.md + 考试指导.md + README.md
+│   ├── source-materials/     # 原始素材（题/答/解析走 data/knowledge-source 接口采集，不在此）
+│   │   └── 税法-总论/
+│   │       ├── 解析与用户留言_*.md # 官方解析和用户留言整理（永久）
+│   │       └── 用户笔记精华_*.md # 高赞用户留言整理（永久）
+│   └── lecture-resource-map.json # 讲次→课件/OCR/转写取料路由（ADR-011，入库版本化，verify_lecture_map.py 校验/重建）
 ├── transcription/            # 转写工作目录
 │   ├── requirements.txt      # Python依赖清单（新电脑复现环境用）
 │   └── venv/                 # Python虚拟环境（gitignore忽略，不提交）
-├── data/                     # 符号链接目录（gitignore忽略，不提交）
-│   └── 高顿/                 # 符号链接 → ~/Desktop/高顿/
+├── data/                     # 工作区：接口采集/抓包/做题进度（实体目录，整体 gitignore 不提交）
+│   ├── 高顿/                 # 符号链接 → ~/Desktop/高顿/（课程库：A视频/C讲义线，传网盘）
+│   ├── cdp-sniff/            # 做题进度总账+抓包（仅留 papers_inventory/papers_audit/course_catalog；侦查包结论入文档后清，全部定稿后整目录清）
+│   ├── knowledge-source/     # B做题线原料 L1（按 paperId 集中存，按讲聚合走 paper_index）
+│   │   ├── paper_index.json  # 试卷索引（paperId↔chapter，按讲聚合用）
+│   │   └── papers/*.json     # 每套卷题面/标准答案/解析（116套，备份到网盘独立原料区）
+│   └── （其余抓包/运行过程文件按需生成、不常驻，结论沉淀后可清）
 └── .git/hooks/
     └── pre-commit            # 实际生效的pre-commit hook
 ```
@@ -184,7 +185,7 @@ gaodun-course-knowledge-base/
 | 目录 | 忽略原因 | 复现方式 |
 |------|----------|----------|
 | `transcription/venv/` | Python虚拟环境，路径硬编码，不应复制 | `./scripts/setup_transcription_env.sh` 重新创建 |
-| `data/` | 符号链接指向外部大文件目录（视频/文档/转写结果） | `./scripts/setup_data_symlink.sh` 创建链接 |
+| `data/` | 工作区（抓包、题答原料、做题进度等），体积大且随任务变化，整体不提交（轻量派生元数据 lecture-resource-map 例外，已移入库 `knowledge-base/`） | 目录内 `高顿` 软链由 `./scripts/setup_data_symlink.sh` 创建；其余为接口采集/运行产物，可由脚本重建 |
 
 **虚拟环境迁移原则**：Python虚拟环境不直接复制到新电脑，用 `requirements.txt` + 搭建脚本重新创建。
 
@@ -225,7 +226,7 @@ NN_讲座标题/
 ├── 考试指导.md         # 考试指导（考点、易错点、记忆口诀、真题回顾）
 ├── docs/              # 讲义文档原件（PDF/PPT/DOC）
 ├── docs_text/         # OCR文字稿（讲义文档中图片的OCR识别结果）
-├── VERIFICATION.md    # 验证报告（视频/知识库等验证结果）
+├── VERIFICATION.md    # 视频/转写专项质检（按需，非每次必出）
 └── .uploaded          # 上传标记（已上传到百度网盘后生成）
 ```
 
