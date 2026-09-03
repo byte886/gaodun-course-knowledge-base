@@ -10,6 +10,10 @@
 # 如果不提供参数，使用默认配置（需手动修改下方DEFAULT_*变量）
 
 set -euo pipefail
+# 兜底 UTF-8 locale：nohup/后台环境可能是 C locale，导致 $VAR 紧跟中文时
+# bash 把中文首字节并入变量名而报 unbound variable
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 # 动态获取项目目录（脚本所在目录的上一级）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -170,7 +174,7 @@ doc.close()
   if [ $PROCESSED -gt 0 ]; then
     AVG_TIME=$((ELAPSED / PROCESSED))
     REMAINING=$(( (TOTAL_PAGES - PROCESSED) * AVG_TIME ))
-    echo "  [进度] 已处理 $PROCESSED/$TOTAL_PAGES，已用 $((ELAPSED / 60))分$((ELAPSED % 60))秒，预计剩余 $((REMAINING / 60))分$((REMAINING % 60))秒"
+    echo "  [进度] 已处理 ${PROCESSED}/${TOTAL_PAGES}，已用 $((ELAPSED / 60))分$((ELAPSED % 60))秒，预计剩余 $((REMAINING / 60))分$((REMAINING % 60))秒"
   fi
 done
 

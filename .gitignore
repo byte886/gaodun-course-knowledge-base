@@ -89,3 +89,7 @@ node_modules/
 *.tar.gz
 *.rar
 *.7z
+
+# GGUF模型文件（大文件，不入库）
+transcription/.gguf_test/
+transcription/.gguf_test/**

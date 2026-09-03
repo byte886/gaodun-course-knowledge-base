@@ -17,6 +17,7 @@
 | `transcription.md` | 音频转文字：FunASR环境搭建、参数配置、性能优化 |
 | `ocr.md` | OCR文字提取：macOS Vision框架使用、表格图表AI补充 |
 | `playwright-cli-guide.md` | Playwright CLI使用：连接浏览器、执行代码、异常处理 |
+| `browser-cdp-connect-guide.md` | 浏览器CDP连接：用 puppeteer-core 连接日常Chrome（复用登录态）、自动授权、抓包 |
 | `document-download.md` | 文档下载：讲义PDF下载、后台下载方法、验证完整性 |
 
 ---

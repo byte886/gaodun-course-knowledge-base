@@ -16,14 +16,20 @@ docs/development/
 ├── README.md                    # 本文档（索引）
 ├── api/                         # 接口与外部服务
 │   ├── feishu-api.md            # 飞书API使用注意事项
+│   ├── gaodun-exam-api.md       # 高顿做题接口档案（syllabus/redo-paper/submit-paper/exam-report）
 │   ├── netdisk-setup.md         # 百度网盘集成：应用创建、API配置、上传脚本
 │   └── encryption.md            # 加密凭证：Token加密存储与使用
 ├── guides/                      # 详细操作指南与规范
-│   ├── agents-md-best-practices.md  # AGENTS.md写作最佳实践
-│   ├── exam-workflow.md         # 做题流程与交互规范（含交互优化、检查清单）
-│   ├── interaction-workflow.md  # 通用交互流程与优化规范（所有Web场景）
-│   └── git-workflow.md          # GitHub工作流：SSH配置、代理设置、常见问题
+│   ├── agents-md-best-practices.md       # AGENTS.md写作最佳实践
+│   ├── debugging-and-collaboration.md    # 问题排查方法论与人机协作
+│   ├── exam-workflow.md                  # 做题流程与交互规范（含交互优化、检查清单）
+│   ├── feishu-knowledge-base-maintenance.md # 飞书知识库整理与维护SOP
+│   ├── interaction-workflow.md           # 通用交互流程与优化规范（所有Web场景）
+│   ├── macos-accessibility-automation.md # macOS原生控件/系统弹窗/多屏精准操作
+│   ├── multi-role-collaboration.md       # 多角色协作分工（完整方法见飞书AI库）
+│   └── git-workflow.md                   # GitHub工作流：SSH配置、代理设置、常见问题
 ├── tools/                       # 工具使用指南
+│   ├── browser-cdp-connect-guide.md # 浏览器CDP连接手册（puppeteer-core连日常Chrome）
 │   ├── playwright-cli-guide.md  # Playwright CLI使用指南
 │   ├── video-processing.md      # 视频处理详细指南（下载/解密/压缩/验证）
 │   ├── transcription.md         # 音频转文字：FunASR环境配置、性能数据
@@ -52,7 +58,10 @@ docs/development/
 | OCR | macOS Vision框架（系统原生）+ AI视觉补充 |
 | 网盘 | 百度网盘开放平台API |
 | 知识库 | 飞书知识库（Lark Wiki） |
-| 浏览器自动化 | Playwright CLI（Extension模式附加到已登录Chrome） |
+| 浏览器自动化·主链路 | puppeteer-core 经 CDP 连接日常 Chrome（选型见 ADR-010） |
+| 浏览器自动化·UI兜底 | Playwright CLI（Extension 模式附加到已登录 Chrome） |
+| 自动做题·主链路 | 纯 HTTP 接口（syllabus/redo-paper/submit-paper/exam-report，JWT 鉴权；契约见 api/gaodun-exam-api.md） |
+| 自动做题·兜底 | Playwright UI 点选（接口失败时降级，保证作业最终交得上） |
 
 ---
 

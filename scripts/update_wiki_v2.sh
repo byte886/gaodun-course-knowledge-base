@@ -1,0 +1,99 @@
+#!/bin/bash
+# 批量更新飞书知识库内容（v2 - 更健壮的版本）
+# 用法: ./update_wiki_v2.sh <起始章号> <结束章号>
+
+PARENT_NODE="UM6bwW23tiYkCVk3nXtc3TpBnGe"
+SPACE_ID="7678261729456852192"
+CONTENT_DIR="/Users/wenjiechen/Doubao/chats/2026-08-26/new-chat/gaodun-course-knowledge-base/knowledge-base/organized-content"
+
+START=${1:-06}
+END=${2:-15}
+
+echo "=== 开始批量更新知识库内容 ==="
+echo "章节范围: $START - $END"
+echo ""
+
+# 获取所有章节点（只获取一次）
+ALL_NODES_JSON=$(lark-cli wiki +node-list --space-id "$SPACE_ID" --parent-node-token "$PARENT_NODE" --as user --format json 2>&1 | sed -n '/^{/,$p')
+
+for ((i=10#$START; i<=10#$END; i++)); do
+    CHAPTER=$(printf "%02d" $i)
+    
+    # 查找章节目录
+    CHAPTER_DIR=$(find "$CONTENT_DIR" -maxdepth 1 -type d -name "${CHAPTER}*" | head -1)
+    
+    if [ -z "$CHAPTER_DIR" ]; then
+        echo "[$CHAPTER] 未找到章节目录，跳过"
+        continue
+    fi
+    
+    CHAPTER_NAME=$(basename "$CHAPTER_DIR")
+    echo "[$CHAPTER] $CHAPTER_NAME"
+    
+    # 从节点列表中找到对应的章节点
+    CHAPTER_INFO=$(echo "$ALL_NODES_JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for node in data.get('data', {}).get('nodes', []):
+    if node['title'].startswith('$CHAPTER_NAME') or node['title'].startswith('$CHAPTER'):
+        print(node['node_token'] + '|' + node['obj_token'])
+        break
+" 2>/dev/null)
+    
+    if [ -z "$CHAPTER_INFO" ]; then
+        echo "  未找到章节点，跳过"
+        continue
+    fi
+    
+    CHAPTER_NODE_TOKEN=$(echo "$CHAPTER_INFO" | cut -d'|' -f1)
+    CHAPTER_OBJ_TOKEN=$(echo "$CHAPTER_INFO" | cut -d'|' -f2)
+    echo "  node_token: $CHAPTER_NODE_TOKEN"
+    
+    # 更新README
+    README_FILE="$CHAPTER_DIR/README.md"
+    if [ -f "$README_FILE" ]; then
+        cat "$README_FILE" | lark-cli docs +update --doc "$CHAPTER_OBJ_TOKEN" --command overwrite --doc-format markdown --content - --as user --format json 2>&1 | grep -q '"result": "success"' && echo "  README: OK" || echo "  README: FAIL"
+    fi
+    
+    # 获取子节点
+    CHILD_NODES_JSON=$(lark-cli wiki +node-list --space-id "$SPACE_ID" --parent-node-token "$CHAPTER_NODE_TOKEN" --as user --format json 2>&1 | sed -n '/^{/,$p')
+    
+    # 更新知识拆解
+    KNOWLEDGE_FILE="$CHAPTER_DIR/知识拆解.md"
+    if [ -f "$KNOWLEDGE_FILE" ]; then
+        KNOWLEDGE_OBJ=$(echo "$CHILD_NODES_JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for node in data.get('data', {}).get('nodes', []):
+    if node['title'] == '知识拆解':
+        print(node['obj_token'])
+        break
+" 2>/dev/null)
+        
+        if [ -n "$KNOWLEDGE_OBJ" ]; then
+            cat "$KNOWLEDGE_FILE" | lark-cli docs +update --doc "$KNOWLEDGE_OBJ" --command overwrite --doc-format markdown --content - --as user --format json 2>&1 | grep -q '"result": "success"' && echo "  知识拆解: OK" || echo "  知识拆解: FAIL"
+        fi
+    fi
+    
+    # 更新考试指导
+    EXAM_FILE="$CHAPTER_DIR/考试指导.md"
+    if [ -f "$EXAM_FILE" ]; then
+        EXAM_OBJ=$(echo "$CHILD_NODES_JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for node in data.get('data', {}).get('nodes', []):
+    if node['title'] == '考试指导':
+        print(node['obj_token'])
+        break
+" 2>/dev/null)
+        
+        if [ -n "$EXAM_OBJ" ]; then
+            cat "$EXAM_FILE" | lark-cli docs +update --doc "$EXAM_OBJ" --command overwrite --doc-format markdown --content - --as user --format json 2>&1 | grep -q '"result": "success"' && echo "  考试指导: OK" || echo "  考试指导: FAIL"
+        fi
+    fi
+    
+    echo "[$CHAPTER] 完成"
+    echo ""
+done
+
+echo "=== 批量更新完成 ==="

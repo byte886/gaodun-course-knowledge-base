@@ -1,0 +1,103 @@
+#!/usr/bin/env node
+/**
+ * fetch_lecture_video.js — 单讲视频「取回放URL → CDP抓HLS key → 下m3u8取IV → 下载解密合并」主控。
+ * 不做压缩（压缩慢、CPU bound，交由队列脚本在下载后串行执行 compress.sh）。
+ *
+ * 幂等：目标讲目录已存在 video.mp4 则跳过。
+ * 时效：每讲实时从 syllabus 取最新回放 token，抓流→下载在同一轮连续完成（m3u8/authorize token 会过期）。
+ *
+ * 用法：node scripts/cdp/fetch_lecture_video.js <idx>
+ *   idx = course_catalog / syllabus children 下标（idx1=开班前缀00，idxN→前缀 N-1）
+ * 产物：<课程库>/<前缀_讲名>/.vfetch/manifest.json + merged.ts（压缩步骤读取 manifest）
+ */
+'use strict';
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawnSync, execFileSync } = require('child_process');
+const ROOT = path.resolve(__dirname, '..', '..');
+const { findJwt, makeHeaders } = require(path.join(ROOT, 'scripts/cdp/gaodun_paper_core.js'));
+const SNIFF = path.join(ROOT, 'data', 'cdp-sniff');
+const COURSE = path.join(os.homedir(), 'Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）');
+const COURSE_ID = 42660, SYLLABUS_ID = 75181;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function log(...a) { console.log(`[fetch ${new Date().toLocaleTimeString()}]`, ...a); }
+function must(bin, args, opts = {}) {
+  const r = spawnSync(bin, args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64, ...opts });
+  if (r.status !== 0) throw new Error(`${bin} ${args.slice(0, 3).join(' ')} 失败: ${(r.stderr || r.stdout || '').slice(0, 300)}`);
+  return r.stdout;
+}
+
+async function getLive(idx) {
+  const H = makeHeaders(findJwt(SNIFF));
+  const j = await (await fetch(
+    `https://apigateway.gaodun.com/g-study/api/v1/front/course/${COURSE_ID}/syllabus/glive/${SYLLABUS_ID}`, { headers: H })).json();
+  const node = j.result.children[idx];
+  if (!node) throw new Error(`children[${idx}] 不存在`);
+  let live = null;
+  for (const key of ['preClassResource', 'inClassMainResource', 'inClassAssistResource', 'afterClassResource']) {
+    for (const r of node[key] || []) if (r.discriminator === 'live_new') live = r;
+  }
+  if (!live || !live.liveUrlPlayBackPc) throw new Error(`idx${idx} 无 live_new 回放`);
+  return { name: node.name || live.title, url: live.liveUrlPlayBackPc, durationMinutes: live.durationMinutes };
+}
+
+(async () => {
+  const idx = Number(process.argv[2]);
+  if (!idx) { console.error('用法: node fetch_lecture_video.js <idx>'); process.exit(2); }
+  const prefix = String(idx - 1).padStart(2, '0');
+  const { name, url, durationMinutes } = await getLive(idx);
+  // 定位/创建讲目录（前缀匹配，避免讲名特殊字符差异）
+  let dir = fs.readdirSync(COURSE).find((d) => d.startsWith(prefix + '_'));
+  if (!dir) { dir = `${prefix}_${name.trim()}`; fs.mkdirSync(path.join(COURSE, dir), { recursive: true }); }
+  const lecDir = path.join(COURSE, dir);
+  if (fs.existsSync(path.join(lecDir, 'video.mp4'))) { log('已存在 video.mp4，跳过', dir); process.exit(0); }
+  const work = path.join(lecDir, '.vfetch');
+  fs.mkdirSync(work, { recursive: true });
+  // 断点续跑：已下载解密出 merged 且 manifest 在，则跳过抓取/下载（压缩阶段另跑）
+  const mfPath = path.join(work, 'manifest.json');
+  if (fs.existsSync(mfPath)) {
+    try {
+      const mf = JSON.parse(fs.readFileSync(mfPath, 'utf8'));
+      if (mf.merged && fs.existsSync(mf.merged)) { log('已下载 merged，跳过抓取下载', dir); process.exit(0); }
+    } catch { /* manifest 损坏则重抓 */ }
+  }
+  log(`讲目录 ${dir}（约${durationMinutes}分钟）工作目录 ${work}`);
+
+  // 1) CDP 抓 key（复用 capture_video_key.js，自动连日常 Chrome、抓完关临时标签）
+  const streamsPath = path.join(work, 'streams.json');
+  log('CDP 抓 HLS key ...');
+  must('node', [path.join(ROOT, 'scripts/cdp/capture_video_key.js'), url, streamsPath], { stdio: 'inherit' });
+  const streams = JSON.parse(fs.readFileSync(streamsPath, 'utf8'));
+  const fhd = streams.find((s) => s.quality.includes('FHD')) || streams[0];
+  if (!fhd || !fhd.keyAscii) throw new Error('未抓到 FHD key');
+  log('选用', fhd.quality, 'key=', fhd.keyAscii);
+
+  // 2) 下 m3u8 并解析 IV
+  const m3u8Path = path.join(work, 'playlist.m3u8');
+  must('curl', ['-s', '-o', m3u8Path, '-H', 'Referer: https://v-glive.gaodun.com/', fhd.m3u8]);
+  const m3u8 = fs.readFileSync(m3u8Path, 'utf8');
+  const keyLine = m3u8.split('\n').find((l) => l.includes('EXT-X-KEY'));
+  const ivm = keyLine && keyLine.match(/IV=0x([0-9a-fA-F]+)/);
+  if (!ivm) throw new Error('m3u8 未找到 IV');
+  const iv = ivm[1];
+  const segCount = m3u8.split('\n').filter((l) => l.startsWith('http') && l.includes('.ts')).length;
+  log('IV=', iv, '分片数=', segCount);
+
+  // 3) 下载 + 解密 + 合并（断点续传，20 并发）
+  const merged = path.join(work, 'merged.ts');
+  log('下载解密合并...');
+  must('node', [path.join(ROOT, 'scripts/download_decrypt.js'), m3u8Path, merged,
+    path.join(work, 'segments'), fhd.keyAscii, iv, '20'], { stdio: 'inherit' });
+  if (!fs.existsSync(merged)) throw new Error('merged.ts 未生成');
+  const dur = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1', merged], { encoding: 'utf8' }).trim();
+  fs.writeFileSync(path.join(work, 'manifest.json'), JSON.stringify({
+    idx, prefix, lecture: dir, capturedAt: new Date().toISOString(),
+    quality: fhd.quality, iv, segCount, merged, durationSec: Number(dur),
+    targetVideo: path.join(lecDir, 'video.mp4'),
+  }, null, 2));
+  log(`✓ 下载解密完成 merged=${(fs.statSync(merged).size / 1024 / 1024).toFixed(1)}MB 时长=${Number(dur).toFixed(0)}s，待压缩 -> video.mp4`);
+  process.exit(0);
+})().catch((e) => { console.error('[FETCH-FAIL]', e.stack || e.message); process.exit(1); });

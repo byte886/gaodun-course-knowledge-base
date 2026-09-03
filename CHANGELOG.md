@@ -14,7 +14,24 @@
 
 > 自最近一次版本结算以来、尚未定版本的变更先累积于此；结算时把本块整体改名为 `[版本号] - 日期`，并在上方另开一个空的 [未发布]。
 
-（暂无累积）
+### 新增
+- 浏览器自动化连接通道选型与落地（「自动做作业」接口化改造前置，决策见 ADR-010）：实测确定用 puppeteer-core 经 Chrome 144+ 运行时远程调试通道连接用户日常 Chrome（默认 Profile、复用登录态、免重启免重登），macOS AX 的 AXPress 自动点授权并内置 403 退避重试；Playwright 连接层在该通道不稳定故弃用、扩展模式保留为 UI 兜底，chrome-devtools-mcp 不进运行时
+- 新增 `scripts/cdp/`：connectBrowser.js（读 DevToolsActivePort 带 UUID 端点、Chrome 没开自动拉起[按 Local State 选上次/首个 Profile]、串行自动授权、重试、找页、安全断开、可自检）、press_allow.applescript（只查授权 sheet、跳过网页 AXWebArea 的元素级代点，多屏可靠）、sniff_demo.js（抓请求/响应落 data/cdp-sniff JSONL）；新增仓库根 package.json/package-lock.json 声明 puppeteer-core（node_modules 不入库，新环境 npm install 自补足）
+- 新增文档：ADR-010、docs/development/tools/browser-cdp-connect-guide.md（CDP 连接手册）、docs/development/guides/macos-accessibility-automation.md（macOS 多屏辅助功能自动化通用方法）、docs/development/guides/debugging-and-collaboration.md（问题排查与人机协作方法论）、task-reports《任务报告_浏览器连接通道选型实测_2026-09-01》
+- 新增 `docs/development/guides/feishu-knowledge-base-maintenance.md`（飞书知识库整理与维护 SOP：盘点与通用分类原则、结构整理流程、父节点导航规范、覆盖校验与安全红线）；`docs/development/api/feishu-api.md` 增补 wiki +move 移动、删除级联风险、stdin 转后台静默未写入、占位符坏链、node/obj token 通用等实测踩坑
+- 「自动做作业」做题链路接口化侦查与纯接口闭环验证（决策点②路线确定为「接口为主、UI 仅负责登录与兜底」）：实测 `redo-paper` 进卷即返回题面/选项/标准答案/解析（无需"先随便做一遍"）、`submit-paper` 明文 JSON 无 sign/nonce/加密、鉴权仅 `authentication` JWT（HS256、有效期 7 天）、同卷题集与选项顺序固定不乱序、存在"最小作答墙钟时长"风控（约 1s 交卷被拒 10462203、与 body.costTime 无关）、`syllabus` 单接口枚举全课程 119 张卷且 `csItemId=章节 itemId`（非 paper 资源节点 id）；纯接口闭环 6 题卷 6/6、此前未做过的 9 题卷 9/9，对照 UI 逐题点选仅 1/6（题序/时序错位，反证 UI 不稳根因在交互而非知识）；3 张 48 题冲刺模考按流程留待基础作业完成后单独验证
+- 新增 `docs/development/api/gaodun-exam-api.md`（高顿作业接口档案 Reference：接口契约、ID 映射、JWT 与风控、已验证边界与待验证清单）与 task-reports《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》；`scripts/cdp/` 新增 7 个脚本：probe_exam_entry.js、probe_quiz_dom.js（只读侦查）、capture_quiz_load.js、capture_schedule_list.js（抓取题/大纲）、answer_submit_capture.js（UI 对照实验）、api_submit_test.js（闭环验证）、api_do_paper.js（通用纯接口做卷蓝本，syllabus 解析 id→record→redo→等待→submit→exam-report 回查）
+
+- 知识来源口径对齐（2026-09-02）：重写 `knowledge-base-sources.md`，认定 4 类内容来源（初始知识库 / 题与标准答案 / 官方解析 / 用户笔记）＋冲刺模考题答（全部前置完成后的末期特例）；明确**剔除"自动化作业产生的 AI 错题"**（旧 Playwright UI BUG 的产物、非用户本人知识），「考点图谱」经侦查只给章→考点目录归属、无知识点关联、已否决；WORKFLOW 第7节、knowledge-base-organization、gaodun-exam-api 同步该口径（做题首要目的=100% 完成作业）
+- 「考点图谱」侦查后否决（2026-09-02）：经 CDP 抓包与逐层点击验证，其数据（with-sid→ep-syllabus course/point）只是 15 章→96 考点的**目录归属树**（多父考点=0、无关联字段、点节点不发额外请求），**不含知识点之间的关联**，不符用户所需，决定**不作知识来源、不做圆点遍历**；相关临时侦查脚本已移除，结论留存当日任务报告以免重复调研
+
+### 变更
+- 作业完成度只读盘点 + 接口化批量补做（2026-09-02）：syllabus+record 全量盘点 119 卷（progress=2=做过未提交、record 只反映最近一次），新增 `scripts/cdp/batch_redo_papers.js` 批量纯接口补做，原 23 张待补卷 22 张补到满分、累计满分 25 张；验证课后(多选)/分章真题(单选)卷型同样进卷即回答案、记录 redo 会切换最近实例的副作用；发现 type=5/6 主观计算大题（AI 批改、标准答案在解析文本、纯选项提交只对客观题）新边界并立专项，82749 客观题满分、主观待专项
+- 登记本轮接口化产物：scripts/README 脚本总览由 23 扩为 31 并新增「十、高顿做题接口链路（7个）」、DOCUMENTATION_MAP 快速入口「做题验证前」置顶接口档案并在参考资料表登记、docs/development/README 目录树与技术栈表补「自动做题·主链路/兜底」
+- 飞书「AI」知识空间结构治理（外部知识库，流程沉淀见新增的维护 SOP）：按主题重构为 Chrome（其下再分 Chrome 自动化 / Chrome 使用与配置，形成三层）、macOS 自动化、豆包、工程方法论与协作四个一级分组；浏览器自动化与 macOS 自动化拆开、Gemini 指南归入「Chrome 使用与配置」、迁出内容后清空并删除名不副实的旧分组；全部 7 个父节点补齐「子文档链接 + 一句话摘要」导航并通过覆盖校验（19/19 直接子节点可点达、无坏链）
+
+### 修复
+- 修复「自动点 Chrome 调试授权时好时坏、偶发永久卡住」：定位到三层叠加根因并逐一修复——①授权脚本递归整张窗口、遍历网页 AXWebArea 上万节点致单次 9.3s 被超时杀（改为只查窗口模态 sheet、跳过 AXWebArea、限深，降到 0.31s）；②Node 侧 setInterval 并发派生 osascript，在 System Events 拥塞堆积卡死（改为串行点击循环：同一时刻一个 osascript、单次硬超时、结束清理在途子进程）；③点中后 sheet 立即关闭、递归继续访问失效元素报错（点中即停+全程容错）。修复后连续 8 次连接全部成功（2.1–3.2s）、osascript 残留恒为 0；通用规律同步沉淀进 AX 指南 §5
 
 ---
 

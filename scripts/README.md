@@ -9,11 +9,11 @@
 
 ---
 
-## 脚本总览（20个）
+## 脚本总览（31个）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
-| 做题自动化 | 3 | 单选题、多选题、交卷 |
+| 做题自动化（旧·UI） | 3 | 单选题、多选题、交卷（UI 点选，接口链路的兜底） |
 | 视频处理 | 2 | 下载解密、压缩 |
 | 音频转写 | 3 | 单文件转写、批量转写、环境搭建 |
 | OCR文字提取 | 1 | 批量OCR |
@@ -21,6 +21,8 @@
 | 环境与工具 | 4 | Playwright连接、密钥管理、数据符号链接、pre-commit |
 | 检查与验证 | 3 | 目录结构检查、知识库结构检查、命名一致性巡检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
+| 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
+| 高顿做题接口链路 | 7 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷（scripts/cdp/） |
 
 ---
 
@@ -301,6 +303,152 @@
 **注意**：用户留言可能需要向下滚动才能完整加载，脚本在"笔记"关键词处可能截断。
 
 ---
+
+## 九、浏览器 CDP 连接（3个，位于 `scripts/cdp/`）
+
+> 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
+
+### `cdp/connectBrowser.js` — 连接日常 Chrome（可复用模块 + 自检）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 读取带 UUID 的 CDP 端点、自动 AXPress 授权、403 退避重试，导出 `connectDailyChrome/findPage/listPages/safeDisconnect` |
+| **用法** | `node scripts/cdp/connectBrowser.js`（环境自检：连接→列标签→断开）；业务脚本 `require('./cdp/connectBrowser')` |
+| **可靠性** | ✅ 高（已实测，连续连接稳定，1.4~3.6s 连上且保留用户页面） |
+| **相关文档** | `docs/development/tools/browser-cdp-connect-guide.md`、ADR-010 |
+
+---
+
+### `cdp/press_allow.applescript` — 自动点「允许远程调试」
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 递归遍历 Chrome 控件，对「允许」按钮执行元素级 AXPress（文字在 AXDescription），多屏可靠；无弹窗时无副作用 |
+| **用法** | 一般由 connectBrowser.js 自动调用；手工调试：`osascript scripts/cdp/press_allow.applescript` |
+| **可靠性** | ✅ 高（需在系统设置授予「辅助功能」权限） |
+| **相关文档** | `docs/development/guides/macos-accessibility-automation.md` |
+
+---
+
+### `cdp/sniff_demo.js` — 网络抓包骨架
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | attach 指定 URL 标签，监听请求/响应（XHR/fetch 取 body），过滤静态噪音，落 JSONL 到 `data/cdp-sniff/`（不入库） |
+| **用法** | `node scripts/cdp/sniff_demo.js [URL关键词] [秒数] [--reload]`，如 `node scripts/cdp/sniff_demo.js gaodun 20` |
+| **可靠性** | ✅ 高（百度页实测 93 请求、记录 57 条）；真实高顿接口待抓 |
+| **相关文档** | `docs/development/tools/browser-cdp-connect-guide.md` |
+
+---
+
+## 十、高顿做题接口链路（8个，位于 `scripts/cdp/`）
+
+> 「接口为主、UI 兜底」的侦查与验证脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)，过程见《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》。报文落 `data/cdp-sniff/`（不入库）。除 `answer_submit_capture.js` 走 UI 交卷外，其余只读或纯接口。
+
+### `cdp/probe_exam_entry.js` — 只读列课程表做题/考试入口
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 解析 class-schedule 页，区分可重做知识点卷（button.ant-btn-link「重新做题」）与正式/模考卷，避免误点 |
+| **用法** | `node scripts/cdp/probe_exam_entry.js` |
+| **可靠性** | ✅ 高（只读，不点击、不进卷） |
+| **相关文档** | gaodun-exam-api.md §2.1 |
+
+---
+
+### `cdp/probe_quiz_dom.js` — 只读探做题页 DOM/iframe
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 确认做题页无 iframe、选项为 `div.sub-tiku__question-select-item`、逐题分页、交卷/确认按钮结构 |
+| **用法** | `node scripts/cdp/probe_quiz_dom.js`（需已打开一张做题标签） |
+| **可靠性** | ✅ 高（只读） |
+| **相关文档** | gaodun-exam-api.md §0 |
+
+---
+
+### `cdp/capture_quiz_load.js` — 进卷抓 redo-paper
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 在课程表精准点指定可重做卷（最小单卷容器判卷、拒绝正式卷），监听新标签加载期请求/响应落 JSONL |
+| **用法** | `node scripts/cdp/capture_quiz_load.js [卡片关键字=计税依据] [等待秒=14]` |
+| **可靠性** | ✅ 高（已两次稳定抓到完整 redo-paper） |
+| **相关文档** | gaodun-exam-api.md §2.3 |
+
+---
+
+### `cdp/capture_schedule_list.js` — 抓 syllabus 全量大纲
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | reload 课程表+滚动触发懒加载，抓课程大纲接口（枚举全部作业入口），标注含 paperId/resourceId 的响应 |
+| **用法** | `node scripts/cdp/capture_schedule_list.js` |
+| **可靠性** | ✅ 高（单接口返回 119 张卷、无分页；大响应上限已设 4MB 防截断） |
+| **相关文档** | gaodun-exam-api.md §2.1 |
+
+---
+
+### `cdp/answer_submit_capture.js` — UI 作答+交卷抓包（对照实验）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 实时取 redo-paper 答案后用 UI 逐题点选并交卷，抓 submit-question/submit-paper/exam-report；用于定位 UI 路线不稳根因 |
+| **用法** | `node scripts/cdp/answer_submit_capture.js [卡片关键字=计税依据]`（**会真实交一次可重做卷**） |
+| **可靠性** | ⚠️ 仅实验用：UI 题序/时序问题会导致错位（实测 1/6），生产走纯接口 |
+| **相关文档** | 任务报告 §4 |
+
+---
+
+### `cdp/api_submit_test.js` — 6 题卷纯接口闭环验证
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 不做任何 UI 点选，Node 直连 record→redo-paper→submit-paper→exam-report，验证纯接口满分与「最小作答时长」风控 |
+| **用法** | `node scripts/cdp/api_submit_test.js`（JWT 从最近抓包自动提取；会真实交一次可重做卷） |
+| **可靠性** | ✅ 验证通过（6/6）；通用场景用 `api_do_paper.js` |
+| **相关文档** | gaodun-exam-api.md §2.5、任务报告 §5 |
+
+---
+
+### `cdp/gaodun_paper_core.js` — 纯接口做卷共享核心（客观 + type5/6 主观）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 被 `api_do_paper.js`/`batch_redo_papers.js` 复用：record→(首次先 create-paper)→redo→平铺答案（type5 父题不答、平铺其 type6 子题；顶层独立 type6 同样处理）→按 `aiCorrect.cpaBotType` 分流（=3 进 AI 批改、=0 未配 AI 只交答案）→最小停留→submit 全量交卷→交卷后并发=3 逐题 correct-ai/cpa：cs=6 走「canon+qual / full / AI 未命中点」三级补全 → best-of-N×4 原样重取 → 仍不满且答案=标准答案则归 aiCeiling→exam-report 两层核对（fullScore / platformDone）。导出 `doPaperViaApi/buildUserAnswers/canonAnswer/qualitativeAnswer/findJwt` 等 |
+| **答案来源** | 客观取 `questionAnswer.answer`；主观（type5 子题与顶层 type6）从 `questionAnswer.analysis` 提炼（canon 等式句 / qual 点拨定性句 / full 整段兜底），无需本地题库 |
+| **可靠性** | ✅ 基础卷 116 张全部达成（109 严格满分 + 7 平台最优）；73 张客观精讲卷一次满分零失败；交卷与 AI 批改解耦（交卷即完成，批改异常只标记不崩）；AI 判分抖动应对见 [flaky-ai-judging.md](../docs/development/guides/flaky-ai-judging.md) |
+| **相关文档** | gaodun-exam-api.md §2.3/2.5/2.6/2.7、§3 |
+
+---
+
+### `cdp/api_do_paper.js` — 通用纯接口做卷（单卷，推荐入口）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 从 syllabus 自动解析指定卷的 csItemId/paperId/resourceId，交 gaodun_paper_core 完成取题→交卷→（主观）AI 批改→回查；零 UI 点选 |
+| **用法** | `node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]`；加 `--no-ai` 只交卷不做主观 AI 批改。如 `node scripts/cdp/api_do_paper.js 82749` |
+| **可靠性** | ✅ 客观卷 + 主观大题卷（含顶层独立 type6）；退出码：0=严格满分或平台最优（未配 AI / AI 判分上限不阻断）、4 已交卷但未达平台最优（可补批）、1/2 未交卷成功或异常；**仅限可重做基础卷，冲刺模考排除** |
+| **相关文档** | gaodun-exam-api.md §3 |
+
+---
+
+### `cdp/batch_redo_papers.js` — 批量纯接口补做到 100%
+
+- 只读枚举 `papers_inventory.json`+`papers_audit.json` 中「非满分且非冲刺」的卷，逐张交 gaodun_paper_core：record→(首次 create-paper)→redo(取标准答案，平铺 type5 子题与顶层 type6，按 cpaBotType 分流)→按实际题量停留→submit 全量→交卷后并发=3 AI 批改（cs=6 三级补全→best-of-N→aiCeiling）→exam-report 回查；硬排除冲刺模考；`10462203 时间太短` 自动延长 20s；单张失败不中断，结果落 `data/cdp-sniff/batch_result_<日期>.json`；卷间停 4s。
+- 用法：`node scripts/cdp/batch_redo_papers.js`（dry-run 预览）｜加 `--go` 实跑｜`--go 82174 82175 ...` 指定 paperId｜加 `--no-ai` 只交卷不做主观 AI 批改。
+- 支持客观题（type 1/2）与主观题（type5 套 type6、顶层独立 type6，交卷后 AI 批改冲满分）；三态结果：✅严格满分 / 🟡平台最优（题库未配 AI 或 AI 判分上限，答案均已正确提交）/ ⏺已交卷未满分；交卷成功即 progress=1，未达平台最优单独标记可补批，不中断批量。
+
+---
+
+### `cdp/refresh_inventory.js` — 刷新作业基线（只读，不交卷）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 拉 syllabus 枚举全部 paper → 对每张基础卷只读 record 审计（满分/平台最优/非满分/未提交/未做）→ 已交卷但分低的用 `paper/analysis` 只读复核 `inspectSubmitted`：配了 AI 的题须判满、或 cs=6 且"我方答案归一化后≈标准答案"才计 AI 判分上限，未配 AI 不阻断，真答错仍判非满分 → 章节自然顺序写出 `papers_inventory.json`（全量）与 `papers_audit.json`（待做）；硬排除冲刺模考。批量开工前先跑它刷新基线，避免重复做已完成卷 |
+| **用法** | `node scripts/cdp/refresh_inventory.js`（约 1–2 分钟，每张间隔 250ms 低频只读） |
+| **可靠性** | ✅ 已实测；分类判据见 gaodun-exam-api.md §2.1/2.2/2.10 |
+| **相关文档** | gaodun-exam-api.md §2.1、§2.2、§2.2.1、§2.10；判分上限方法论见 guides/flaky-ai-judging.md |
 
 ## 脚本使用原则
 

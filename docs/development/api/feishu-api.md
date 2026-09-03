@@ -66,6 +66,36 @@ lark-cli wiki +node-get \
 
 ---
 
+### 1.4 移动节点用 wiki +move 的 node 模式（同步、整棵子树随动）
+
+整理知识库结构时，用 node 模式移动**已有 wiki 节点**（不要用 docs-to-wiki 模式）：
+
+```bash
+# 把某节点移到新父节点下；同步返回，node_token 与正文不变，其整棵子树随父移动
+lark-cli wiki +move \
+  --node-token <被移动节点 wiki node token> \
+  --target-parent-token <目标父节点 wiki node token> --as user
+```
+
+- 移动到空间根目录用 `--target-space-id <space_id>`（与 `--target-parent-token` 二选一）。
+- 移动是高风险写操作，先出移动清单经确认；先建好目标父节点、拿到 token 再移。
+
+### 1.5 删除节点默认级联删子树，删前必须核验为空
+
+`wiki +node-delete` **默认 `--include-children=true`，会把整棵子树一起删掉**。因此：
+
+```bash
+# 1) 先列直接子节点，确认数量为 0
+lark-cli wiki +node-list --space-id <sid> --parent-node-token <待删节点> --as user
+# 2) 确认为空壳后再删（raw node token 配 --obj-type wiki，高风险需 --yes）
+lark-cli wiki +node-delete --node-token <token> --obj-type wiki \
+  --space-id <sid> --yes --as user
+```
+
+只删"内容已全部迁出、确认废弃"的空分组；非空或用户未明确同意的节点一律保留。错误码 `131011` 表示该空间开启了删除审批，CLI 无法绕过，需到 Web 界面处理。
+
+---
+
 ## 二、文档内容操作
 
 ### 2.1 docs +update 的 --content 不接受绝对路径
@@ -84,7 +114,7 @@ lark-cli docs +update --doc <token> --command overwrite --content @/tmp/file.md
 lark-cli docs +update --doc <token> --command overwrite --content @./file.md
 ```
 
-**正确方式2**：用 stdin（推荐，避免临时文件）
+**正确方式2**：用 stdin（适合短内容；长内容/批量的注意事项见 2.3）
 ```bash
 # ✅ 通过管道传递内容
 cat << 'EOF' | lark-cli docs +update --doc <token> --command overwrite --doc-format markdown --content -
@@ -120,6 +150,27 @@ cat << 'EOF' | lark-cli docs +update \
 [第一章 税法总论](https://...)
 EOF
 ```
+
+---
+
+### 2.3 长内容/批量优先 @file：stdin 在命令转后台时可能静默未写入
+
+**问题（实测）**：用 heredoc 经 stdin（`--content -`）传较长内容时，若命令超过前台等待被自动转入后台，stdin 可能与终端断连，导致**命令看似跑完、正文却没写进去**（fetch 回读发现仍是旧内容），且不一定报错。
+
+**最佳实践**：
+- 短内容可直接 stdin；**多行/长内容、一次写多篇时，优先把内容落成 cwd 内文件，用 `@./file.md` 传参**，最稳。
+- **任何写操作后必须 `docs +fetch` 回读验证**（长度、链接数、关键字），不能只看返回 `success`。
+
+### 2.4 链接写完整 URL，不要用变量/占位符
+
+带引号的 heredoc（`<<'EOF'`）**不会展开 shell 变量**。若正文里写 `%BASE%/xxx`、`$W/xxx` 这类占位符，会原样写入形成坏链。
+
+- 导入/写入文档时，超链接一律直接写**完整 `https://.../wiki/<token>`**。
+- 写完用正则回查：不应残留 `%`、`$` 类占位符；正文中 Markdown 链接的目标都应以 `http(s)://` 开头，不得是省略号或未展开的变量。
+
+### 2.5 docs +fetch / +update 可直接吃 wiki node token
+
+`--doc` 既能传 obj_token（docx token）/文档 URL，也能直接传 **wiki node token**，CLI 会自动解析，无需先 `node-get` 换 obj_token。导航链接则统一用 `/wiki/<node_token>` 形式（移动节点后该 token 不变）。
 
 ---
 

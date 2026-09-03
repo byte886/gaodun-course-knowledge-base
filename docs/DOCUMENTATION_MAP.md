@@ -20,11 +20,12 @@
 5. `project-management/active/TASK_STATUS.md` — 当前任务状态和前置依赖
 
 ### 做题验证前
-1. `docs/development/guides/exam-workflow.md` — 做题流程与交互规范（含交互优化、检查清单、v4 JavaScript方法）
-2. `knowledge-base/organized-content/<章节名>/知识拆解.md` — 知识库内容
-3. `knowledge-base/organized-content/<章节名>/考试指导.md` — 考点分析、易错点
-4. `knowledge-base/organized-content/做题思路解析.md` — 通用做题方法论
-5. `scripts/answer_option.sh` / `scripts/answer_multi.sh` / `scripts/submit_exam.sh` — 做题脚本
+1. `docs/development/api/gaodun-exam-api.md` — **高顿做题接口契约（接口为主：syllabus 枚举作业→redo-paper 取题与标准答案→submit-paper 交卷→exam-report 回查）**
+2. `docs/development/guides/exam-workflow.md` — 做题流程与交互规范（UI 兜底链路，含交互优化、检查清单、v4 JavaScript方法）
+3. `knowledge-base/organized-content/<章节名>/知识拆解.md` — 知识库内容
+4. `knowledge-base/organized-content/<章节名>/考试指导.md` — 考点分析、易错点
+5. `knowledge-base/organized-content/做题思路解析.md` — 通用做题方法论
+6. `scripts/cdp/api_do_paper.js` — 纯接口做卷（推荐）；`scripts/answer_option.sh`/`scripts/answer_multi.sh`/`scripts/submit_exam.sh` — 旧 UI 做题脚本（兜底）
 
 ### 视频下载/压缩
 1. `docs/WORKFLOW.md` 第2节
@@ -55,8 +56,11 @@
 ### 遇到问题/异常
 1. `grep -rn "关键词" docs/` — 搜索相关文档
 2. `docs/development/tools/playwright-cli-guide.md` — Playwright常见问题
-3. `docs/development/guides/interaction-workflow.md` — 交互异常处理
-4. `AGENTS.md` 第10节 — 异常处理流程
+3. `docs/development/tools/browser-cdp-connect-guide.md` — 浏览器CDP连接/抓包、端点与授权问题
+4. `docs/development/guides/macos-accessibility-automation.md` — macOS原生控件/系统弹窗/多屏精准点击
+5. `docs/development/guides/debugging-and-collaboration.md` — 问题排查方法论与人机配合
+6. `docs/development/guides/interaction-workflow.md` — 交互异常处理
+7. `AGENTS.md` 第10节 — 异常处理流程
 
 ### 项目维护/文档更新
 1. `docs/project-management/standards/PROJECT_MAINTENANCE.md` — 项目维护规范索引（拆分为三个子文档）
@@ -67,6 +71,10 @@
 6. `docs/project-management/standards/DOC_SYNC_CHECKLIST.md` — 文档同步清单
 7. `docs/project-management/standards/NAMING_CONVENTION.md` — 命名规范
 8. `docs/project-management/decisions/README.md` — 架构决策记录（ADR）索引，做重要决策前先查看历史决策
+
+### 飞书知识库整理 / 维护
+1. `docs/development/guides/feishu-knowledge-base-maintenance.md` — 盘点分类、结构整理SOP、父节点导航规范与覆盖校验（先读）
+2. `docs/development/api/feishu-api.md` — lark-cli 通用命令踩坑（移动 / 删除 / 传参 / token）
 
 ---
 
@@ -98,6 +106,10 @@
 | 交互工作流 | `docs/development/guides/interaction-workflow.md` | 通用页面交互、异常恢复、卡住处理 |
 | **做题流程与交互规范** | `docs/development/guides/exam-workflow.md` | 做题规范、多选题处理、v4 JavaScript方法、检查清单、试卷统计（合并了原交互优化指南） |
 | 多角色协作（项目配合部分） | `docs/development/guides/multi-role-collaboration.md` | 角色定义、职责分工、协作关系；完整方法见飞书知识库 |
+| 浏览器CDP连接手册 | `docs/development/tools/browser-cdp-connect-guide.md` | 用 puppeteer-core 连接日常Chrome（复用登录态）、自动授权、抓包与排障 |
+| macOS辅助功能自动化 | `docs/development/guides/macos-accessibility-automation.md` | 元素级AXPress vs 坐标点击、多属性定位、多显示器坐标、通用SOP |
+| 问题排查与人机协作方法论 | `docs/development/guides/debugging-and-collaboration.md` | 分层证伪、证据分级、失败换通道、人机分工与协作节奏 |
+| 飞书知识库整理与维护 | `docs/development/guides/feishu-knowledge-base-maintenance.md` | 盘点与通用分类原则、结构整理SOP、父节点导航规范与覆盖校验、安全红线 |
 | 文档下载 | `docs/development/tools/document-download.md` | CDN直链、curl后台下载、完整性校验 |
 
 ### 二、概念说明（Concept — 是什么）
@@ -128,6 +140,7 @@
 | 大任务执行规范 | `docs/project-management/standards/BATCH_TASK_EXECUTION.md` | 检查点、预警、异常恢复 |
 | 脚本说明 | `scripts/README.md` | 所有脚本的用途、参数、可靠性 |
 | 开发文档索引 | `docs/development/README.md` | 开发文档快速索引 |
+| 高顿作业接口档案 | `docs/development/api/gaodun-exam-api.md` | 做题链路接口契约、ID映射、JWT鉴权与最小作答时长风控（接口为主路线） |
 | 项目管理索引 | `docs/project-management/README.md` | 项目管理文档快速索引 |
 | 报告模板 | `project-management/task-reports/README.md`、`docs/development/templates/REPORT_TEMPLATE.md` | 任务报告模板 |
 | 验证报告模板 | `docs/development/templates/VERIFICATION_TEMPLATE.md`、`docs/development/templates/VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md` | 验证报告模板 |

@@ -70,9 +70,8 @@
 | 讲义OCR | `scripts/batch_ocr.sh` |
 | 音频转写 | `scripts/transcribe_pipeline.py` |
 | 网盘上传 | `scripts/baidu_upload.py` |
-| 做题（单选） | `scripts/answer_option.sh` |
-| 做题（多选） | `scripts/answer_multi.sh` |
-| 交卷 | `scripts/submit_exam.sh` |
+| 做题/交卷（接口主链路） | `scripts/cdp/api_do_paper.js`（syllabus→redo取答案→submit交卷→exam-report回查） |
+| 做题/交卷（UI兜底，仅异常） | `scripts/answer_option.sh`、`scripts/answer_multi.sh`、`scripts/submit_exam.sh` |
 
 **完整脚本索引**：[scripts/README.md](../scripts/README.md)
 
@@ -310,39 +309,30 @@
 
 ### 摘要
 
-通过做题检验知识库是否覆盖所有考点，错题和未覆盖的知识点补充回知识库，形成验证-补充闭环。
+通过做题检验并补全知识库。**做题链路已接口化（2026-09-02）：redo-paper 进卷即返回题面、标准答案与解析，submit-paper 一次性交卷，exam-report 回查，全程纯接口、无需 UI 点选；Playwright UI 仅用于登录与未覆盖异常兜底。** 做题首要目的是**帮用户把作业 100% 正确完成**，题/答/解析与考点图谱再反哺知识库。
 
 ### 关键要点
 
-- **试卷类型**：每个章节有8套试卷（7套课后练习按考点分 + 1套分章真题测）
-- **执行顺序**：先做7套课后练习（按考点顺序），再做1套分章真题测
-- **⚠️ 总考试触发条件**：总考试（冲刺模考卷）必须在所有课程/讲座学习完成后才能做
-- **做题不用强求全部做对**：做完就可以，如实记录正确率；如果用户请求可以再做一遍
-- **做题前必须查询知识库**：先根据知识库内容学习，查询相关知识点，记录查询结果，然后再应答（禁止凭记忆答题）
-- **每道题做完后必须检查是否选择了对应答案（蓝色标记）**，确认后才能进行下一步
-- **单选题**自动跳题，**多选题**需手动点击"下一题"
-- **补题流程**（发现未做题时）：记录所有未做题编号→通过答题卡依次点击未做题编号补做（不要从头依次做，避免反向取消已做题）→中途不交卷，完成所有未做题后才交卷
-- **获取全部解析**：逐题点击"下一题"遍历所有题目，获取官方解析和用户留言
-- **⚠️ 做题记录必须遵循模板**：生成做题记录时必须遵循`EXAM_RECORD_TEMPLATE.md`，确保数据完整、格式统一
-- **⚠️ 数据采集规范（避免把错题当答案）**：
-  - `✓`标记的是**最终正确答案**（以官方为准），不是AI选的答案
-  - 如果AI选错了，在选项后标注`（AI选错）`，但`✓`仍然标在正确选项上
-  - 多选题的正确答案可能是多个，要全部标`✓`，不能只标AI选的那几个
-  - 未作答的题目也要记录正确答案，标注`（未作答）`
-  - 每道题必须采集：题目完整内容、所有选项、最终正确答案、官方解析、AI作答结果、题型
-- **错题补充**：知识点缺失→补充到知识拆解；易错点/陷阱/解题技巧→补充到考试指导；知识库表述不准确→修正知识库内容
-- **用户留言处理**：高赞留言（点赞≥5）重点整理，可能包含记忆口诀、易错点总结；与讲义冲突时以讲义为准
+- **接口主链路（正常路径）**：syllabus 枚举本章卷与完成状态 → record → redo-paper（当场拿题+标准答案+解析）→ 满足最小作答时长 → submit-paper 一次性交全卷 → exam-report 回查；契约见 [gaodun-exam-api.md](development/api/gaodun-exam-api.md)，操作入口 `scripts/cdp/api_do_paper.js`
+- **两条异常出口（不做常规双轨）**：①需重新登录/验证码 → 暂停交用户；②遇到没见过的卷型/题型/报错 → 不硬闯，停下发起针对性测试或功能迭代
+- **试卷类型与顺序**：先知识点测试/课后练习，再分章真题测、强化专题；**总考试（3 张 48 题冲刺模考）必须在所有课程/讲座与基础作业完成后才做**，其题/答同为知识来源、但最后采集
+- **作业目标 100% 正确**：接口直给标准答案，以 exam-report 全对为准；非满分视为需排查的异常（不再是"做错题更有价值"）
+- **知识来源口径（2026-09-02 对齐）**：来源=初始知识库 + 题/答 + 官方解析 + 用户笔记；**自动化作业产生的 AI 错题不作来源**（旧 UI BUG 产物、非用户产出）；「考点图谱」经侦查只给章→考点目录归属、无知识点关联，**已否决、不作来源**。详见 [knowledge-base-sources.md](development/knowledge/knowledge-base-sources.md)
+- **知识反哺**：题/答暴露的遗漏客观知识点→知识拆解；官方解析/真题/易错/口诀→考试指导；用户笔记与讲义冲突时以讲义为准
+- **UI 兜底旧操作**（仅异常回退时用）：单选自动跳题、多选手动"下一题"、补题走答题卡避免反向取消、逐题遍历取解析等，见 exam-workflow.md
 
-### 冲刺模考（阶段二）
+### 冲刺模考（阶段二，最后）
 
-所有课程完成后进入冲刺模考阶段：视频解析（走与一般课程相同的完整流程）→ 机考（交互方式与一般考试不同，待模拟时补充）→ 知识库迭代更新。
+所有课程与基础作业完成后进入：视频解析（走与一般课程相同的完整流程）→ 机考（先只读侦查接口、交互不同处单独打通）→ 题/答/解析反哺知识库迭代。
 
 ### 参考文档
 
-- **做题流程与交互规范**：[exam-workflow.md](development/guides/exam-workflow.md) — ⚠️ **必读**：页面管理、补题流程、答题卡操作、v4 JavaScript方法、检查清单、试卷统计
-- **做题记录模板**：[EXAM_RECORD_TEMPLATE.md](development/templates/EXAM_RECORD_TEMPLATE.md) — ⚠️ **必读**：做题记录标准格式、数据采集清单、选项标记规范、避免把错题当答案
-- **做题思路解析**：[做题思路解析.md](../knowledge-base/organized-content/做题思路解析.md) — 通用做题方法论（面向学习者）
-- **做题脚本**：`scripts/answer_option.sh`（单选）、`scripts/answer_multi.sh`（多选）、`scripts/submit_exam.sh`（交卷）
+- **接口契约（主）**：[gaodun-exam-api.md](development/api/gaodun-exam-api.md) — syllabus/record/redo-paper/submit-paper/exam-report、JWT、最小作答时长风控
+- **做题流程与交互规范（UI 兜底）**：[exam-workflow.md](development/guides/exam-workflow.md) — 页面管理、补题、答题卡、检查清单
+- **知识来源口径**：[knowledge-base-sources.md](development/knowledge/knowledge-base-sources.md)
+- **做题记录模板（UI 时代，接口链路去留待定）**：[EXAM_RECORD_TEMPLATE.md](development/templates/EXAM_RECORD_TEMPLATE.md)
+- **做题思路解析**：[做题思路解析.md](../knowledge-base/organized-content/做题思路解析.md)
+- **脚本**：`scripts/cdp/api_do_paper.js`（接口主链路）；`answer_option.sh`/`answer_multi.sh`/`submit_exam.sh`（旧 UI，兜底）
 
 ---
 

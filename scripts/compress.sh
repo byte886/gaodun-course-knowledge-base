@@ -94,13 +94,16 @@ echo "Output duration: ${DURATION_OUT}s"
 echo "Video: $VCODEC"
 echo "Bitrate: $((BITRATE / 1000)) kbps"
 
-# Check duration difference (allow 2s tolerance)
+# Check duration difference.
+# 容差 = max(3s, 输入时长×0.1%)：AAC 重编码 + MP4 容器首尾填充会让长视频出现数秒正常偏移，
+# 用「绝对 3s 或相对千分之一取大者」既吸收正常偏移，又能拦住真正的截断（真损坏通常差几十秒以上）。
 DUR_DIFF=$(echo "$DURATION_IN - $DURATION_OUT" | bc 2>/dev/null || echo "999")
 DUR_DIFF_ABS=$(echo "${DUR_DIFF#-}" | bc 2>/dev/null || echo "999")
-if (( $(echo "$DUR_DIFF_ABS < 2" | bc -l) )); then
-  echo "✅ Duration matches"
+DUR_TOL=$(echo "t=$DURATION_IN*0.001; if(t<3) t=3; t" | bc -l)
+if (( $(echo "$DUR_DIFF_ABS < $DUR_TOL" | bc -l) )); then
+  echo "✅ Duration matches (diff ${DUR_DIFF_ABS}s < tol ${DUR_TOL}s)"
 else
-  echo "⚠️  Duration mismatch! Input=${DURATION_IN}s Output=${DURATION_OUT}s"
+  echo "⚠️  Duration mismatch! Input=${DURATION_IN}s Output=${DURATION_OUT}s tol=${DUR_TOL}s"
   exit 1
 fi
 

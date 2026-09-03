@@ -1,0 +1,16 @@
+{
+  "name": "gaodun-course-knowledge-base",
+  "version": "0.2.0",
+  "private": true,
+  "description": "高顿课程知识库系统：浏览器自动化（CDP/Puppeteer）等开发脚本的 Node 依赖声明。node_modules 不入库，新环境在仓库根执行 npm install 即可补足。",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "cdp:check": "node scripts/cdp/connectBrowser.js",
+    "cdp:sniff": "node scripts/cdp/sniff_demo.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.9.0"
+  }
+}
