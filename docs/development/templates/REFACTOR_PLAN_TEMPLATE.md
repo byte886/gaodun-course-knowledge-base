@@ -5,7 +5,7 @@
 > **维护者**：AI自动维护
 > **读者**：AI代理（执行批量重命名/结构整改时复制使用）
 
-> 使用方式：复制到 `project-management/verification-reports/`，命名 `批量整改_全量文件清单_待确认_YYYY-MM-DD.md`；流程见 `PROJECT_STRUCTURE_MAINTENANCE.md` 第六章；命名依据见 `NAMING_CONVENTION.md` 第九章（唯一事实源）。
+> 使用方式：复制到 `project-management/task-reports/`，命名 `批量整改_全量文件清单_待确认_YYYY-MM-DD.md`；流程见 `PROJECT_STRUCTURE_MAINTENANCE.md` 第六章；命名依据见 `NAMING_CONVENTION.md` 第九章（唯一事实源）。
 
 ## 0. 元信息
 

@@ -297,6 +297,7 @@ fix: 修复上传脚本路径缺少高顿层
 | 大文件 | >1MB | ⚠️ 警告 |
 | 超大文件 | >10MB | ❌ 阻止提交 |
 | 音视频/文档 | .mp4/.wav/.pdf等 | ⚠️ 警告 |
+| 运行产物误入 | venv/env/node_modules、data/、logs/、.tmp/、完成哨兵、题缓存等命中模式表 ARTIFACT_RE，或被 .gitignore 忽略却被 `git add -f` 强塞 | ❌ 阻止提交 |
 | 敏感信息 | password/token/secret等 | ⚠️ 警告 |
 | 新文档登记/头部标注 | 新增.md未登记DOCUMENTATION_MAP或缺类型标注 | ⚠️ 警告 |
 | 相对链接有效性 | 暂存.md的相对链接目标不存在（跳过代码块/行内代码/外链/锚点） | ❌ 阻止提交 |
@@ -309,6 +310,8 @@ fix: 修复上传脚本路径缺少高顿层
 cp scripts/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
+
+> 运行产物模式表 `ARTIFACT_RE` 与根 `.gitignore` 互为备份，新增一类运行产物时两处同步（依据 PROJECT_STRUCTURE_MAINTENANCE 2.1）。pre-commit 只查本次暂存（增量拦截）；需要排查存量时跑只读的全量体检 `bash scripts/check_git_hygiene.sh`。
 
 ### 9.4 跳过检查（特殊情况）
 

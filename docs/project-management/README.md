@@ -30,7 +30,7 @@ docs/project-management/        # 项目管理方法论（静态内容）
 ```
 
 > **动态内容**（任务状态、问题跟踪、测试计划、报告等）已移到项目根目录下的 `project-management/` 目录，详见 [project-management/README.md](../../project-management/README.md)。
-> **具体课程验证报告**放在对应课程目录下（和被验证对象在一起）。
+> **具体课程的专项质检/任务产物**放在对应课程目录下（和被验证对象在一起）；验证默认不单独成文、结论并入任务报告。
 
 ---
 

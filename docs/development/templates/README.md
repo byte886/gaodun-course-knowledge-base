@@ -15,10 +15,8 @@
 |---------|------|---------|
 | `KNOWLEDGE_BASE_TEMPLATE.md` | 知识库内容模板 | 生成知识拆解和考试指导文档时 |
 | `PARENT_NODE_TEMPLATE.md` | 知识库父节点模板 | 生成章节父节点页面（含子节点链接）时 |
-| `EXAM_RECORD_TEMPLATE.md` | 做题记录模板 | 生成做题记录时，明确数据采集规范，避免把错题当答案 |
 | `REPORT_TEMPLATE.md` | 任务报告模板 | 生成任务完成报告时 |
-| `VERIFICATION_TEMPLATE.md` | 通用验证报告模板 | 验证任何对象（视频、转写、OCR等）时 |
-| `VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md` | 知识库验证报告模板 | 验证飞书知识库页面导入质量时 |
+| `VERIFICATION_TEMPLATE.md` | 通用验证模板 | 视频/转写/OCR 等专项质检、确需独立留痕时（验证默认不单独成文） |
 | `REFACTOR_PLAN_TEMPLATE.md` | 批量整改清单模板 | 批量重命名/结构整改，出全量清单与回归核对时（配合结构维护 SOP） |
 | `TEST_PLAN_TEMPLATE.md` | 流程测试计划模板 | 新学科首跑/链路改造，做端到端可行性测试时 |
 
@@ -28,11 +26,7 @@
 
 1. **生成文档前先读对应模板**：确保文档结构和格式统一
 2. **模板变更时同步更新**：模板变更后，已生成的文档不需要强制更新，但新文档必须使用新模板
-3. **通用模板 vs 专用模板**：
-   - 通用验证模板适用于任何验证对象
-   - 知识库验证模板专门用于知识库验证，有具体的8个验证项
-   - 两者不合并，保持特异性
-4. **模板只放本目录**：所有模板统一放在本目录，其他目录不放模板文件
+3. **模板只放本目录**：所有模板统一放在本目录，其他目录不放模板文件
 
 ---
 
@@ -42,15 +36,11 @@
 - `KNOWLEDGE_BASE_TEMPLATE.md`：知识拆解 + 考试指导
 - `PARENT_NODE_TEMPLATE.md`：章节父节点（含子节点链接）
 
-### 做题记录模板（1个）
-- `EXAM_RECORD_TEMPLATE.md`：做题记录（含数据采集清单、选项标记规范、避免把错题当答案）
-
 ### 报告模板（1个）
 - `REPORT_TEMPLATE.md`：任务完成报告
 
-### 验证模板（2个）
-- `VERIFICATION_TEMPLATE.md`：通用验证报告
-- `VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md`：知识库验证报告（专用）
+### 验证模板（1个）
+- `VERIFICATION_TEMPLATE.md`：通用验证模板（视频/转写/OCR 等专项质检按需；做题回查、飞书同步验证默认不单独成文、结论并入任务报告）
 
 ### 流程与治理模板（2个）
 - `REFACTOR_PLAN_TEMPLATE.md`：批量重命名/结构整改的全量清单 + 回归核对

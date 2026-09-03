@@ -22,7 +22,7 @@ docs/development/
 ├── guides/                      # 详细操作指南与规范
 │   ├── agents-md-best-practices.md       # AGENTS.md写作最佳实践
 │   ├── debugging-and-collaboration.md    # 问题排查方法论与人机协作
-│   ├── exam-workflow.md                  # 做题流程与交互规范（含交互优化、检查清单）
+│   ├── exam-workflow.md                  # 做题/交卷任务执行指南（接口为主、UI兜底、检查清单）
 │   ├── feishu-knowledge-base-maintenance.md # 飞书知识库整理与维护SOP
 │   ├── interaction-workflow.md           # 通用交互流程与优化规范（所有Web场景）
 │   ├── macos-accessibility-automation.md # macOS原生控件/系统弹窗/多屏精准操作
@@ -42,8 +42,7 @@ docs/development/
     ├── KNOWLEDGE_BASE_TEMPLATE.md  # 知识库内容模板（知识拆解+考试指导）
     ├── PARENT_NODE_TEMPLATE.md     # 知识库父节点内容模板
     ├── REPORT_TEMPLATE.md          # 任务报告模板
-    ├── VERIFICATION_TEMPLATE.md    # 通用验证报告模板
-    └── VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md  # 知识库验证报告模板
+    └── VERIFICATION_TEMPLATE.md    # 通用验证模板（视频/转写专项质检按需）
 ```
 
 ---

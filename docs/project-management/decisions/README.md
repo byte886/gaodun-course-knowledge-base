@@ -37,6 +37,7 @@ ADR是一种轻量级的决策记录方式，帮助AI和人理解"为什么这�
 | [ADR-008](./ADR-008-PROJECT_MAINTENANCE文档分解.md) | PROJECT_MAINTENANCE.md文档分解为三个独立文档 | 已采纳 | 2026-08-29 |
 | [ADR-009](./ADR-009-项目重命名.md) | 项目重命名 cpa-course-archive → gaodun-course-knowledge-base | 已采纳 | 2026-08-29 |
 | [ADR-010](./ADR-010-浏览器自动化连接通道与技术栈选型.md) | 浏览器自动化连接通道选型：puppeteer-core/CDP 主、Playwright 扩展备（连接日常 Chrome） | 已采纳 | 2026-09-01 |
+| [ADR-011](./ADR-011-讲次课件跨讲映射机制.md) | 官方课件按税种模块覆盖多讲，建立逐讲原料映射 lecture-resource-map.json | 已采纳 | 2026-09-04 |
 
 ---
 

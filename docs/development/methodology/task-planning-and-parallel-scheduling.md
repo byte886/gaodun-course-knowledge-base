@@ -102,8 +102,8 @@ cat pending.txt | xargs -P 3 -n 1 bash scripts/process_one.sh
 
 **C方案（混合，推荐）**：
 - 按税种章组织每章的知识拆解+考试指导（学习阶段按章推进）
-- 顶层建两个总索引页：《知识拆解总目录》（当教材用）+《考试指导速查手册》（当应试宝典用，复习阶段直接刷）
-- 两个索引页在逐章内容完成后自动汇总生成
+- 顶层只建一个总索引页《考试指导速查手册》（当应试宝典用，复习阶段直接刷）；《知识拆解总目录》不创建（飞书左侧目录树已承担导航，避免重复）
+- 索引页在逐章内容完成后自动汇总生成
 
 ## 四、落地检查清单
 
@@ -121,6 +121,6 @@ cat pending.txt | xargs -P 3 -n 1 bash scripts/process_one.sh
 ## 五、相关文档
 
 - [project-dag.md](../project-dag.md) — 本项目完整 DAG
-- [parallel-processing-guide.md](parallel-processing-guide.md) — CPU密集任务并发度反向评估详细指南
-- [watch_stage_done.sh](../../scripts/watch_stage_done.sh) — 通用阶段完成事件监听脚本
+- [parallel-processing-guide.md](../performance/parallel-processing-guide.md) — CPU密集任务并发度反向评估详细指南
+- [watch_stage_done.sh](../../../scripts/watch_stage_done.sh) — 通用阶段完成事件监听脚本
 - [chapter-mapping-draft.md](../knowledge/chapter-mapping-draft.md) — 15章归并映射表（定稿）

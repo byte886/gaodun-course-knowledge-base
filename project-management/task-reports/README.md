@@ -5,7 +5,7 @@
 > **维护者**：AI自动维护
 > **读者**：AI代理+人类
 
-本目录存放项目中所有**实际报告**，包括任务报告和验证报告。
+本目录存放项目中所有**实际报告**，以《任务报告》为主；验证默认不单独成文（见下"验证留痕"）。
 
 > ⚠️ **模板已迁移**：所有模板文件已统一移到 [`docs/development/templates/`](../../docs/development/templates/) 目录，本目录只放实际报告。
 
@@ -13,7 +13,7 @@
 
 ## 文档清单
 
-> 当前暂无实际报告（历史报告可经 git 查阅）。新报告按下方模板生成；针对具体课程的报告优先放在对应课程目录，本目录只放跨课程的通用报告。
+> 现存任务报告见本目录文件清单。新报告按下方模板生成；针对具体课程的报告优先放在对应课程目录，本目录只放跨课程的通用报告。
 
 ---
 
@@ -32,20 +32,12 @@
 
 **模板**：[`docs/development/templates/REPORT_TEMPLATE.md`](../../docs/development/templates/REPORT_TEMPLATE.md)
 
-### 2. 验证报告
+### 2. 验证留痕（默认不单独成文）
 
-每个产出物（知识梳理文档、视频压缩、文档上传等）验证后生成，记录：
-- 验证对象和时间
-- 验证清单和结果
-- 发现的问题
-- 验证结论
-- 后续建议
+验证是必做动作、不是必交文档：做题回查、飞书同步回读、视频/转写校验等结论默认并入任务执行输出或上面的《任务报告》，**不再单独生成「验证报告_*.md / 同步报告_*.md」**。仅视频/转写/OCR 等非标准对象专项质检、确需独立留痕时，才用通用验证模板：
 
-**模板**：
 - 通用验证：[`docs/development/templates/VERIFICATION_TEMPLATE.md`](../../docs/development/templates/VERIFICATION_TEMPLATE.md)
-- 知识库验证：[`docs/development/templates/VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md`](../../docs/development/templates/VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md)
-
-**规范**：[`docs/project-management/standards/QUALITY_ASSURANCE.md`](../../docs/project-management/standards/QUALITY_ASSURANCE.md)
+- 规范：[`docs/project-management/standards/QUALITY_ASSURANCE.md`](../../docs/project-management/standards/QUALITY_ASSURANCE.md) 1.4 节
 
 ---
 
@@ -53,12 +45,10 @@
 
 | 报告类型 | 命名格式 | 示例 | 适用场景 |
 |----------|----------|------|---------|
-| 任务报告 | `任务报告_{对象}_{日期}.md` | `任务报告_税法01批量压缩_2026-08-29.md` | 批量任务执行报告 |
-| 综合验证报告 | `VERIFICATION.md` | `01_税法全面精讲01-税法总论/VERIFICATION.md` | 课程目录下的综合验证（目录本身已说明课程） |
-| 专项验证报告 | `验证报告_{对象}_{范围}.md` | `验证报告_税法总论_分章真题测.md` | 知识库质量验证、做题验证等专项 |
-| 同步报告 | `同步报告_{对象}_{日期}.md` | `同步报告_税法总论_2026-08-28.md` | 飞书知识库同步报告 |
+| 任务报告 | `任务报告_{对象}_{日期}.md` | `任务报告_项目检查与维护_2026-09-03.md` | 批量/专项任务执行报告（默认留痕形式） |
+| 综合验证（按需） | `VERIFICATION.md` | `01_税法全面精讲01-税法总论/VERIFICATION.md` | 仅视频/转写等非标准对象专项质检、确需独立留痕时，放对应课程目录、仅本地 |
 
-> **注意**：针对具体课程的任务报告和验证报告，优先放在**对应课程目录下**（和被验证对象在一起），本目录只放跨课程的通用报告。
+> **注意**：针对具体课程的任务报告优先放在**对应课程目录下**（和被验证对象在一起），本目录只放跨课程的通用报告；不再单设「同步报告」「知识库验证报告」类型。
 
 ---
 

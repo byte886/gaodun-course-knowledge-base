@@ -99,7 +99,7 @@
 | Q2 | 问题/BUG查询 | 有什么问题、有哪些bug、有什么异常 | `project-management/active/ISSUES.md` |
 | Q3 | 维护工作查询 | 需要做什么维护、定期检查什么、有什么待优化 | `docs/project-management/standards/PROJECT_MAINTENANCE.md` + `project-management/active/TASK_STATUS.md`中的待优化项 |
 | Q4 | 文档/操作查询 | 某某文档在哪里、怎么操作某某、流程是什么 | `docs/DOCUMENTATION_MAP.md` + `docs/WORKFLOW.md` |
-| Q5 | 项目概览查询 | 项目现在什么情况、总结一下、整体进度 | `README.md` + `TASK_STATUS.md` + 最近的验证报告 |
+| Q5 | 项目概览查询 | 项目现在什么情况、总结一下、整体进度 | `README.md` + `TASK_STATUS.md` + 最近的任务报告 |
 | Q6 | 决策/历史查询 | 为什么这样做、之前做了什么决定、历史记录 | `docs/project-management/decisions/`（ADR）+ `project-management/task-reports/` |
 | Q7 | 项目维护检查（执行型） | 让AI实际做结构/文档检查、分级、修复并出报告（区别于Q3只"问"有哪些维护） | `PROJECT_STRUCTURE_MAINTENANCE.md` + `DOCUMENTATION_OPTIMIZATION.md`第12章 + `DIRECTORY_STRUCTURE.md` + `scripts/check_directory_structure.sh` + `scripts/check_naming_consistency.py` |
 
@@ -327,7 +327,7 @@
 3. 文档健康度：按11项清单逐项查 完整性/关联性/结构/质量/维护；所有结论来自实际扫描或复算，不凭对话记忆
 4. 问题分级：小问题（断链、过时数字、漏登记）直接修；结构性/拿不准的（目录改名、流程或hook变更、文档拆分）列方案先问用户；用户要求"只读/体检"则一律不改
 5. 改后用不同方式复扫验证（重跑脚本、断链扫描），确认无回退、无新增问题
-6. 需要留痕时在 project-management/verification-reports/ 按需生成《文档健康度检查报告_日期》（该目录按需建、不常驻）；若只是对话内体检、结论已直接落回活文档，则按 PROJECT_STRUCTURE_MAINTENANCE 1.2 去留判据不必另留过程报告。无论是否出报告，都同步 CHANGELOG / DOCUMENTATION_MAP / TASK_STATUS
+6. 需要留痕时在 project-management/task-reports/ 按需生成《文档健康度检查报告_日期》（验证默认并入任务报告、不单独成文）；若只是对话内体检、结论已直接落回活文档，则按 PROJECT_STRUCTURE_MAINTENANCE 1.2 去留判据不必另留过程报告。无论是否出报告，都同步 CHANGELOG / DOCUMENTATION_MAP / TASK_STATUS
 7. 按 git-workflow 8.3 分场景提交（治理等用户验收，日常及时 commit，push 按约定），提交前展示改动清单
 ```
 

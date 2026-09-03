@@ -114,7 +114,7 @@
 | 转写原始数据 | `transcript.json` | FunASR原始输出（技术过程文件，不上传网盘） |
 | 知识拆解 | `知识拆解.md` | 面向知识应用和搜索 |
 | 考试指导 | `考试指导.md` | 面向考试（记忆口诀、易错点、答题技巧） |
-| 验证报告 | `VERIFICATION.md` | 本章节的质量验证报告（如有） |
+| 专项质检（按需） | `VERIFICATION.md` | 视频/转写等非标准对象专项质检，非每次必出、仅本地 |
 
 ### docs/ 目录（原始文档）
 
@@ -175,7 +175,7 @@
 2. 网盘路径前缀：`/apps/CPA课程归档/高顿/`
 3. **不上传网盘的文件**（技术过程文件）：
    - `transcript.json`（转写原始数据）
-   - `VERIFICATION.md`（验证报告，仅本地保留）
+   - `VERIFICATION.md`（专项质检按需，仅本地保留）
    - 临时文件、日志文件
 4. **上传网盘的文件**（面向使用者）：
    - `video.mp4`
@@ -292,8 +292,8 @@ bash scripts/check_directory_structure.sh clean
 | L1 | 治理规范/标准/模板/状态台账/全局索引/顶层骨架 | 英文 UPPER_SNAKE_CASE（9.6） | `docs/` 根、`standards/`、`templates/`、`active/` 台账 | `NAMING_CONVENTION.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`WORKFLOW.md` |
 | L2 | 方法/操作/流程/工具 API/最佳实践 | 英文小写 kebab-case（9.7） | `guides/api/tools/knowledge/` | `git-workflow.md`、`multi-role-collaboration.md` |
 | L3 | 可执行脚本 | 英文小写 snake_case（9.4） | `scripts/` | `baidu_upload.py` |
-| L4 | 知识库内容（同步飞书） | 中文，对应飞书节点/H1（9.5） | `knowledge-base/` | `知识拆解.md`、`做题记录_x.md` |
-| L5 | 项目管理过程产物（报告/计划/记录） | 中文，对应 H1、ISO 日期（9.5） | `task-reports/`、`test-plans/`、`verification-reports/` | `验证报告_x_2026-08-31.md` |
+| L4 | 知识库内容（同步飞书） | 中文，对应飞书节点/H1（9.5） | `knowledge-base/` | `知识拆解.md`、`考试指导.md` |
+| L5 | 项目管理过程产物（报告/计划/记录） | 中文，对应 H1、ISO 日期（9.5） | `task-reports/`、`test-plans/` | `任务报告_对象_2026-08-31.md` |
 | L6 | 架构决策记录 | `ADR-NNN-中文`（9.8） | `decisions/` | `ADR-001-文档拆分与命名规范.md` |
 
 #### 9.1.1 五类命名形态速查（按"文件名长什么样"反查）
@@ -306,7 +306,7 @@ bash scripts/check_directory_structure.sh clean
 | ② 大写 UPPER_SNAKE | 词间下划线 `_` | Governance 规范 / Template 模板 / Active 持续台账 / 全局索引与顶层骨架——回答"必须遵守什么、标准或当前状态是什么、供复制的骨架" | `NAMING_CONVENTION.md`、`CODE_STYLE.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`DIRECTORY_STRUCTURE.md` |
 | ③ 小写 kebab-case | 词间连字符 `-` | Task 方法流程 / Concept 概念 / 工具类 Reference——回答"怎么一步步做一件事" | `git-workflow.md`、`video-processing.md`、`feishu-api.md` |
 | ④ 脚本 snake_case | 全小写、词间 `_` | `.py/.sh/.js` 可执行脚本（L3，9.4） | `baidu_upload.py`、`check_kb_structure.sh` |
-| ⑤ 中文 | 段间 `_`、日期 ISO | Knowledge 学习内容 / 中文过程产物 / ADR（L4/L5/L6） | `知识拆解.md`、`同步报告_税法总论_2026-08-28.md`、`ADR-001-文档结构优化.md` |
+| ⑤ 中文 | 段间 `_`、日期 ISO | Knowledge 学习内容 / 中文过程产物 / ADR（L4/L5/L6） | `知识拆解.md`、`任务报告_项目检查与维护_2026-09-03.md`、`ADR-001-文档结构优化.md` |
 
 > **一句话判据**："是什么 / 必须怎样"→ ②大写；"怎么做"→ ③小写；给学习者的中文内容 → ⑤；代码脚本 → ④；工具钉死的 → ①。
 > **两个最易混点**：(a) `docs/` 根 5 个顶层骨架（WORKFLOW/REQUIREMENTS/SYSTEM_REQUIREMENTS/DOCUMENTATION_MAP/DIRECTORY_STRUCTURE）虽标 Task/Concept/Reference，仍固定按 ②大写（见 9.6）；(b) `active/` 只放持续状态台账（大写），不设任务交接文件，新会话按使用者话术读实时台账了解情况（见 9.10）。
@@ -354,14 +354,13 @@ bash scripts/check_directory_structure.sh clean
 | 类别 | 命名 | 示例 |
 |------|------|------|
 | 成品固定名 | 固定中文名 | `知识拆解.md`、`考试指导.md` |
-| 原始/整理素材 | `{中文类型}_{试卷/对象}.md` | `做题记录_02消费税（一）真题A卷.md`、`解析与用户留言_xx.md`、`用户笔记精华_xx.md` |
-| 知识库同步/验证报告 | `同步报告_{章节}_{日期}.md` / `验证报告_{章节}_{对象}.md` | `同步报告_税法总论_2026-08-28.md` |
+| 原始/整理素材 | `{中文类型}_{试卷/对象}.md` | `解析与用户留言_xx.md`、`用户笔记精华_xx.md`（题/答/解析由接口落 `data/knowledge-source/papers` JSON，不产手抄 md） |
 
-**L5 项目管理过程产物**（`project-management/` 下 task-reports / test-plans / verification-reports，以及 active 中的过程件）：每次任务生成、H1 为中文，文件名用中文并与 H1 对应：
+**L5 项目管理过程产物**（`project-management/` 下 task-reports / test-plans，以及 active 中的过程件）：每次任务生成、H1 为中文，文件名用中文并与 H1 对应：
 
 - 统一格式：`{中文类型}_{对象}_{日期}.md`；日期用 ISO `YYYY-MM-DD`，无日期的持续性记录可省略日期段，但**不得中英前缀混排、不得用紧凑日期 `YYYYMMDD`**。
-- 中文类型词：任务报告 / 同步报告 / 验证报告 / 测试计划 / 问题调研 / 整改方案 / 优化记录 等。
-- 正例（格式 `{中文类型}_{对象}_{日期}.md`，下列均为现存文件）：`同步报告_税法总论_2026-08-28.md`、`验证报告_税法总论_分章真题测.md`；无日期者如 `测试计划_课程名.md`。
+- 中文类型词：任务报告 / 测试计划 / 问题调研 / 整改方案 / 优化记录 等（验证默认并入任务报告，不单设「同步报告/验证报告」类型；仅视频等非标准对象专项质检可用 `VERIFICATION.md`）。
+- 正例（格式 `{中文类型}_{对象}_{日期}.md`）：`任务报告_项目检查与维护_2026-09-03.md`（现存）；无日期者用对象命名，如 `测试计划_<课程名>.md`。
 - 反例：`REPORT_02消费税法_完成_20260829.md`、`TEST_PLAN_税法01.md`、`SYNC_REPORT_税法总论_20260828.md`。
 - **英文前缀→中文类型映射（整改对照）**：`REPORT_→任务报告`、`SYNC_REPORT_→同步报告`、`VERIFICATION_→验证报告`、`TEST_PLAN_→测试计划`；紧凑日期 `20260828→2026-08-28`。
 
@@ -387,7 +386,7 @@ bash scripts/check_directory_structure.sh clean
 
 ### 9.9 目录命名
 
-- **工程目录**：全小写 kebab-case，如 `task-reports/`、`verification-reports/`、`organized-content/`、`source-materials/`；不用空格、不用大写；`.github/`、`.secrets/` 等隐藏/平台目录从平台约定。
+- **工程目录**：全小写 kebab-case，如 `task-reports/`、`test-plans/`、`organized-content/`、`source-materials/`；不用空格、不用大写；`.github/`、`.secrets/` 等隐藏/平台目录从平台约定。
 - **知识库内容目录**用中文体系（详见第二、三章）：`organized-content/` 下用 `NN中文章节名`（`01税法总论`），`source-materials/` 下用 `科目-章节`（`税法-总论`）。二者是"成品/原料"镜像，各自体系内部一致即可，不强行互相统一。
 - 目录名与其中文件的命名风格相互独立：目录按本节，文件按 9.3–9.8。
 

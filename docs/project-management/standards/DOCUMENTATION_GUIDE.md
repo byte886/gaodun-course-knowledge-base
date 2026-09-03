@@ -104,10 +104,10 @@ WORKFLOW.md 原包含视频转写、OCR、Git 操作等详细内容，已分解�
 | 类型 | 说明 | 示例 |
 |------|------|------|
 | **Governance** | 治理规范，AI必须遵守的规则 | AGENTS.md, 项目维护规范, 质量保证规范 |
-| **Task** | 操作指南，教你怎么做（具体方法，文件小写） | git-workflow.md, 视频处理指南, 做题流程与交互规范 |
+| **Task** | 操作指南，教你怎么做（具体方法，文件小写） | git-workflow.md, 视频处理指南, 做题/交卷任务执行指南 |
 | **Concept** | 概念说明，解释是什么 | README.md, 知识库组织结构说明 |
 | **Reference** | 参考资料，查事实用 | DOCUMENTATION_MAP.md, 脚本说明, 命名规范 |
-| **Active** | 过程记录，做了什么 | TASK_STATUS.md, 做题记录, 验证报告 |
+| **Active** | 过程记录，做了什么 | TASK_STATUS.md, 任务报告（验证结论并入） |
 | **Knowledge** | 知识内容，学什么用 | 知识拆解.md, 考试指导.md |
 | **Template** | 模板骨架，供复制套用（templates/ 下 `*_TEMPLATE.md`） | KNOWLEDGE_BASE_TEMPLATE.md, REPORT_TEMPLATE.md |
 
@@ -123,7 +123,7 @@ WORKFLOW.md 原包含视频转写、OCR、Git 操作等详细内容，已分解�
 | **Knowledge** 知识内容 | **中文**，与飞书节点 / H1 标题对应 | `知识拆解.md`、`考试指导.md` |
 | **Reference** 参考 | 看内容：API/工具/参数参考用小写 kebab；全局索引/地图/结构总览用 UPPER_SNAKE | `feishu-api.md`（小写）；`DOCUMENTATION_MAP.md`（大写） |
 | **Concept** 概念/方法论说明 | 英文小写 kebab-case（目录说明用固定名 `README.md`） | `knowledge-base-organization.md`、`README.md` |
-| **Active** 过程记录/状态 | 持续状态台账用 UPPER_SNAKE；每次任务产出的中文报告用中文且与 H1 对应 | `TASK_STATUS.md`（大写）；`验证报告_xx_2026-08-31.md`（中文） |
+| **Active** 过程记录/状态 | 持续状态台账用 UPPER_SNAKE；每次任务产出的中文报告用中文且与 H1 对应 | `TASK_STATUS.md`（大写）；`任务报告_对象_2026-08-31.md`（中文） |
 
 > 桥接逻辑：**治理性**（规定必须遵守什么、状态/模板/索引）→ 大写；**方法性**（教怎么做）→ 小写；**内容性**（给学习者的知识、中文过程产物）→ 中文对应标题。按**单个文件的类型**定风格，而非按所在目录"一刀切"（如 `active/` 里状态台账是 Active 用大写、交接方法是 Task 用小写）。**例外**：`docs/` 根的 5 个顶层骨架文档（`WORKFLOW/REQUIREMENTS/SYSTEM_REQUIREMENTS/DOCUMENTATION_MAP/DIRECTORY_STRUCTURE`）固定大写，不随内容类型小写（见 NAMING 9.6）。拿不准时回到 `NAMING_CONVENTION.md` 9.2 决策树判定。
 
@@ -209,7 +209,7 @@ WORKFLOW.md 原包含视频转写、OCR、Git 操作等详细内容，已分解�
 ```
 refactor: 文档梳理优化，减少重叠和冗余
 
-1. 验证报告移到对应课程目录下
+1. 验证默认并入任务报告，不再单独产出验证/同步报告
 2. 新增 PROJECT_MAINTENANCE.md，抽离 README 中的项目维护详细规则
 3. 精简 README 项目维护规则（从116行减到约30行）
 4. 删除 README 中重复的存储分工章节

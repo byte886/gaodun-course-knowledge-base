@@ -21,7 +21,7 @@
 
 ### 做题验证前
 1. `docs/development/api/gaodun-exam-api.md` — **高顿做题接口契约（接口为主：syllabus 枚举作业→redo-paper 取题与标准答案→submit-paper 交卷→exam-report 回查）**
-2. `docs/development/guides/exam-workflow.md` — 做题流程与交互规范（UI 兜底链路，含交互优化、检查清单、v4 JavaScript方法）
+2. `docs/development/guides/exam-workflow.md` — 做题/交卷任务执行指南（接口为主、UI 兜底：前置准备/枚举作业/批量与单卷/两层回查/异常分流/知识反哺）
 3. `knowledge-base/organized-content/<章节名>/知识拆解.md` — 知识库内容
 4. `knowledge-base/organized-content/<章节名>/考试指导.md` — 考点分析、易错点
 5. `knowledge-base/organized-content/做题思路解析.md` — 通用做题方法论
@@ -104,7 +104,8 @@
 | AGENTS.md最佳实践 | `docs/development/guides/agents-md-best-practices.md` | AGENTS.md写作规范、结构优化、AI友好设计 |
 | Playwright指南 | `docs/development/tools/playwright-cli-guide.md` | CLI使用、Token刷新、常见问题 |
 | 交互工作流 | `docs/development/guides/interaction-workflow.md` | 通用页面交互、异常恢复、卡住处理 |
-| **做题流程与交互规范** | `docs/development/guides/exam-workflow.md` | 做题规范、多选题处理、v4 JavaScript方法、检查清单、试卷统计（合并了原交互优化指南） |
+| **做题/交卷任务执行指南** | `docs/development/guides/exam-workflow.md` | 纯接口做题主链路（枚举/批量/单卷/两层回查/异常分流）、UI 兜底最小集、知识反哺、检查清单；接口契约见 gaodun-exam-api.md |
+| **讲次知识构建 SOP** | `docs/development/guides/lecture-knowledge-build-sop.md` | 单讲从原料到知识成品的标准步骤：生成前先跑 verify_lecture_map、原料集合（跨讲课件 OCR / papers / transcript / 用户笔记）、按模板产出三件套、产物按 L0–L4 对号入座（规则引用 standards 2.2） |
 | 多角色协作（项目配合部分） | `docs/development/guides/multi-role-collaboration.md` | 角色定义、职责分工、协作关系；完整方法见飞书知识库 |
 | 浏览器CDP连接手册 | `docs/development/tools/browser-cdp-connect-guide.md` | 用 puppeteer-core 连接日常Chrome（复用登录态）、自动授权、抓包与排障 |
 | macOS辅助功能自动化 | `docs/development/guides/macos-accessibility-automation.md` | 元素级AXPress vs 坐标点击、多属性定位、多显示器坐标、通用SOP |
@@ -143,8 +144,7 @@
 | 高顿作业接口档案 | `docs/development/api/gaodun-exam-api.md` | 做题链路接口契约、ID映射、JWT鉴权与最小作答时长风控（接口为主路线） |
 | 项目管理索引 | `docs/project-management/README.md` | 项目管理文档快速索引 |
 | 报告模板 | `project-management/task-reports/README.md`、`docs/development/templates/REPORT_TEMPLATE.md` | 任务报告模板 |
-| 验证报告模板 | `docs/development/templates/VERIFICATION_TEMPLATE.md`、`docs/development/templates/VERIFICATION_TEMPLATE_KNOWLEDGE_BASE.md` | 验证报告模板 |
-| 做题记录模板 | `docs/development/templates/EXAM_RECORD_TEMPLATE.md` | 做题记录标准格式、数据采集清单、选项✓标记规范 |
+| 通用验证模板 | `docs/development/templates/VERIFICATION_TEMPLATE.md` | 视频/转写等专项质检按需（验证默认不单独成文，无知识库专用模板） |
 | 批量整改清单模板 | `docs/development/templates/REFACTOR_PLAN_TEMPLATE.md` | 批量重命名/结构整改的全量清单与回归核对（配合 PROJECT_STRUCTURE_MAINTENANCE 第六章 SOP） |
 | 流程测试计划模板 | `docs/development/templates/TEST_PLAN_TEMPLATE.md` | 新学科首跑/链路改造的端到端流程测试（步骤状态、问题两级分级、通过标准） |
 
@@ -158,11 +158,9 @@
 | 问题/BUG跟踪 | `project-management/active/ISSUES.md` | 未解决问题、已解决问题、潜在风险 |
 | 批量任务状态 | `project-management/active/BATCH_TASK_STATUS.md` | 大任务执行进度、恢复点 |
 | 课程索引 | `project-management/active/COURSE_INDEX.md` | 所有课程清单、进度、资源位置 |
-| 章节验证/同步报告（仅本地） | `knowledge-base/organized-content/*/验证报告_*.md`、`同步报告_*.md` | 知识库质量验证与飞书同步报告，按AGENTS 3.8仅本地保留、不上传飞书 |
-| 测试计划 | `project-management/test-plans/测试计划_*.md` | 各课程测试计划 |
-| 验证报告 | `project-management/verification-reports/验证报告_*.md` | 各课程验证结果 |
+| 测试计划 | `project-management/test-plans/测试计划_*.md` | 各课程测试计划（按需、不常驻） |
 | 决策记录（ADR） | `docs/project-management/decisions/ADR-*.md` | 重要决策的背景、原因、后果 |
-| 做题记录（原始素材） | `knowledge-base/source-materials/*/做题记录_*.md` | 各章节做题过程记录（不要求引用） |
+| 题答解析（接口采集） | `data/knowledge-source/papers/<paperId>.json`、`paper_index.json` | 题面/标准答案/官方解析只读采集（.gitignore 不入库；替代旧手抄做题记录） |
 | 解析与用户留言（原始素材） | `knowledge-base/source-materials/*/解析与用户留言_*.md` | 官方解析和用户留言采集（不要求引用） |
 | 用户笔记精华（原始素材） | `knowledge-base/source-materials/*/用户笔记精华_*.md` | 用户留言精华整理（不要求引用） |
 | 任务报告 | `project-management/task-reports/任务报告_*.md` | 各任务执行报告（不要求引用） |
@@ -185,7 +183,7 @@
 | 做题思路解析 | `knowledge-base/organized-content/做题思路解析.md` | 通用做题方法论（面向学习者） |
 | 各章节知识拆解 | `knowledge-base/organized-content/<章节>/知识拆解.md` | 知识点整理 |
 | 各章节考试指导 | `knowledge-base/organized-content/<章节>/考试指导.md` | 考点、易错点、记忆口诀 |
-| 原始素材 | `knowledge-base/source-materials/<章节>/` | 做题记录、用户笔记、解析 |
+| 原始素材 | `knowledge-base/source-materials/<章节>/` | 用户笔记精华、解析与用户留言（题/答/解析走 data/knowledge-source 接口采集） |
 
 ---
 

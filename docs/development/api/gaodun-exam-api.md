@@ -301,4 +301,4 @@ syllabus(枚举全部作业+ID映射+完成状态 progress)
 - 原始报文（不入库）：`data/cdp-sniff/quiz_load_*.jsonl`、`submit_*.jsonl`、`schedule_*.jsonl`、`*sniff*.jsonl`（含 UI「帮我批改」真实 cpa 请求，证实 openEnergyToEquity）。
 - 共享实现：`scripts/cdp/gaodun_paper_core.js`（buildUserAnswers / canon/qual/full 答案提炼 / doPaperViaApi）；入口 `api_do_paper.js`、`batch_redo_papers.js`；连接见 `connectBrowser.js`（脚本索引见 [scripts/README.md](../../../scripts/README.md)）。
 - 2026-09-02 主观闭环侦查蓝本与响应快照留存于本机 `/tmp`（hw_empty_sub/hw_cpa_clean/hw_rest_clean/retry6/decisive/finish6 等，临时可弃）。
-- 连接与抓包：[浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)；UI 做题旧链路：[做题流程与交互规范](../guides/exam-workflow.md)。
+- 连接与抓包：[浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)；做题任务怎么执行（前置准备/枚举作业/批量与单卷/回查/异常分流/UI 兜底/知识反哺）：[做题/交卷任务执行指南](../guides/exam-workflow.md)。
