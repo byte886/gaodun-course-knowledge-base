@@ -9,22 +9,24 @@
 
 ---
 
-## 脚本总览（已登记 39 个）
+## 脚本总览（已登记 57 个，与 `scripts/` 磁盘文件一一对应）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
 | 做题自动化（旧·UI） | 3 | 单选题、多选题、交卷（UI 点选，接口链路的兜底） |
-| 视频处理 | 2 | 下载解密、压缩 |
-| 音频转写 | 3 | 单文件转写、批量转写、环境搭建 |
-| OCR文字提取 | 1 | 批量OCR |
+| 视频处理 | 7 | 单文件下载解密/压缩；CDP 抓 HLS key、单讲下载、分阶段下载/压缩与总控（scripts/cdp/） |
+| 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
+| OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 4 | 单文件上传、批量上传、课程上传、整课程并发同步 |
-| 环境与工具 | 4 | Playwright连接、密钥管理、数据符号链接、pre-commit |
+| 环境与工具 | 5 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听 |
 | 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
-| 高顿做题接口链路 | 10 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做（scripts/cdp/） |
+| 高顿做题接口链路 | 11 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采（scripts/cdp/） |
+| 飞书知识库同步 | 3 | 批量同步建节点、节点内容更新两版 |
+| 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
-> **索引盘点（2026-09-04）**：上表为**已登记**脚本（39 个）。磁盘实际 `scripts/` 顶层 36 + `scripts/cdp/` 19 = 55 个脚本；另有 **16 个历史脚本尚未补登**（顶层 10：transcribe_all/one/parallel、watch_stage_done、sync_wiki、update_wiki_content/v2、poc_persistent_browser、capture_exam_net、dump_exam_net；cdp 6：download_all、encode_all、fetch_all_videos、fetch_lecture_video、capture_video_key、collect_paper_sources），多为活跃入口脚本（顶层入口本就不被其他脚本引用，refs 低不等于废弃）。这 16 个的补登/去留判定列为独立「脚本索引补全」小任务，不在本次数据分层治理范围内，不擅自删除。
+> **全量对齐（2026-09-04）**：历史脚本已一次性补登完毕，上表 57 个与 `scripts/`（顶层 + `cdp/` + `ocr/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr` 核对，避免再次出现"在跑但没上台账"。
 
 ---
 
@@ -69,7 +71,7 @@
 
 ---
 
-## 二、视频处理（2个）
+## 二、视频处理（7个）
 
 ### `download_decrypt.js` — HLS视频下载解密合并
 
@@ -98,7 +100,62 @@
 
 ---
 
-## 三、音频转写（3个）
+### `cdp/capture_video_key.js` — CDP 抓 HLS 流地址与密钥
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；等价旧 Playwright 版 `capture_key.js`，但走主链路（连日常 Chrome、复用登录态） |
+| **用法** | `node scripts/cdp/capture_video_key.js "<回放 player?token=URL>" [输出json路径]`，输出 `{quality,m3u8,keyAscii}[]` |
+| **可靠性** | ✅ 高（纯采集，只开一个临时静音播放标签触发 worker 流量、抓完即关，不动用户其它页） |
+| **相关文档** | `docs/development/tools/video-processing.md`、ADR-010 |
+
+---
+
+### `cdp/fetch_lecture_video.js` — 单讲下载解密合并主控
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 取回放 URL → CDP 抓 HLS key → 下 m3u8 取 IV → 下载解密合并为 `merged.ts`（**不做压缩**，压缩交队列脚本）；幂等（已有 video.mp4 跳过）；每讲实时取最新 token（m3u8/authorize token 会过期） |
+| **用法** | `node scripts/cdp/fetch_lecture_video.js <idx>`（idx=课程表下标，idx1=开班前缀00） |
+| **可靠性** | ✅ 高；产物 `<讲>/.vfetch/manifest.json + merged.ts`（压缩阶段读取） |
+| **相关文档** | video-processing.md、ADR-010 |
+
+---
+
+### `cdp/download_all.sh` — 批量「下载阶段」
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 逐讲 抓 key→下载解密，只产出 `.vfetch/merged.ts`、不压缩；串行抓 key（同一 Chrome 一次只开一个播放标签，拟人、避免多标签 hls worker 互扰）；网络 IO 为主、几乎不占 CPU，**可与 OCR/压缩并行**；讲间留 4s；断点续跑（已有 video.mp4 或 merged 自动跳过） |
+| **用法** | `bash scripts/cdp/download_all.sh [idx ...]`（不给参数遍历 1..39） |
+| **可靠性** | ✅ 高 |
+| **相关文档** | video-processing.md、WORKFLOW「多任务并发调度」 |
+
+---
+
+### `cdp/encode_all.sh` — 批量「压缩阶段」
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 扫描各讲 `.vfetch/manifest.json`，把已下载的 merged.ts 逐个 H.265 压成 video.mp4（compress.sh 自带时长/moov 校验），成功后清分片与 merged；全局同时只允许一个 ffmpeg（x265 吃满核，第二个实例吞吐反降）；断点续跑 |
+| **用法** | `bash scripts/cdp/encode_all.sh`（扫一遍压完即退）；`--watch` 守护模式边下边压、等下载结束且全压完才退 |
+| **可靠性** | ✅ 高（CPU 密集，与下载阶段错峰） |
+| **相关文档** | video-processing.md |
+
+---
+
+### `cdp/fetch_all_videos.sh` — 下载+压缩两段总控
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 先跑「下载阶段」再跑「压缩阶段」的串行总入口；若要与其它任务并行调度，可分别手动跑 download_all.sh 与 encode_all.sh |
+| **用法** | `bash scripts/cdp/fetch_all_videos.sh [idx ...]` |
+| **可靠性** | ✅ 高 |
+| **相关文档** | video-processing.md |
+
+---
+
+## 三、音频转写（6个）
 
 ### `transcribe_pipeline.py` — 单视频音频转写
 
@@ -139,7 +196,40 @@
 
 ---
 
-## 四、OCR文字提取（1个）
+### `transcribe_all.sh` — 全课程批量转写（串行）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 对课程库所有讲的 video.mp4 用 FunASR（SenseVoiceSmall+VAD）批量转写；逐讲用独立临时目录调 transcribe_pipeline.py（规避所有视频同名 video.mp4 互相覆盖），完成后拷回 transcript.md/json；断点续传（已有 transcript.md 且 >1000 字自动跳过），单讲失败记录后继续 |
+| **用法** | `bash scripts/transcribe_all.sh` |
+| **可靠性** | ✅ 高；**CPU 密集**，须在视频「压缩全部完成后」再跑，避免与 x265 叠加争抢/降频 |
+| **相关文档** | `docs/development/tools/transcription.md`、ADR-003 |
+
+---
+
+### `transcribe_one.sh` — 单讲转写（并发 worker）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 转写单个讲目录，被 `xargs -P` 并发调用；每个讲只出现一次，天然无竞态 |
+| **用法** | `bash scripts/transcribe_one.sh <讲目录绝对路径>` |
+| **可靠性** | ✅ 高 |
+| **相关文档** | transcription.md |
+
+---
+
+### `transcribe_parallel.sh` — 队列式多进程并发转写
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 待转讲列表写入队列文件，N 个 worker 用 flock 互斥取第一个空闲任务、做完再取（哪个 worker 快就多处理，天然负载均衡），失败讲自动写回队尾重试；单进程实测约占 2 核/3.3GB，本机 20 线程默认并发 6（约 12 核，留余量给 IO/系统） |
+| **用法** | `bash scripts/transcribe_parallel.sh [并发数N]`（默认 6） |
+| **可靠性** | ✅ 高（动态调度，优于固定分片） |
+| **相关文档** | WORKFLOW「多任务并发调度」、ADR-003 |
+
+---
+
+## 四、OCR文字提取（3个）
 
 ### `batch_ocr.sh` — 批量PDF/讲义OCR
 
@@ -151,6 +241,28 @@
 | **相关文档** | `docs/development/tools/ocr.md` |
 
 **注意**：表格和图表中的文字OCR可能不完整，需要AI视觉模型补充识别。
+
+---
+
+### `ocr/run_ocr_all.sh` — 全课程批量 OCR
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 批量 OCR 课程库全部讲义 PDF（串行，逐个调 batch_ocr.sh）；每处理一个 PDF 前清空 /tmp 分页缓存，避免不同 PDF 断点缓存串用；输出 `docs/<x>.pdf → docs_text/<x>_OCR.md`，已存在且非空则跳过 |
+| **用法** | `bash scripts/ocr/run_ocr_all.sh [--dry]` |
+| **可靠性** | ✅ 中高（macOS 原生 OCR） |
+| **相关文档** | `docs/development/tools/ocr.md` |
+
+---
+
+### `ocr/verify_ocr.py` — OCR 完整性复核（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 逐份比对 `docs/*.pdf` 实际页数与 `docs_text/<名>_OCR.md` 中 `## 第N页` 分节数（允许相等，少于即残缺），输出逐份 OK/残缺清单与汇总 |
+| **用法** | `transcription/venv/bin/python scripts/ocr/verify_ocr.py`（残缺时退出码 1） |
+| **可靠性** | ✅ 高（PyMuPDF 机械计数） |
+| **相关文档** | ocr.md、SOP 步骤0「生成前 verify 前置」 |
 
 ---
 
@@ -202,7 +314,7 @@
 
 ---
 
-## 六、环境与工具（4个）
+## 六、环境与工具（5个）
 
 ### `playwright_connect.sh` — Playwright连接恢复
 
@@ -253,6 +365,17 @@
 | **相关文档** | `docs/development/guides/git-workflow.md` 第 9 节 |
 
 **安装**：`cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
+
+---
+
+### `watch_stage_done.sh` — 通用阶段完成事件监听
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 零依赖、60 秒轮询：监听某目录下匹配指定模式的文件数量达到预期值时，写完成标记文件并退出。替代人工长间隔巡检，消除"任务已完成但总调度未发现"的空窗（空窗 ≤60 秒）——即"子任务主动上报为主、定期检查仅防异常" |
+| **用法** | `bash scripts/watch_stage_done.sh <监听目录> <文件名匹配> <预期数量> <标记文件路径> [检查间隔秒]` |
+| **可靠性** | ✅ 高（纯文件计数，无外部依赖） |
+| **相关文档** | WORKFLOW「多任务并发调度」 |
 
 ---
 
@@ -398,7 +521,7 @@
 
 ---
 
-## 十、高顿做题接口链路（10个，位于 `scripts/cdp/`）
+## 十、高顿做题接口链路（11个，位于 `scripts/cdp/`）
 
 > 「接口为主、UI 兜底」的侦查与验证脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)，过程见《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》。报文落 `data/cdp-sniff/`（不入库）。除 `answer_submit_capture.js` 走 UI 交卷外，其余只读或纯接口。
 
@@ -506,6 +629,93 @@
 | **用法** | `node scripts/cdp/refresh_inventory.js`（约 1–2 分钟，每张间隔 250ms 低频只读） |
 | **可靠性** | ✅ 已实测；分类判据见 gaodun-exam-api.md §2.1/2.2/2.10 |
 | **相关文档** | gaodun-exam-api.md §2.1、§2.2、§2.2.1、§2.10；判分上限方法论见 guides/flaky-ai-judging.md |
+
+---
+
+### `cdp/collect_paper_sources.js` — papers 原料只读补采
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 线 B 原料补采：把已交卷的 116 张基础卷的题面/选项/标准答案/官方解析/知识点标签/全站正确率，经只读接口 record→paper/analysis 逐张拉出并精简落盘，供末期知识库生成。**纯只读**：不 redo、不建实例、不交卷、不耗 AI 权益、无副作用 |
+| **用法** | `node scripts/cdp/collect_paper_sources.js [--all] [paperId...]`（默认只补本地缺失卷，`--all` 强制重拉） |
+| **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 `data/knowledge-source/papers/<id>.json` + `paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
+| **相关文档** | gaodun-exam-api.md、standards 2.2.4、SOP 步骤1 |
+
+---
+
+## 十一、飞书知识库同步（3个）
+
+> 旧 15 章时期的批量同步脚本。34 讲重建的飞书同步以 `lecture-knowledge-build-sop.md` 步骤7 与 lark-cli（lark-wiki/lark-doc skill）为准；下列脚本保留用于批量场景，使用前先核对与现行节点结构是否一致。
+
+### `sync_wiki.sh` — 批量同步知识库到飞书（建节点）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 按章号区间，批量把本地 organized-content 同步为飞书 wiki 节点 |
+| **用法** | `bash scripts/sync_wiki.sh <起始章号> <结束章号>`，如 `bash scripts/sync_wiki.sh 04 15` |
+| **可靠性** | ⚠️ 中（旧 15 章结构，34 讲用前先核对） |
+| **相关文档** | WORKFLOW 步骤8、lark-wiki/lark-doc skill |
+
+---
+
+### `update_wiki_content.sh` — 更新飞书节点内容（旧版）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 节点已创建时，按章号区间只更新节点正文内容 |
+| **用法** | `bash scripts/update_wiki_content.sh <起始章号> <结束章号>` |
+| **可靠性** | ⚠️ 中（旧版，保留备查；更健壮版本见 update_wiki_v2.sh） |
+| **相关文档** | WORKFLOW 步骤8 |
+
+---
+
+### `update_wiki_v2.sh` — 批量更新飞书节点内容（v2）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | v2 更健壮版本，批量更新已建飞书节点的正文 |
+| **用法** | `bash scripts/update_wiki_v2.sh <起始章号> <结束章号>` |
+| **可靠性** | ⚠️ 中（34 讲同步优先按 SOP / lark-cli） |
+| **相关文档** | WORKFLOW 步骤8 |
+
+---
+
+## 十二、侦查 / PoC 网络采集（3个）
+
+> 路线探索期脚本。现役浏览器链路是 `cdp/connectBrowser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 PoC 备查与 Playwright 备用采集手段，**非生产链路**。
+
+### `poc_persistent_browser.js` —【PoC】持久化专用 Chrome + 进程外抓包
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 可行性验证：脚本自开浏览器/导航/抓包，无需 Extension 授权，独立 profile 存 `data/browser-profile/`，context.on 增量落 JSONL/HAR。**属未采用路线**：现役改走 cdp/connectBrowser 直连用户日常 Chrome 复用登录态，独立 profile 已删，本脚本仅留作路线备查 |
+| **用法** | `node scripts/poc_persistent_browser.js`（POC_DURATION_MS 可改常驻时长） |
+| **可靠性** | ⚠️ PoC 备查，非现役链路 |
+| **相关文档** | ADR-010、browser-cdp-connect-guide.md |
+
+---
+
+### `capture_exam_net.js` — Playwright 网络钩子注入
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 在考试页注入 fetch/XHR 网络钩子并 reload（使钩子先于页面脚本生效），把高顿业务请求/响应记录到 `window.__net`；默认只读采集，置 `__netBlockWrite=true` 可阻断写请求，用于"捕获交卷 payload 但不真正发送" |
+| **用法** | `npx playwright cli -s=ga run-code scripts/capture_exam_net.js`（页面操作后用 dump_exam_net.js 导出） |
+| **可靠性** | ⚠️ 中（备用采集手段；现役接口侦查走 cdp/ 第十类） |
+| **相关文档** | gaodun-exam-api.md |
+
+---
+
+### `dump_exam_net.js` — 导出 window.__net 网络数据
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 导出 capture_exam_net.js 记录在 `window.__net` 的全部网络数据为 JSON，Shell 侧重定向保存到 `data/`（不入库） |
+| **用法** | `npx playwright cli -s=ga run-code scripts/dump_exam_net.js`；可选清空：`... eval "window.__net.length=0"` |
+| **可靠性** | ⚠️ 中（与 capture_exam_net.js 配套） |
+| **相关文档** | gaodun-exam-api.md |
+
+---
 
 ## 脚本使用原则
 

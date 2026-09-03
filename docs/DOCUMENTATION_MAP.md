@@ -180,10 +180,11 @@
 
 | 文档 | 路径 | 用途 |
 |------|------|------|
-| 做题思路解析 | `knowledge-base/organized-content/做题思路解析.md` | 通用做题方法论（面向学习者） |
-| 各章节知识拆解 | `knowledge-base/organized-content/<章节>/知识拆解.md` | 知识点整理 |
-| 各章节考试指导 | `knowledge-base/organized-content/<章节>/考试指导.md` | 考点、易错点、记忆口诀 |
-| 原始素材 | `knowledge-base/source-materials/<章节>/` | 用户笔记精华、解析与用户留言（题/答/解析走 data/knowledge-source 接口采集） |
+| 做题思路解析 | `knowledge-base/organized-content/做题思路解析.md` | 通用做题方法论（面向学习者，跨课程） |
+| 考试指导速查手册 | `knowledge-base/organized-content/考试指导速查手册.md` | 跨章速查（S4 产物，通用内容单独成章、不按税种） |
+| 各章节知识拆解 | `knowledge-base/organized-content/<章节>/知识拆解.md` | 知识点整理；`<章节>`＝`_34chapters/讲NN`（现役 34 讲）或 `NN税种章`（旧 15 章过渡底座，S3 逐章替换） |
+| 各章节考试指导 | `knowledge-base/organized-content/<章节>/考试指导.md` | 考点、易错点、记忆口诀（章节口径同上） |
+| 原始素材 | `knowledge-base/source-materials/<课程>/` | 用户笔记精华、解析与用户留言（只取留言/口诀；题/答/解析走 data/knowledge-source 接口采集） |
 
 ---
 
