@@ -2,419 +2,184 @@
 
 > **文档类型**：Reference（参考资料）
 > **更新频率**：目录结构变更时
-> **维护者**：AI自动维护
-> **读者**：AI代理+人类
+> **维护者**：AI自动维护 + 用户审核
+> **读者**：AI代理 + 人类
 
-本文档详细说明项目的各类目录结构，包括项目仓库结构、本地与网盘课程目录结构、飞书知识库结构。
+本文档说明四类存储的目录结构与分工：**GitHub 仓库（工程）、本地课程数据（data）、百度网盘（备份）、飞书知识库（成品知识系统）**。范式基线 [ADR-012](project-management/decisions/ADR-012-三层解耦与按知识点聚合.md)。
 
-> README.md 中只保留摘要和链接，详细内容见本文档。
-
-> **命名速查（唯一事实源：`docs/project-management/standards/NAMING_CONVENTION.md` 第九章）**
-> - **工程目录**：全小写 kebab-case；知识库内容目录用中文体系（`01税法总论`、`税法-总论`）。
-> - **脚本** `scripts/`：全小写 snake_case（`.py/.sh/.js`），Git 固定名 `pre-commit` 除外。
-> - **规范/标准/模板/状态台账/全局索引**：英文 UPPER_SNAKE_CASE（如 `NAMING_CONVENTION.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`DOCUMENTATION_MAP.md`）。
-> - **方法/操作/工具/API 文档**：英文小写 kebab-case，H1 标题仍用中文（如 `git-workflow.md`、`multi-role-collaboration.md`）。
-> - **知识库内容与中文过程报告**：中文，文件名与 H1/飞书节点对应，日期用 ISO `YYYY-MM-DD`（如 `知识拆解.md`、`任务报告_对象_2026-08-31.md`）。
-> - **固定名白名单**：`README.md`/`LICENSE`/`CHANGELOG.md`/`CONTRIBUTING.md`/`AGENTS.md`/`.gitignore`/`requirements.txt`/`pre-commit`/`.github/`。
+> README.md 只留摘要与链接，详细内容见本文档。
+> **命名唯一事实源**：[NAMING_CONVENTION.md](project-management/standards/NAMING_CONVENTION.md)（第九章管 Git 工程命名，第一~八章管课程数据三层命名）。
 
 ---
 
-## 一、项目仓库目录结构（GitHub）
+## 〇、四地存储分工总表（先看这张）
 
-### 1.1 简化版
+| 内容 | Git 仓库 | 本地 data | 百度网盘 | 飞书知识库 |
+|------|:---:|:---:|:---:|:---:|
+| 规范/模板/SOP/脚本/ADR | ✅ 唯一源 | — | — | — |
+| 原始资源（视频/转写/讲义/OCR） | ❌ 忽略 | ✅ | ✅ 备份 | ❌ |
+| 知识详解成品（组→92 篇 + 全局篇） | ❌ 不入 Git | ✅ | ✅ 备份 | ✅ 唯一对外知识系统 |
+| `_workspace/` 过程件（papers/manifest/留言原件/tmp/logs） | ❌ 忽略 | ✅ | ❌ 不传 | ❌ |
+| 加密凭证 `.secrets/*.enc`、工具链 venv/node_modules | 见 .gitignore | ✅ | ❌ | ❌ |
 
-```
-项目根目录/
-├── docs/                          # 项目文档（只放静态内容：方法论、指导、规范、流程、模板）
-│   ├── development/               # 开发文档
-│   │   ├── api/                   # API文档（飞书API、百度网盘API）
-│   │   ├── guides/                # 详细操作指南（做题、Git、交互）
-│   │   ├── knowledge/             # 知识库方法论（组织规范、来源清单）
-│   │   ├── templates/             # 模板（知识库模板、父节点模板）
-│   │   └── tools/                 # 工具使用文档（视频处理、转写、OCR、Playwright）
-│   ├── project-management/        # 项目管理方法论（静态）
-│   │   ├── decisions/             # 决策记录（ADR，半静态，只增不改）
-│   │   └── standards/             # 规范文档（命名规范、文档同步、项目维护等）
-│   ├── WORKFLOW.md                # 主工作流（总体流程概览）
-│   ├── REQUIREMENTS.md            # 需求文档
-│   ├── DIRECTORY_STRUCTURE.md     # 目录结构说明
-│   └── DOCUMENTATION_MAP.md       # 文档地图（所有文档索引）
-├── project-management/            # 项目管理（动态内容：任务状态、问题跟踪、测试计划、报告）
-│   ├── active/                    # 活动状态（任务状态、问题跟踪、课程索引）
-│   ├── test-plans/                # 测试计划（按需生成、不常驻，无任务时可不建）
-│   └── task-reports/              # 任务执行报告（验证结论默认并入；目录保留 README）
-├── knowledge-base/                # 知识库内容（本地源头，同步到飞书）
-│   ├── organized-content/         # 整理后的知识内容（成品，新旧两套并存见其 README）
-│   │   ├── _34chapters/讲NN/      # 【现役】官方 34 讲三件套（重建中，样板=讲01，做到哪讲建哪讲）
-│   │   ├── NN<税种章名>/          # 【过渡底座】旧 15 章三件套，S3 逐章替换前保留
-│   │   ├── 做题思路解析.md / 考试指导速查手册.md  # 两个全局文件（跨课程/跨章，非"通用方法/"目录）
-│   │   └── ...
-│   ├── source-materials/          # 原始素材（原材料，用于生成知识库）
-│   │   ├── 税法-总论/             # 各课程的解析与用户留言、用户笔记精华（题答走 data/knowledge-source）
-│   │   └── ...
-│   └── lecture-resource-map.json  # 讲次→课件/OCR/转写取料路由（ADR-011，入库，脚本可校验重建）
-├── scripts/                       # 脚本（下载、压缩、转写、上传、做题等）
-├── transcription/                 # 转写工作目录（.gitignore忽略）
-├── .secrets/                      # 加密凭证（加密文件提交到仓库）
-├── data/                          # 符号链接，指向外部数据目录（.gitignore忽略）
-├── README.md                      # 项目介绍
-├── AGENTS.md                      # AI操作手册（每次启动自动加载）
-├── CHANGELOG.md                   # 变更日志
-├── LICENSE                        # MIT协议
-└── .gitignore                     # 忽略规则
-```
+**一句话**：Git 只放"怎么做"的工程资产；课程"原料 + 成品"在本地 data，原料与成品备份网盘，**成品知识系统最终落飞书**；过程件只在本地 `_workspace`、收尾清。
 
-### 1.2 详细版（含文件说明）
+---
+
+## 一、项目仓库目录结构（GitHub，只放工程）
 
 ```
 gaodun-course-knowledge-base/
-├── .gitignore                # Git忽略规则（视频/文档/音频/转写结果等）
-├── README.md                 # 项目说明
-├── AGENTS.md                 # 全局执行规则、文档快速入口、存储分工
-├── .secrets/                 # 加密凭证（已提交，密码由用户保管）
-│   ├── gh_token.enc          # GitHub Personal Access Token（加密）
-│   └── baidu_credentials.enc # 百度网盘API凭证（加密）
-├── scripts/                  # 所有可执行脚本
-│   ├── capture_key.js        # HLS AES密钥捕获（Playwright Worker hook注入）
-│   ├── download_decrypt.js   # HLS分片下载并AES-128解密合并
-│   ├── compress.sh           # ffmpeg压缩为H.265 MP4（CRF30，iTerm显示进度）
-│   ├── baidu_upload.py       # 百度网盘分片上传（4MB分片+MD5秒传）
-│   ├── batch_upload.sh       # 批量上传视频（iTerm运行，断点续传）
-│   ├── upload_course.sh      # 课程目录批量上传（自动过滤技术过程文档）
-│   ├── transcribe_pipeline.py # 音频转文字（FunASR+VAD）
-│   ├── batch_transcribe.sh   # 批量转写（iTerm运行，断点续传）
-│   ├── batch_ocr.sh          # 批量OCR（macOS Vision框架）
-│   ├── playwright_connect.sh # Playwright连接脚本（自动处理连接确认）
-│   ├── secrets.sh            # 密钥加密/解密工具（AES-256-CBC）
-│   ├── setup_data_symlink.sh # data/符号链接设置（跨电脑调整路径）
-│   ├── setup_transcription_env.sh # 转写环境搭建（新电脑一键创建虚拟环境）
-│   ├── answer_option.sh      # 单选题答题脚本
-│   ├── answer_multi.sh       # 多选题答题脚本
-│   ├── submit_exam.sh        # 交卷脚本
-│   ├── check_directory_structure.sh # 检查目录结构
-│   ├── check_kb_structure.sh # 检查知识库结构
-│   ├── collect_analysis.js   # 收集解析
-│   ├── pre-commit            # pre-commit hook源文件（大文件/敏感信息检查）
-│   └── README.md             # 脚本说明文档
-├── docs/
-│   ├── WORKFLOW.md           # 总体工作流（索引+流程）
-│   ├── REQUIREMENTS.md       # 需求文档
-│   ├── DOCUMENTATION_MAP.md  # 文档地图
-│   ├── DIRECTORY_STRUCTURE.md # 目录结构详细说明（本文档）
-│   ├── project-management/   # 项目管理方法论（静态）
-│   │   ├── README.md         # 项目管理规范
-│   │   ├── standards/        # 标准规范
-│   │   │   ├── QUALITY_ASSURANCE.md # 质量保证规范
-│   │   │   ├── PROJECT_MAINTENANCE.md # 项目维护规范索引
-│   │   │   ├── PROJECT_STRUCTURE_MAINTENANCE.md # 项目结构维护规范
-│   │   │   ├── DOCUMENTATION_GUIDE.md # 文档写作指南
-│   │   │   ├── DOCUMENTATION_OPTIMIZATION.md # 文档优化流程与变更驱动
-│   │   │   ├── NAMING_CONVENTION.md # 命名规范
-│   │   │   ├── BATCH_TASK_EXECUTION.md # 大任务执行规范
-│   │   │   ├── DOC_SYNC_CHECKLIST.md # 文档同步清单
-│   │   │   ├── CODE_STYLE.md        # 编码规范（强制标准）
-│   │   │   └── PROJECT_STATUS_QUERY.md # 状态查询协议
-│   │   └── decisions/        # 决策记录（ADR，半静态，只增不改）
-│   └── development/          # 开发文档
-│       ├── README.md         # 开发文档索引
-│       ├── api/              # API文档
-│       │   ├── feishu-api.md     # 飞书API使用
-│       │   ├── netdisk-setup.md  # 百度网盘接入
-│       │   └── encryption.md      # 加密凭证
-│       ├── guides/           # 详细操作指南
-│       │   ├── exam-workflow.md      # 做题工作流
-│       │   ├── git-workflow.md       # Git工作流
-│       │   ├── interaction-workflow.md # 通用交互流程
-│       │   ├── agents-md-best-practices.md # AGENTS写作最佳实践
-│       │   └── multi-role-collaboration.md # 多角色协作（项目配合部分）
-│       ├── knowledge/        # 知识库方法论
-│       │   ├── knowledge-base-organization.md # 知识库组织规范
-│       │   └── knowledge-base-sources.md      # 知识库来源清单
-│       ├── tools/            # 工具使用文档
-│       │   ├── playwright-cli-guide.md # Playwright CLI使用指南
-│       │   ├── video-processing.md    # 视频处理详细指南
-│       │   ├── transcription.md       # 音频转文字
-│       │   ├── ocr.md                 # OCR文字提取
-│       │   └── document-download.md   # 文档下载
-│       └── templates/        # 模板文件
-│           ├── KNOWLEDGE_BASE_TEMPLATE.md # 知识库页面模板
-│           ├── PARENT_NODE_TEMPLATE.md    # 父节点页面模板
-│           ├── REPORT_TEMPLATE.md          # 任务报告模板
-│           └── VERIFICATION_TEMPLATE.md    # 通用验证模板（视频/转写等专项质检按需，非每次必出）
-├── project-management/       # 项目管理（动态内容）
-│   ├── README.md             # 项目管理目录说明
-│   ├── active/               # 活动状态（频繁更新）
-│   │   ├── TASK_STATUS.md    # 任务状态（唯一任务状态来源）
-│   │   ├── ISSUES.md         # 问题跟踪
-│   │   ├── BATCH_TASK_STATUS.md # 批量任务状态
-│   │   └── COURSE_INDEX.md   # 课程清单索引
-│   ├── test-plans/           # 测试计划（按需生成、不常驻）
-│   │   └── 测试计划_*.md
-│   └── task-reports/         # 任务执行报告（验证结论默认并入；目录保留 README）
-│       ├── README.md         # 报告目录说明
-│       └── 任务报告_*.md
-├── knowledge-base/           # 知识库实际内容（本地，唯一源头）
-│   ├── organized-content/    # 整理后的知识内容
-│   │   ├── 做题思路解析.md / 考试指导速查手册.md  # 两个全局文件（跨课程/跨章，非"通用方法/"目录）
-│   │   ├── 01税法总论/ … 15强化冲刺/  # 旧15章版（过渡底座，待被34讲版替换，去留见阶段计划D4）
-│   │   │   ├── README.md        # 章节概览（含子节点链接）
-│   │   │   ├── 知识拆解.md      # 章节核心知识点
-│   │   │   └── 考试指导.md      # 做题技巧/易错点/记忆口诀（验证/同步不单独成文）
-│   │   └── _34chapters/      # 新版：严格对齐官方34讲（讲01…讲34，重建中）
-│   │       └── 讲NN/ 知识拆解.md + 考试指导.md + README.md
-│   ├── source-materials/     # 原始素材（题/答/解析走 data/knowledge-source 接口采集，不在此）
-│   │   └── 税法-总论/
-│   │       ├── 解析与用户留言_*.md # 官方解析和用户留言整理（永久）
-│   │       └── 用户笔记精华_*.md # 高赞用户留言整理（永久）
-│   └── lecture-resource-map.json # 讲次→课件/OCR/转写取料路由（ADR-011，入库版本化，verify_lecture_map.py 校验/重建）
-├── transcription/            # 转写工作目录
-│   ├── requirements.txt      # Python依赖清单（新电脑复现环境用）
-│   └── venv/                 # Python虚拟环境（gitignore忽略，不提交）
-├── data/                     # 工作区：接口采集/抓包/做题进度（实体目录，整体 gitignore 不提交）
-│   ├── 高顿/                 # 符号链接 → ~/Desktop/高顿/（课程库：A视频/C讲义线，传网盘）
-│   ├── cdp-sniff/            # 做题进度总账+抓包（仅留 papers_inventory/papers_audit/course_catalog；侦查包结论入文档后清，全部定稿后整目录清）
-│   ├── knowledge-source/     # B做题线原料 L1（按 paperId 集中存，按讲聚合走 paper_index）
-│   │   ├── paper_index.json  # 试卷索引（paperId↔chapter，按讲聚合用）
-│   │   └── papers/*.json     # 每套卷题面/标准答案/解析（116套，备份到网盘独立原料区）
-│   └── （其余抓包/运行过程文件按需生成、不常驻，结论沉淀后可清）
-└── .git/hooks/
-    └── pre-commit            # 实际生效的pre-commit hook
+├── docs/                          # 工程文档（静态：方法论/规范/流程/模板/API）
+│   ├── WORKFLOW.md                # 主工作流（四阶段总纲）
+│   ├── REQUIREMENTS.md
+│   ├── DIRECTORY_STRUCTURE.md     # 本文档
+│   ├── DOCUMENTATION_MAP.md
+│   ├── development/
+│   │   ├── api/                   # API 文档（feishu / gaodun-exam / netdisk / encryption）
+│   │   ├── guides/                # 阶段 SOP 与操作指南（resource-collection / paper-manifest /
+│   │   │                          #   knowledge-detail-build / finalize / exam-workflow 等）
+│   │   ├── knowledge/             # 知识库方法论（organization 组织规范 / sources 来源清单）
+│   │   ├── templates/             # 模板（KNOWLEDGE_BASE_TEMPLATE / PARENT_NODE_TEMPLATE / REPORT_TEMPLATE）
+│   │   ├── methodology/           # 通用方法论（调试/并发/任务规划等，课程无关）
+│   │   ├── performance/           # 性能/并行
+│   │   └── tools/                 # 工具文档（video-processing/transcription/ocr/document-download/browser-cdp）
+│   └── project-management/
+│       ├── decisions/             # ADR（只增不改）
+│       └── standards/             # 治理规范（NAMING/QUALITY/CODE_STYLE/DOC_* 等）
+├── project-management/            # 项目管理（动态：active 状态台账 / test-plans / task-reports）
+├── scripts/                       # 可执行脚本（下载/压缩/转写/OCR/上传/做题/校验，snake_case）
+├── transcription/                 # 转写工具链：requirements.txt 入库，venv/ 忽略
+├── .secrets/                      # 加密凭证（*.enc；*.json/*.txt 忽略）
+├── data/                          # → 软链外部数据盘，整体 gitignore（见第二章）
+├── logs/、node_modules/           # 运行日志/依赖，均 gitignore
+├── README.md / AGENTS.md / CHANGELOG.md / LICENSE / .gitignore
+└── （旧 knowledge-base/ 在存量消化、校验后移除，不再版本化课程成品）
 ```
 
-### 1.3 Git忽略目录说明
-
-| 目录 | 忽略原因 | 复现方式 |
-|------|----------|----------|
-| `transcription/venv/` | Python虚拟环境，路径硬编码，不应复制 | `./scripts/setup_transcription_env.sh` 重新创建 |
-| `data/` | 工作区（抓包、题答原料、做题进度等），体积大且随任务变化，整体不提交（轻量派生元数据 lecture-resource-map 例外，已移入库 `knowledge-base/`） | 目录内 `高顿` 软链由 `./scripts/setup_data_symlink.sh` 创建；其余为接口采集/运行产物，可由脚本重建 |
-
-**虚拟环境迁移原则**：Python虚拟环境不直接复制到新电脑，用 `requirements.txt` + 搭建脚本重新创建。
+要点：
+1. **Git 不再版本化课程成品**（旧 `knowledge-base/organized-content`、`source-materials` 是旧范式产物，作为阶段③输入被消化、校验后清退；`lecture-resource-map.json` 的职责由 `_workspace/manifest/course-manifest.json` 承接，见 ADR-012）。
+2. 工程文档怎么分类、何时新建/删除/调整目录，见本文档第六章。
 
 ---
 
-## 二、本地与百度网盘（完全镜像）
+## 二、本地课程数据（data，软链外部、整体 gitignore）
 
-本地、百度网盘、飞书知识库三者使用相同的课程/讲座层级结构。
-
-```
-高顿/                                    ← 本地: ~/Desktop/高顿/
-└── CPA/                                 ← 网盘: /apps/CPA课程归档/高顿/CPA/
-    ├── 课程库/                          ← 走完整流程（有知识库）
-    │   ├── 【26考季】VIPCPA系列-税法（蔡俊峻老师）/
-    │   │   ├── 01_税法全面精讲01-税法总论/
-    │   │   │   ├── video.mp4
-    │   │   │   ├── transcript.md
-    │   │   │   ├── 知识拆解.md
-    │   │   │   ├── 考试指导.md
-    │   │   │   ├── docs/
-    │   │   │   └── docs_text/
-    │   │   └── ...
-    │   └── 【26考季】VIPCPA系列-会计（罗翔老师）/
-    └── 待整理/                          ← 未走完整流程（暂无知识库）
-        └── 【26考季】VIPCPA-基础必修-会计（罗翔老师）/
-            ├── 01_会计总论(一)/
-            └── ...
-```
-
-### 2.1 每个讲座目录下
+`data/高顿` 软链到外部数据盘（如 `~/Desktop/高顿`），`data/` 整体不入库。单个**课程目录**采用封板三层结构：
 
 ```
-NN_讲座标题/
-├── video.mp4          # 压缩后的最终视频（H.265 CRF30）
-├── transcript.md      # 视频文字稿（语音转文字）
-├── transcript.json    # 转写原始数据（含时间戳）
-├── 知识拆解.md         # 知识本身（结构化知识点，用于搜索、应用、AI问答）
-├── 考试指导.md         # 考试指导（考点、易错点、记忆口诀、真题回顾）
-├── docs/              # 讲义文档原件（PDF/PPT/DOC）
-├── docs_text/         # OCR文字稿（讲义文档中图片的OCR识别结果）
-├── VERIFICATION.md    # 视频/转写专项质检（按需，非每次必出）
-└── .uploaded          # 上传标记（已上传到百度网盘后生成）
+data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
+├── README.md                          # 课程目录说明：结构图 + 各文件来源/作用 + 对应关系
+├── 原始资源/                          # 第一层：按资源类型分桶的原始原料（永久、传网盘）
+│   ├── videos/
+│   │   └── NN_讲题/
+│   │       ├── video.mp4              # 压缩成品（H.265）
+│   │       ├── transcript.md          # 转写文字稿（面向人）
+│   │       └── transcript.json        # 转写原始数据（技术件，不传网盘）
+│   └── notes/
+│       └── NN_模块/
+│           ├── 讲义_{名称}.pdf        # 官方讲义原件（有则建，试卷/纯视频讲可为空）
+│           └── 讲义_{名称}_OCR.md     # 讲义 OCR 文字稿
+├── 知识详解/                          # 第二层：成品（传网盘 + 同步飞书，与飞书同构）
+│   ├── 01_税法总论/
+│   │   ├── 税法概念.md                # 一个官方知识点 = 一篇，篇内固定 4 节
+│   │   └── …（本组 N 篇）
+│   ├── 02_增值税法/ …
+│   ├── …（共 14 组、92 篇）
+│   ├── 课程做题思路解析.md            # 课程全局篇（带本科目特征）
+│   └── 考试指导速查手册.md            # 课程全局篇（只通用，冲刺后定稿）
+└── _workspace/                        # 第三层：运行过程件（英文命名，gitignore+不传网盘，收尾清）
+    ├── README.md                      # 工作区说明（结构/作用/清理时机）
+    ├── manifest/
+    │   ├── course-manifest.json       # 讲↔资源↔知识点 路由 + 组→知识点映射（可 rebuild）
+    │   ├── papers_inventory.json      # 官网试卷台账
+    │   ├── paper_index.json           # 本地试卷索引（paperId↔讲/组）
+    │   └── course_catalog.json        # 课程表/syllabus 快照
+    ├── papers/                        # 116 套卷题/标准答案/官方解析 JSON
+    ├── sniff/                         # CDP 抓包（验证完即删）
+    ├── user-notes-raw/                # 用户留言/笔记原件（100% 吸收进成品后删）
+    ├── logs/
+    └── tmp/
+        ├── download/NN_讲题/          # 下载临时（单任务成功即清）
+        └── transcribe/NN_讲题/        # 转写临时（单任务成功即清）
 ```
 
-> **说明**：
-> - `docs_text/` 是标准目录，用于存放OCR识别后的文字稿（与docs/原始文档区分）
-> - `.uploaded` 是上传标记文件，存在表示已上传到百度网盘
-> - 课程根目录下可能有 `upload_log.txt`（上传日志）和 `.DS_Store`（macOS系统文件，应忽略）
+课程库层（跨课）另有一份：`data/高顿/CPA/课程库/通用做题思路解析.md`。
+
+### 2.1 三层边界
+
+| 层 | 进什么 | 不进什么 | 生命周期 |
+|----|--------|----------|----------|
+| 原始资源 | 视频/转写、讲义/OCR | 题答 JSON、过程件 | 永久，传网盘 |
+| 知识详解 | 92 知识点篇 + 课程全局篇 | 原始件、临时件 | 成品，可迭代，传网盘+同步飞书 |
+| _workspace | manifest/papers/sniff/留言原件/logs/tmp | 成品、原始件 | 临时，按序清理 |
+
+### 2.2 不进 _workspace 的例外（留标准位置）
+
+- `.secrets/*.enc`：加密、跨课复用，留仓库根；
+- `node_modules/`、`transcription/venv/`：工具链环境、跨课、包管理器要求标准位置，留原位 + gitignore；
+- `package.json`/`requirements.txt` 与 `scripts/`：入 Git。
+
+### 2.3 旧散落件去向（存量迁移）
+
+- 旧按讲目录（`00_…`~`38_…`，内含 video/transcript/docs/docs_text/.vfetch/零星旧成品）→ 拆入 `原始资源/{videos,notes}` 与 `知识详解/`；
+- `data/knowledge-source/{papers,paper_index.json}` → `_workspace/{papers,manifest}`；
+- `data/cdp-sniff/*` → `_workspace/{manifest,sniff}`，侦查包结论入文档后清；
+- 讲目录内 `.vfetch/` 下载缓存 → `_workspace/tmp/download` 后清。
 
 ---
 
-## 三、飞书知识库
+## 三、百度网盘（备份：镜像原始资源 + 知识详解）
 
-知识库名称：**CPA备考知识库**
+- 网盘根：`/apps/CPA课程归档/高顿/CPA/`，与本地**同构镜像"原始资源 + 知识详解"两层**；
+- **不传 `_workspace/`**（过程件可由接口/脚本重建），不传 `transcript.json`、tmp、logs；
+- 上传凭证与命令见 [netdisk-setup.md](development/api/netdisk-setup.md)；上传后做本地↔网盘文件数/大小核对。
 
-结构与本地/网盘一致，每个讲座对应一个知识库页面：
+```
+/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
+├── 原始资源/…（同本地）
+└── 知识详解/…（同本地）
+```
+
+---
+
+## 四、飞书知识库（只同步知识详解成品）
+
+知识库「CPA备考知识库」，结构与本地 `知识详解/` **同构**，只同步成品：
 
 ```
 CPA备考知识库/
-└── CPA/
-    ├── 课程库/
-    │   ├── 【26考季】VIPCPA系列-税法（蔡俊峻老师）/
-    │   │   ├── 01_税法全面精讲01-税法总论    ← 页面：视频文字稿 + 讲义要点
-    │   │   └── ...
-    │   └── 【26考季】VIPCPA系列-会计（罗翔老师）/
-    └── 待整理/
-        └── 【26考季】VIPCPA-基础必修-会计（罗翔老师）/
+└── 课程库/
+    ├── 通用做题思路解析（跨课一份）
+    └── 【26考季】VIPCPA系列-税法（蔡俊峻老师）
+        ├── 01_税法总论（父节点）→ 知识点子页面…
+        ├── …14 组
+        ├── 课程做题思路解析
+        └── 考试指导速查手册
 ```
 
-"待整理"中的课程走完知识库流程后，移动到"课程库"下（本地、网盘、知识库三处同步移动）。
+- 不同步原始资源（视频/讲义在网盘）、不同步 `_workspace`；
+- **本地全量生成并通过阶段③校验门后统一同步**，冲刺模考后做最终一次同步；不在飞书直接编辑（紧急修复除外）；
+- 节点模板见 [KNOWLEDGE_BASE_TEMPLATE.md](development/templates/KNOWLEDGE_BASE_TEMPLATE.md)，接口见 [feishu-api.md](development/api/feishu-api.md)。
 
 ---
 
-## 四、目录结构维护原则
+## 五、目录结构维护原则
 
-### 4.1 基本原则
+### 5.1 基本原则
+1. **四地分工不串味**：工程入 Git、原料/成品入 data、原料+成品备份网盘、成品同步飞书、过程件留 _workspace；
+2. 项目仓库只放代码和文档，大体积课程数据不进 GitHub；
+3. 模板统一放 `docs/development/templates/`；
+4. 目录结构变更必须同步本文档、NAMING、README、DOCUMENTATION_MAP 与 .gitignore。
 
-1. **本地、网盘、知识库三者结构一致**：课程/讲座层级结构在三处保持同步
-2. **项目仓库只放代码和文档**：生成结果（视频、PDF、文字稿）放本地和网盘，不放GitHub
-3. **模板统一管理**：所有模板放在 `docs/development/templates/`，其他目录不放模板
-4. **目录结构变更时同步更新**：新增/移动/删除目录时，必须更新本文档和 README.md
-5. **文件和目录有变化时检查 .gitignore**：确保新的文件类型或目录被正确忽略
+### 5.2 新建文档前（强制）
+先 `grep -r 关键词 docs/` + 查 DOCUMENTATION_MAP 确认无重复；按 Diátaxis 判型、按 NAMING 第九章定文件名与归属目录；预计≥3 个同类文件才新建子目录；建好后更新文档地图与目录 README。
 
-### 4.2 文档创建规则（强制执行）
+### 5.3 删除文档前（强制）
+先 `grep -r 文档名 docs/ scripts/` 查引用，先改/删引用再删；评估是否已融入他文、有无追溯价值；删后更新文档地图与所有引用。
 
-在创建任何新文档前，必须按以下流程操作：
+### 5.4 调整目录前（强制）
+先评估必要性（职责重叠/文件过多/新类型无归属/结构重大变化），产出"前结构→后结构→逐文件移动路径→引用更新清单→文档更新清单"，执行后用 grep 验证无旧路径残留；改名用 `git mv` 保留历史。
 
-#### 第一步：检查是否已有类似文档
-
-```bash
-# 搜索是否已有类似主题的文档
-grep -r "关键词" docs/ --include="*.md" -l
-# 查看文档地图
-cat docs/DOCUMENTATION_MAP.md
-```
-
-**如果已有类似文档**：
-- 优先更新现有文档，而不是创建新文档
-- 如果现有文档内容过多需要拆分，参考"文档分解原则"（DOCUMENTATION_GUIDE.md 第二章）
-
-#### 第二步：确定文档类型和归属目录
-
-根据 Diátaxis 框架确定文档类型，然后选择对应的目录：
-
-| 文档类型 | 归属目录 | 说明 |
-|----------|----------|------|
-| Tutorial（教程） | `docs/development/guides/` | 面向初学者的操作指南 |
-| How-to（操作指南） | `docs/development/guides/` | 具体任务的操作步骤 |
-| Reference（参考资料） | `docs/development/api/` 或对应目录 | API、参数、配置等参考 |
-| Explanation（解释说明） | `docs/development/knowledge/` | 概念、原理、方法论 |
-| Standard（规范标准） | `docs/project-management/standards/` | 命名规范、质量标准等 |
-| Decision（决策记录） | `docs/project-management/decisions/` | ADR架构决策记录 |
-| Active（活动状态） | `project-management/active/` | 任务状态、问题跟踪等 |
-| Template（模板） | `docs/development/templates/` | 各类文档模板 |
-| Tool（工具文档） | `docs/development/tools/` | 工具使用说明 |
-
-> **两套词表的关系（避免混淆）**：本表用 Diátaxis 框架判断"归属哪个目录"；文档**头部 `文档类型` 标注**必须用 `DOCUMENTATION_GUIDE.md` 3.1 的 7 类封闭词表（`Task/Concept/Reference/Governance/Active/Knowledge/Template`）。映射：Tutorial/How-to/Tool→`Task`，Explanation→`Concept`，Reference→`Reference`，Standard/Decision→`Governance`（ADR 按 NAMING 9.8），活动状态→`Active`，模板→`Template`，知识内容→`Knowledge`。定完类型与目录后，**文件名风格按 `NAMING_CONVENTION.md` 第九章**。
-
-#### 第三步：评估是否需要新目录
-
-**只有在以下情况才创建新目录**：
-1. 现有目录中没有适合该类文档的位置
-2. 该类文档预计会有3个以上的文件
-3. 新目录的职责清晰，与现有目录不重叠
-
-**创建新目录前必须回答**：
-- 这个目录的职责是什么？
-- 与现有目录的边界在哪里？
-- 预计会有多少个文件？
-- 是否可以放在现有目录下，用前缀区分？
-
-#### 第四步：创建文档并更新索引
-
-创建文档后，必须更新：
-1. `docs/DOCUMENTATION_MAP.md`（文档地图）
-2. 对应目录的 `README.md`（如果有）
-3. `docs/DIRECTORY_STRUCTURE.md`（如果涉及目录变更）
-
-### 4.3 文档删除规则（强制执行）
-
-在删除任何文档前，必须按以下流程操作：
-
-#### 第一步：检查引用关系
-
-```bash
-# 搜索哪些文档引用了待删除的文档
-grep -r "文档名" docs/ --include="*.md" -l
-# 搜索脚本中是否引用
-grep -r "文档名" scripts/ -l
-```
-
-**如果有其他文档引用**：
-- 先更新引用关系，将引用指向新位置或删除引用
-- 不能直接删除有引用的文档
-
-#### 第二步：评估内容价值
-
-问自己：
-1. 这个文档的内容是否已融入其他文档？
-2. 这个文档是否还有追溯价值？
-3. 删除后是否会影响后续工作？
-
-**如果内容已融入其他文档且无追溯价值**：可以删除
-**如果还有追溯价值**：考虑移到 `project-management/active/` 或归档目录
-
-#### 第三步：删除文档并更新索引
-
-删除文档后，必须更新：
-1. `docs/DOCUMENTATION_MAP.md`（文档地图）
-2. 对应目录的 `README.md`（如果有）
-3. 所有引用该文档的地方
-
-### 4.4 目录调整规则（强制执行）
-
-在调整任何目录结构前，必须按以下流程操作：
-
-#### 第一步：评估调整必要性
-
-问自己：
-1. 为什么需要调整目录？（文档过多？职责不清？新需求？）
-2. 不调整是否可以解决问题？（用前缀区分？更新文档内容？）
-3. 调整的收益是否大于成本？（更新引用、更新文档、潜在错误）
-
-**只有在以下情况才调整目录**：
-1. 目录职责不清，与其他目录重叠
-2. 目录下文件过多（超过20个），需要细分
-3. 新的文档类型没有合适的归属目录
-4. 项目结构发生重大变化
-
-#### 第二步：制定调整方案
-
-调整方案必须包括：
-1. 调整前的目录结构
-2. 调整后的目录结构
-3. 每个文件的移动路径（从哪里到哪里）
-4. 需要更新的引用关系清单
-5. 需要更新的文档清单（DOCUMENTATION_MAP.md、README.md等）
-
-#### 第三步：执行调整并验证
-
-执行调整后，必须验证：
-1. 所有文件都已移动到正确位置
-2. 所有引用关系都已更新
-3. 文档地图和目录结构文档已更新
-4. 脚本中的路径引用都已更新（如果有）
-
-```bash
-# 验证：搜索是否还有旧路径的引用
-grep -r "旧目录名" docs/ scripts/ --include="*.md" --include="*.sh" --include="*.py" -l
-```
-
-### 4.5 文档与目录的关系原则
-
-1. **目录先于文档**：创建文档前，先确定归属目录；不要先创建文档再想放哪里
-2. **目录职责单一**：每个目录只有一个清晰的职责，避免"大杂烩"目录
-3. **文档归属唯一**：每个文档只有一个主要归属目录，避免重复存放
-4. **目录深度适中**：目录深度不超过4层（docs/xxx/yyy/zzz/），过深会增加查找成本
-5. **目录名称稳定**：目录名称确定后尽量不变，频繁变更会增加维护成本
-6. **空目录及时清理**：删除文档后，如果目录为空，及时删除空目录
-
-### 4.6 常见错误与纠正
-
-| 错误做法 | 正确做法 |
-|----------|----------|
-| 想到就创建文档，不检查是否已有类似文档 | 先搜索，优先更新现有文档 |
-| 创建文档后不更新文档地图 | 创建后立即更新 DOCUMENTATION_MAP.md |
-| 删除文档前不检查引用关系 | 先检查引用，更新引用后再删除 |
-| 频繁调整目录结构 | 评估必要性，只有收益大于成本时才调整 |
-| 目录职责不清，什么都往里放 | 每个目录只有一个清晰职责 |
-| 调整目录后不验证引用关系 | 调整后搜索验证所有引用都已更新 |
-| 为单个文档创建新目录 | 只有预计3个以上文件时才创建新目录 |
+### 5.5 通用原则
+目录先于文档、职责单一、归属唯一、深度适中（docs 内≤4 层）、名称稳定、空目录及时清理。常见错误纠正沿用"先搜再建/改引用再删/改完验证"的闭环。

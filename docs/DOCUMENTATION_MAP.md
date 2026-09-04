@@ -22,9 +22,9 @@
 ### 做题验证前
 1. `docs/development/api/gaodun-exam-api.md` — **高顿做题接口契约（接口为主：syllabus 枚举作业→redo-paper 取题与标准答案→submit-paper 交卷→exam-report 回查）**
 2. `docs/development/guides/exam-workflow.md` — 做题/交卷任务执行指南（接口为主、UI 兜底：前置准备/枚举作业/批量与单卷/两层回查/异常分流/知识反哺）
-3. `knowledge-base/organized-content/<章节名>/知识拆解.md` — 知识库内容
-4. `knowledge-base/organized-content/<章节名>/考试指导.md` — 考点分析、易错点
-5. `knowledge-base/organized-content/做题思路解析.md` — 通用做题方法论
+3. 课程目录 `知识详解/NN_模块组/{官方知识点}.md` — 知识点单篇（一篇 4 节，含题答解析）
+4. `docs/development/guides/knowledge-detail-build-sop.md` — 题答如何加工成知识详解
+5. 课程库层 `通用做题思路解析.md`、课程层 `知识详解/课程做题思路解析.md` — 做题方法论
 6. `scripts/cdp/api_do_paper.js` — 纯接口做卷（推荐）；`scripts/answer_option.sh`/`scripts/answer_multi.sh`/`scripts/submit_exam.sh` — 旧 UI 做题脚本（兜底）
 
 ### 视频下载/压缩
@@ -42,11 +42,12 @@
 2. `docs/development/tools/transcription.md` — 转写方案对比、FunASR使用
 3. `scripts/transcribe_pipeline.py` — 转写管道
 
-### 知识库生成
-1. `docs/WORKFLOW.md` 第6节
-2. `docs/development/knowledge/knowledge-base-organization.md` — 知识库组织结构
-3. `docs/development/knowledge/knowledge-base-sources.md` — 知识库来源清单
-4. `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` — 知识库模板
+### 知识系统构建（四阶段）
+1. `docs/WORKFLOW.md` — 四阶段总纲与校验门
+2. 四阶段 SOP（`docs/development/guides/`）：resource-collection-sop（①采集）→ paper-manifest-sop（②做题/manifest）→ knowledge-detail-build-sop（③知识详解，核心）→ finalize-sop（④网盘/飞书/清理）
+3. `docs/development/knowledge/knowledge-base-organization.md` — 三层架构与 14 组/92 点组织原则
+4. `docs/development/knowledge/knowledge-base-sources.md` — 来源清单与优先级
+5. `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` — 知识点单篇 4 节/组父/课程全局模板
 
 ### 百度网盘同步
 1. `docs/WORKFLOW.md` 第4节
@@ -105,7 +106,10 @@
 | Playwright指南 | `docs/development/tools/playwright-cli-guide.md` | CLI使用、Token刷新、常见问题 |
 | 交互工作流 | `docs/development/guides/interaction-workflow.md` | 通用页面交互、异常恢复、卡住处理 |
 | **做题/交卷任务执行指南** | `docs/development/guides/exam-workflow.md` | 纯接口做题主链路（枚举/批量/单卷/两层回查/异常分流）、UI 兜底最小集、知识反哺、检查清单；接口契约见 gaodun-exam-api.md |
-| **讲次知识构建 SOP** | `docs/development/guides/lecture-knowledge-build-sop.md` | 单讲从原料到知识成品的标准步骤：生成前先跑 verify_lecture_map、原料集合（跨讲课件 OCR / papers / transcript / 用户笔记）、按模板产出三件套、产物按 L0–L4 对号入座（规则引用 standards 2.2） |
+| **阶段①资源采集 SOP** | `docs/development/guides/resource-collection-sop.md` | 视频/转写、讲义/OCR 采集到课程「原始资源/」、并发调度、阶段校验门 |
+| **阶段②做题/manifest SOP** | `docs/development/guides/paper-manifest-sop.md` | 接口做题交卷、采全 papers、主观题下钻、生成 manifest 与 14 组显式归组 |
+| **阶段③知识详解生成 SOP（核心）** | `docs/development/guides/knowledge-detail-build-sop.md` | 按官方知识点跨讲聚合、一篇 4 节、样板门、全量自检（替代旧 lecture-knowledge-build-sop） |
+| **阶段④收尾 SOP** | `docs/development/guides/finalize-sop.md` | 网盘备份、飞书统一同步、_workspace 按门禁时序清理 |
 | 多角色协作（项目配合部分） | `docs/development/guides/multi-role-collaboration.md` | 角色定义、职责分工、协作关系；完整方法见飞书知识库 |
 | 浏览器CDP连接手册 | `docs/development/tools/browser-cdp-connect-guide.md` | 用 puppeteer-core 连接日常Chrome（复用登录态）、自动授权、抓包与排障 |
 | macOS辅助功能自动化 | `docs/development/guides/macos-accessibility-automation.md` | 元素级AXPress vs 坐标点击、多属性定位、多显示器坐标、通用SOP |
@@ -133,7 +137,7 @@
 
 | 文档 | 路径 | 用途 |
 |------|------|------|
-| 知识库模板 | `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` | 知识拆解/考试指导模板 |
+| 知识库模板 | `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` | 层级树、知识点单篇 4 节、组父/课程全局/导航模板 |
 | 父节点模板 | `docs/development/templates/PARENT_NODE_TEMPLATE.md` | 知识库父节点内容模板 |
 | 命名规范 | `docs/project-management/standards/NAMING_CONVENTION.md` | 文件、目录、变量命名 |
 | 文档同步清单 | `docs/project-management/standards/DOC_SYNC_CHECKLIST.md` | 同步时机、更新内容 |
@@ -160,9 +164,8 @@
 | 课程索引 | `project-management/active/COURSE_INDEX.md` | 所有课程清单、进度、资源位置 |
 | 测试计划 | `project-management/test-plans/测试计划_*.md` | 各课程测试计划（按需、不常驻） |
 | 决策记录（ADR） | `docs/project-management/decisions/ADR-*.md` | 重要决策的背景、原因、后果 |
-| 题答解析（接口采集） | `data/knowledge-source/papers/<paperId>.json`、`paper_index.json` | 题面/标准答案/官方解析只读采集（.gitignore 不入库；替代旧手抄做题记录） |
-| 解析与用户留言（原始素材） | `knowledge-base/source-materials/*/解析与用户留言_*.md` | 官方解析和用户留言采集（不要求引用） |
-| 用户笔记精华（原始素材） | `knowledge-base/source-materials/*/用户笔记精华_*.md` | 用户留言精华整理（不要求引用） |
+| 题答解析（接口采集） | 课程 `_workspace/papers/<paperId>.json`、`_workspace/manifest/{paper_index,papers_inventory,course-manifest}.json` | 题面/标准答案/官方解析只读采集与归组路由（gitignore 不入库） |
+| 用户留言/笔记原件 | 课程 `_workspace/user-notes-raw/` | 高赞留言/口诀原件，提炼入「学员补充」后清（gitignore） |
 | 任务报告 | `project-management/task-reports/任务报告_*.md` | 各任务执行报告（不要求引用） |
 
 ### 五、治理规范（Governance — 规则）
@@ -180,11 +183,10 @@
 
 | 文档 | 路径 | 用途 |
 |------|------|------|
-| 做题思路解析 | `knowledge-base/organized-content/做题思路解析.md` | 通用做题方法论（面向学习者，跨课程） |
-| 考试指导速查手册 | `knowledge-base/organized-content/考试指导速查手册.md` | 跨章速查（S4 产物，通用内容单独成章、不按税种） |
-| 各章节知识拆解 | `knowledge-base/organized-content/<章节>/知识拆解.md` | 知识点整理；`<章节>`＝`_34chapters/讲NN`（现役 34 讲）或 `NN税种章`（旧 15 章过渡底座，S3 逐章替换） |
-| 各章节考试指导 | `knowledge-base/organized-content/<章节>/考试指导.md` | 考点、易错点、记忆口诀（章节口径同上） |
-| 原始素材 | `knowledge-base/source-materials/<课程>/` | 用户笔记精华、解析与用户留言（只取留言/口诀；题/答/解析走 data/knowledge-source 接口采集） |
+| 知识点单篇（成品主体） | 课程 `知识详解/NN_模块组/{官方知识点}.md` | 一个知识点一篇、固定 4 节（知识拆解/考试指导/题答解析/学员补充） |
+| 课程做题思路解析 | 课程 `知识详解/课程做题思路解析.md` | 结合本科目题型的做题套路 |
+| 考试指导速查手册 | 课程 `知识详解/考试指导速查手册.md` | 通用速查（只含通用内容、不含具体业务题、不按税种强行组织） |
+| 通用做题思路解析 | 课程库层 `通用做题思路解析.md` | 跨课程通用做题方法论 |
 
 ---
 
@@ -198,6 +200,20 @@
 ---
 
 ## 文档优化记录
+
+### 2026-09-04 三层解耦范式切换（ADR-012）
+
+**新增**：
+- `docs/project-management/decisions/ADR-012-三层解耦与按知识点聚合.md`
+- 四阶段 SOP：`resource-collection-sop.md` / `paper-manifest-sop.md` / `knowledge-detail-build-sop.md` / `finalize-sop.md`
+
+**重写**：WORKFLOW（四阶段总纲）、knowledge-base-organization、KNOWLEDGE_BASE_TEMPLATE、DIRECTORY_STRUCTURE、NAMING_CONVENTION 数据段、knowledge-base-sources、PARENT_NODE_TEMPLATE。
+
+**废弃（加头部指引、正文留作追溯，勿据此执行）**：
+- `lecture-knowledge-build-sop.md` → 被 `knowledge-detail-build-sop.md` 替代
+- `knowledge/chapter-mapping-draft.md`（旧按讲映射）→ 被 ADR-012 / organization 替代
+
+**加演进注记（历史决策保留）**：ADR-004（双文档→一篇4节）、ADR-005（四地分工最新口径）、ADR-011（lecture-resource-map→course-manifest）。
 
 ### 2026-08-29 文档治理优化
 

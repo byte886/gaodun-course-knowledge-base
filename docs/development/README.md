@@ -23,6 +23,10 @@ docs/development/
 │   ├── agents-md-best-practices.md       # AGENTS.md写作最佳实践
 │   ├── debugging-and-collaboration.md    # 问题排查方法论与人机协作
 │   ├── exam-workflow.md                  # 做题/交卷任务执行指南（接口为主、UI兜底、检查清单）
+│   ├── resource-collection-sop.md        # 阶段①资源采集SOP（视频/转写、讲义/OCR）
+│   ├── paper-manifest-sop.md             # 阶段②做题交卷/试卷采集/manifest SOP
+│   ├── knowledge-detail-build-sop.md     # 阶段③知识详解生成SOP（核心，一篇4节）
+│   ├── finalize-sop.md                   # 阶段④收尾SOP（网盘/飞书统一同步/清理）
 │   ├── feishu-knowledge-base-maintenance.md # 飞书知识库整理与维护SOP
 │   ├── interaction-workflow.md           # 通用交互流程与优化规范（所有Web场景）
 │   ├── macos-accessibility-automation.md # macOS原生控件/系统弹窗/多屏精准操作
@@ -36,10 +40,10 @@ docs/development/
 │   ├── ocr.md                   # OCR文字提取：macOS Vision框架、PDF转图片
 │   └── document-download.md     # 文档下载：CDN直链获取、curl后台下载
 ├── knowledge/                   # 知识库管理
-│   ├── knowledge-base-organization.md  # 知识库组织规范（AI友好）
-│   └── knowledge-base-sources.md       # 知识库来源清单与整理流程
+│   ├── knowledge-base-organization.md  # 三层架构/14组92点/一篇4节组织规范
+│   └── knowledge-base-sources.md       # 知识库来源清单、优先级与冲突处理
 └── templates/                   # 模板
-    ├── KNOWLEDGE_BASE_TEMPLATE.md  # 知识库内容模板（知识拆解+考试指导）
+    ├── KNOWLEDGE_BASE_TEMPLATE.md  # 知识点单篇4节/组父/课程全局模板
     ├── PARENT_NODE_TEMPLATE.md     # 知识库父节点内容模板
     ├── REPORT_TEMPLATE.md          # 任务报告模板
     └── VERIFICATION_TEMPLATE.md    # 通用验证模板（视频/转写专项质检按需）

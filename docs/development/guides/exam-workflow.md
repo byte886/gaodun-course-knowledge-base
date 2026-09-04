@@ -13,7 +13,7 @@
 |----------|--------|
 | 接口 URL / 字段 / 时序 / 错误码 / 已实测边界（契约） | [gaodun-exam-api.md](../api/gaodun-exam-api.md) |
 | 通用 Web 交互（页面/标签管理、命令超时、session 异常） | [interaction-workflow.md](interaction-workflow.md) |
-| 题/答/解析如何加工成知识库 | [lecture-knowledge-build-sop.md](lecture-knowledge-build-sop.md) |
+| 题/答/解析如何加工成知识库 | [knowledge-detail-build-sop.md](knowledge-detail-build-sop.md) |
 | 在总流程第几步、冲刺模考前置条件 | [WORKFLOW.md 步骤5](../../WORKFLOW.md) |
 | AI 判分抖动的原理与应对 | [flaky-ai-judging.md](flaky-ai-judging.md) |
 
@@ -183,7 +183,7 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
    - `data/knowledge-source/papers/<paperId>.json`（每卷精简题答解析）
    - `data/knowledge-source/paper_index.json`（paperId→章/标题/题量/文件，`chapter`=官方讲次标题）
    - 纯只读、不 redo、不建实例、不交卷、不耗 AI 权益。
-2. **加工成知识库**：按 [lecture-knowledge-build-sop.md](lecture-knowledge-build-sop.md)，用 paper_index 定位一讲全部卷、脚本聚合考点题量定高频、官方解析逐题校验知识拆解；来源口径与冲突优先级见 [knowledge-base-sources.md](../knowledge/knowledge-base-sources.md)。
+2. **加工成知识库**：按 [knowledge-detail-build-sop.md](knowledge-detail-build-sop.md)，用 paper_index / manifest 定位知识点对应的全部卷、脚本按知识点聚合题量定高频、官方解析逐题校验知识拆解（主观题下钻小问）；来源口径与冲突优先级见 [knowledge-base-sources.md](../knowledge/knowledge-base-sources.md)。
 3. **AI 错题不作来源**：自动化过程中因旧 UI BUG 产生的"AI 选错"不是知识，不写入知识库；"发现漏洞"由题/答/官方解析承担。
 
 ---

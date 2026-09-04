@@ -396,7 +396,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 检查本地知识库文档结构是否符合规范（知识拆解.md + 考试指导.md） |
+| **用途** | 检查本地知识成品结构是否符合规范（14 组 / 知识点单篇 4 节） |
 | **用法** | `bash scripts/check_kb_structure.sh <kb_dir>` |
 | **可靠性** | ✅ 中（基于文件命名检查） |
 | **相关文档** | `docs/development/knowledge/knowledge-base-organization.md` |
@@ -432,7 +432,7 @@
 | **用途** | 校验 `knowledge-base/lecture-resource-map.json`（ADR-011 跨讲取料路由表）与课程库磁盘一致：结构完整（每讲有条目）、map 逻辑路径在真实目录存在、磁盘标准件反向被 map 收录、`讲义_/课件_` 旧命名件列 legacy；`--rebuild` 保留各讲「课件来源讲次」按磁盘重建文件清单写回 |
 | **用法** | `python3 scripts/verify_lecture_map.py`（只校验，不一致退出 1）；加 `--rebuild` 重建写回；`--course-root PATH` 指定课程 |
 | **可靠性** | ✅ 高（讲00/01 去重后复验 legacy=0、退出 0；幂等；自动选含 NN_ 目录最多的课程、避开空占位课程） |
-| **相关文档** | ADR-011、standards 2.2、`lecture-knowledge-build-sop.md` 步骤0 |
+| **相关文档** | ADR-012、`knowledge-detail-build-sop.md`、standards 2.2 |
 
 ---
 
@@ -638,20 +638,20 @@
 |------|------|
 | **用途** | 线 B 原料补采：把已交卷的 116 张基础卷的题面/选项/标准答案/官方解析/知识点标签/全站正确率，经只读接口 record→paper/analysis 逐张拉出并精简落盘，供末期知识库生成。**纯只读**：不 redo、不建实例、不交卷、不耗 AI 权益、无副作用 |
 | **用法** | `node scripts/cdp/collect_paper_sources.js [--all] [paperId...]`（默认只补本地缺失卷，`--all` 强制重拉） |
-| **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 `data/knowledge-source/papers/<id>.json` + `paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
+| **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 课程 `_workspace/papers/<id>.json` + `_workspace/manifest/paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
 | **相关文档** | gaodun-exam-api.md、standards 2.2.4、SOP 步骤1 |
 
 ---
 
 ## 十一、飞书知识库同步（3个）
 
-> 旧 15 章时期的批量同步脚本。34 讲重建的飞书同步以 `lecture-knowledge-build-sop.md` 步骤7 与 lark-cli（lark-wiki/lark-doc skill）为准；下列脚本保留用于批量场景，使用前先核对与现行节点结构是否一致。
+> 旧时期的批量同步脚本。飞书同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准；下列脚本保留用于批量场景，存量迁移到 14 组→知识点结构后，使用前必须核对与现行节点结构一致。
 
 ### `sync_wiki.sh` — 批量同步知识库到飞书（建节点）
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 按章号区间，批量把本地 organized-content 同步为飞书 wiki 节点 |
+| **用途** | 按区间，批量把本地知识详解同步为飞书 wiki 节点（旧脚本，按 14 组→知识点结构核对后再用） |
 | **用法** | `bash scripts/sync_wiki.sh <起始章号> <结束章号>`，如 `bash scripts/sync_wiki.sh 04 15` |
 | **可靠性** | ⚠️ 中（旧 15 章结构，34 讲用前先核对） |
 | **相关文档** | WORKFLOW 步骤8、lark-wiki/lark-doc skill |

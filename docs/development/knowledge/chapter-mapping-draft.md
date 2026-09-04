@@ -1,5 +1,7 @@
 # 章节映射方法论
 
+> ⚠️ **【已废弃 · 2026-09-04】** 本文档是旧"按讲/章对齐、一讲双文档"范式的方法论，已被 [ADR-012](../../project-management/decisions/ADR-012-三层解耦与按知识点聚合.md) 的"官方模块组 → 官方知识点、跨讲聚合、一篇 4 节"范式取代，**不再执行**。新组织方法见 [knowledge-base-organization.md](./knowledge-base-organization.md)，加工作业见 `../guides/knowledge-detail-build-sop.md`。正文仅作历史追溯保留，勿据此生成。
+
 > **文档类型**：Concept（概念说明 — 知识库章节映射的原则与方法）
 > **更新频率**：方法论变更时
 > **维护者**：AI自动维护

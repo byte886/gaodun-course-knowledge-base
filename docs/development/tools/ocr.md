@@ -89,7 +89,7 @@ nohup bash batch_ocr.sh > /tmp/ocr_log.txt 2>&1 &
 - 每页标题：`## 第N页`
 - 后处理：修正常见 OCR 错误（如"高顿教意"→"高顿教育"、"高顿教肓"→"高顿教育"）
 
-输出位置：`课程目录/docs/讲义文字稿.md`
+输出位置：课程目录 `原始资源/notes/NN_模块/讲义_名称_OCR.md`（与讲义 PDF 同名、统一 `_OCR` 后缀）
 
 ## 3. 表格和图表处理
 
@@ -143,7 +143,7 @@ PDF → 分页转图片 → macOS Vision OCR（批量）
 | DOC/DOCX | python-docx 或 textutil（macOS） | 可直接提取文字 |
 | XLS/XLSX | python-openpyxl | 可直接提取表格数据 |
 
-输出到 `docs_text/` 目录，保持文件名对应。
+输出到课程目录 `原始资源/notes/NN_模块/`，统一 `_OCR.md` 后缀、与原讲义同名对应。
 
 ## 5. 已知问题
 

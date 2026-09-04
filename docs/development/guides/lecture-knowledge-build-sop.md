@@ -1,5 +1,7 @@
 # 单讲知识库生成作业指引（SOP）
 
+> ⚠️ **【已废弃 · 2026-09-04，被替代】** 本 SOP 是旧"按讲端到端、一讲产出 知识拆解.md + 考试指导.md"范式，已被 [ADR-012](../../project-management/decisions/ADR-012-三层解耦与按知识点聚合.md) 取代。**现行作业以 [knowledge-detail-build-sop.md](./knowledge-detail-build-sop.md) 为准（按官方知识点跨讲聚合、一篇 4 节）。** 正文仅作历史追溯保留，勿据此执行。
+
 > **文档类型**：Task（操作指南）
 > **更新频率**：生成流程变更时
 > **维护者**：AI自动维护

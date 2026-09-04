@@ -180,7 +180,7 @@ end tell"
 # 1. 点击下载按钮前，开启网络请求监听
 # 2. 点击下载按钮，捕获下载请求的URL
 # 3. 用curl直接下载到目标目录（不需要后续移动）
-curl -L -o "目标目录/docs/文件名.pdf" "下载链接" \
+curl -L -o "原始资源/notes/NN_模块/讲义_名称.pdf" "下载链接" \
   -H "Cookie: 从浏览器复制" \
   -H "User-Agent: Mozilla/5.0 ..."
 ```
@@ -201,7 +201,7 @@ sleep 10
 ls -lt ~/Downloads/ | head -5
 
 # 5. 移动并重命名到目标目录
-mv ~/Downloads/下载的文件.pdf "目标目录/docs/讲义_名称.pdf"
+mv ~/Downloads/下载的文件.pdf "原始资源/notes/NN_模块/讲义_名称.pdf"
 ```
 
 **注意事项：**
@@ -215,16 +215,16 @@ mv ~/Downloads/下载的文件.pdf "目标目录/docs/讲义_名称.pdf"
 
 ```bash
 # 1. 检查文件类型
-file "目标目录/docs/文件名.pdf"
+file "原始资源/notes/NN_模块/讲义_名称.pdf"
 
 # 2. 检查PDF页数（macOS）
-mdls -name kMDItemNumberOfPages "目标目录/docs/文件名.pdf"
+mdls -name kMDItemNumberOfPages "原始资源/notes/NN_模块/讲义_名称.pdf"
 
 # 3. 检查PDF是否以%%EOF结尾（完整性标记）
-tail -c 100 "目标目录/docs/文件名.pdf" | grep -q "%%EOF" && echo "✓ 完整" || echo "⚠️ 可能不完整"
+tail -c 100 "原始资源/notes/NN_模块/讲义_名称.pdf" | grep -q "%%EOF" && echo "✓ 完整" || echo "⚠️ 可能不完整"
 
 # 4. 对比文件大小与页面显示的大小
-ls -lh "目标目录/docs/文件名.pdf"
+ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 ```
 
 **验证标准：**
@@ -241,11 +241,11 @@ ls -lh "目标目录/docs/文件名.pdf"
 <download_root>/
 ├── 税法-蔡俊峻/
 │   ├── 01_税法全面精讲01-税法总论/
-│   │   ├── video.mp4          # 压缩后视频
+│   │   ├── video.mp4          # 压缩后视频（最终归课程 原始资源/videos/NN_讲题/）
 │   │   ├── playlist.m3u8      # m3u8 备份
 │   │   ├── segments/          # 解密分片缓存（可删除）
 │   │   ├── merged.ts          # 合并后原始TS（可删除）
-│   │   └── docs/              # 讲义课件 PDF
+│   │   └── notes/             # 讲义课件 PDF（最终归课程 原始资源/notes/NN_模块/）
 │   ├── 02_.../
 │   └── ...
 ├── 会计-罗翔/

@@ -54,7 +54,7 @@
 |----------|----------|------|
 | 通用规范/流程 | `docs/` 对应子目录 | 如 QUALITY_ASSURANCE.md、PROJECT_MAINTENANCE.md |
 | 通用模板 | `project-management/task-reports/` 或 `docs/` | 如 REPORT_TEMPLATE.md、VERIFICATION_TEMPLATE.md |
-| 具体课程产出物 | 对应课程目录下 | 如 video.mp4、知识拆解.md、考试指导.md、transcript.md |
+| 具体课程产出物 | 对应课程目录三层下 | 如 原始资源/ 的 video.mp4、transcript.md、讲义，知识详解/ 的 {知识点}.md |
 | 具体课程专项质检（按需） | 对应课程目录下 | 仅视频/转写等非标准对象用 VERIFICATION.md，非每次必出；做题/同步验证默认并入任务报告 |
 | 具体课程测试计划 | `docs/project-management/` | 测试计划是项目管理文档，不是课程产出物 |
 | 具体任务报告 | `project-management/task-reports/` 或对应课程目录 | 根据报告性质决定 |
@@ -71,7 +71,7 @@
 | 数据 / 抓包 / 题源 | `data/`（外部数据目录软链） | ❌ | papers JSON、cdp-sniff |
 | 运行日志 / 完成哨兵 | `logs/`、`*.log`、`*.done` | ❌（进度以 active 正式台账为准） | `netdisk_*.log`、`netdisk_done/*.done` |
 | 临时中转 | 系统 `/tmp` 或模块内 `.tmp_*/`，脚本退出自清 | ❌ | `transcription/.tmp_transcribe` |
-| 成品 | knowledge-base / docs / 外部课程库 | ✅ | 知识拆解.md、脚本源码、规范、模板 |
+| 成品 | 课程目录 知识详解/（课程成品不入库）；docs/ 只放工程 | 规范/模板/脚本 ✅，课程成品 ❌入库 | {知识点}.md（一篇4节）、脚本源码、规范、模板 |
 
 **两条硬规矩**：
 
@@ -96,9 +96,9 @@
 | 层 | 定义 | 典型内容 | 本地 | 入库 | 网盘 | 终态 |
 |---|---|---|---|---|---|---|
 | **L0 工具运行环境** | 可由依赖清单/脚本重建，不含独有成果 | `venv/`、`node_modules/`、`__pycache__/`、独立 `browser-profile/` | 留 | ❌ | ❌ | 随时可删可重建；换环境靠 `requirements.txt`/`package.json` 自补 |
-| **L1 原始原料（底片）** | 重跑/溯源必需，**无法由成品逆推** | `papers/<paperId>.json`、讲义 `docs/*.pdf`、`transcript.json` | 留 | ❌（大体量） | ✅ 备份 | 定稿前保留并重传备份；长期留存作重跑保险 |
-| **L2 成品** | 面向学习者的最终交付物 | `video.mp4`、`transcript.md`、`*_OCR.md`、知识拆解.md、考试指导.md、飞书知识库 | 留 | 规范/模板入库，课程成品在外部课程库 | ✅ | 永久保留（本地 + 网盘 + 飞书） |
-| **L3 过程状态/凭证** | 可由脚本或接口重建，服务断点续跑/路由 | `papers_inventory/audit`、`.vfetch/`、`.uploaded` 哨兵、`lecture-resource-map.json` | 阶段中留 | 仅"轻量派生元数据"入库（见 2.2.3） | ❌ | 整条线完成后清；轻量派生元数据随仓库版本化保留 |
+| **L1 原始原料（底片）** | 重跑/溯源必需，**无法由成品逆推** | `_workspace/papers/<paperId>.json`、`原始资源/notes/*.pdf`、`transcript.json` | 留 | ❌（大体量） | ✅ 备份 | 定稿前保留并重传备份；长期留存作重跑保险 |
+| **L2 成品** | 面向学习者的最终交付物 | `video.mp4`、`transcript.md`、`*_OCR.md`、知识详解 `{知识点}.md`（一篇4节）+ 课程全局篇、飞书知识库 | 留 | 规范/模板入库，课程成品在外部课程库 | ✅ | 永久保留（本地 + 网盘 + 飞书） |
+| **L3 过程状态/凭证** | 可由脚本或接口重建，服务断点续跑/路由 | `papers_inventory/audit`、`.vfetch/`、`.uploaded` 哨兵、`course-manifest.json`（替代旧 lecture-resource-map） | 阶段中留（`_workspace/`） | 仅"轻量派生元数据"入库（见 2.2.3） | ❌ | 整条线完成后清；轻量派生元数据随仓库版本化保留 |
 | **L4 一次性取证** | 结论沉淀进文档后即无独立价值 | knowmap/quiz_load 侦查、截图 shots、PoC 输出、一次性抓包 | 暂留 | ❌ | ❌ | **结论入 docs 即清** |
 
 #### 2.2.3 轻量派生元数据的入库判据（L3 的唯一例外）
@@ -147,9 +147,9 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 | 类别 | 上传？ | 示例 | 说明 |
 |------|--------|------|------|
 | **视频** | ✅ 上传 | video.mp4 | 课程视频 |
-| **知识文档** | ✅ 上传 | 知识拆解.md, 考试指导.md | 知识本身和考试指导 |
-| **讲义原件** | ✅ 上传 | docs/*.pdf | 原始讲义 |
-| **讲义文字稿** | ✅ 上传 | docs_text/*_OCR.md | 讲义OCR后的文字稿（带_OCR后缀） |
+| **知识文档** | ✅ 上传 | 知识详解/{知识点}.md、课程全局篇 | 一篇4节的知识成品 |
+| **讲义原件** | ✅ 上传 | 原始资源/notes/*.pdf | 原始讲义 |
+| **讲义文字稿** | ✅ 上传 | 原始资源/notes/*_OCR.md | 讲义OCR后的文字稿（带_OCR后缀） |
 | **转写文字稿** | ✅ 上传 | transcript.md | 视频转写后的文字稿（可读） |
 | **过程留痕** | ❌ 不上传 | VERIFICATION.md、SYNC_REPORT_*.md、任务过程记录 | 技术过程文档，仅本地（验证默认并入任务报告、不单独成文） |
 | **原始数据** | ❌ 不上传 | transcript.json | 转写原始JSON，非面向使用者 |

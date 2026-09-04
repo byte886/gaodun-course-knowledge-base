@@ -138,15 +138,10 @@ curl -X POST "https://openapi.baidu.com/oauth/2.0/token" \
     └── CPA/                        ← 专业名
         ├── 课程库/                  ← 走完整流程（有知识库）
         │   └── 【26考季】VIPCPA系列-税法（蔡俊峻老师）/
-        │       ├── 00_开班典礼&规划方法/
-        │       │   ├── video.mp4
-        │       │   ├── transcript.md
-        │       │   ├── 知识拆解.md
-        │       │   ├── 考试指导.md
-        │       │   ├── docs/
-        │       │   └── docs_text/
-        │       └── 01_税法全面精讲01-税法总论/
-        │           └── ...
+        │       ├── 原始资源/         ← videos/NN_讲题/{video.mp4,transcript.md}
+        │       │                    ← notes/NN_模块/{讲义_*.pdf,讲义_*_OCR.md}
+        │       └── 知识详解/         ← NN_模块组/{官方知识点}.md + 课程全局篇
+        │                            （不传 _workspace / transcript.json / tmp / logs）
         └── 待整理/                  ← 未走完整流程（暂无知识库）
             └── 【26考季】VIPCPA系列-会计（罗翔老师）/
                 └── ...

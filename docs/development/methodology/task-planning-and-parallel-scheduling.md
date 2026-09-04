@@ -123,4 +123,4 @@ cat pending.txt | xargs -P 3 -n 1 bash scripts/process_one.sh
 - [project-dag.md](../project-dag.md) — 本项目完整 DAG
 - [parallel-processing-guide.md](../performance/parallel-processing-guide.md) — CPU密集任务并发度反向评估详细指南
 - [watch_stage_done.sh](../../../scripts/watch_stage_done.sh) — 通用阶段完成事件监听脚本
-- [chapter-mapping-draft.md](../knowledge/chapter-mapping-draft.md) — 15章归并映射表（定稿）
+- ~~chapter-mapping-draft.md（旧"按讲映射"方法论，已废弃，被 ADR-012 的"官方模块组→知识点"取代）~~

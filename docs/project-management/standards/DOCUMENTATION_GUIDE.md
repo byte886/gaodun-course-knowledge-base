@@ -108,7 +108,7 @@ WORKFLOW.md 原包含视频转写、OCR、Git 操作等详细内容，已分解�
 | **Concept** | 概念说明，解释是什么 | README.md, 知识库组织结构说明 |
 | **Reference** | 参考资料，查事实用 | DOCUMENTATION_MAP.md, 脚本说明, 命名规范 |
 | **Active** | 过程记录，做了什么 | TASK_STATUS.md, 任务报告（验证结论并入） |
-| **Knowledge** | 知识内容，学什么用 | 知识拆解.md, 考试指导.md |
+| **Knowledge** | 知识内容，学什么用 | {官方知识点}.md（知识详解，一篇 4 节）、课程全局篇 |
 | **Template** | 模板骨架，供复制套用（templates/ 下 `*_TEMPLATE.md`） | KNOWLEDGE_BASE_TEMPLATE.md, REPORT_TEMPLATE.md |
 
 > **权威封闭词表（2026-08-31 起）**：文档类型仅限以上 7 个英文词 `Task / Concept / Reference / Governance / Active / Knowledge / Template`，pre-commit 会对暂存文档做白名单校验；确需新增类型，必须先在本表登记并同步 pre-commit 白名单，不得在单篇文档里自造类型词（如 Guide）。按规范豁免头部标注的原始素材、知识库正文、过程报告不受此限；`templates/README.md` 是目录说明而非模板，标 Reference。
@@ -120,7 +120,7 @@ WORKFLOW.md 原包含视频转写、OCR、Git 操作等详细内容，已分解�
 | **Governance** 治理规范/标准/协议 | 英文 UPPER_SNAKE_CASE | `NAMING_CONVENTION.md`、`CODE_STYLE.md`、`PROJECT_STATUS_QUERY.md` |
 | **Template** 模板 | 英文 UPPER_SNAKE_CASE，统一 `_TEMPLATE` 后缀 | `REPORT_TEMPLATE.md` |
 | **Task** 方法/操作/流程/最佳实践 | 英文**小写 kebab-case**（H1 标题仍用中文） | `git-workflow.md`、`video-processing.md`、`multi-role-collaboration.md` |
-| **Knowledge** 知识内容 | **中文**，与飞书节点 / H1 标题对应 | `知识拆解.md`、`考试指导.md` |
+| **Knowledge** 知识内容 | **中文**，与飞书节点 / H1 标题对应（官方知识点原名） | `{知识点}.md`（一篇 4 节） |
 | **Reference** 参考 | 看内容：API/工具/参数参考用小写 kebab；全局索引/地图/结构总览用 UPPER_SNAKE | `feishu-api.md`（小写）；`DOCUMENTATION_MAP.md`（大写） |
 | **Concept** 概念/方法论说明 | 英文小写 kebab-case（目录说明用固定名 `README.md`） | `knowledge-base-organization.md`、`README.md` |
 | **Active** 过程记录/状态 | 持续状态台账用 UPPER_SNAKE；每次任务产出的中文报告用中文且与 H1 对应 | `TASK_STATUS.md`（大写）；`任务报告_对象_2026-08-31.md`（中文） |
