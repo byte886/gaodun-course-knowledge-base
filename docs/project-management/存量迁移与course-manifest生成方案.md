@@ -1,7 +1,7 @@
 # 存量迁移与 course-manifest 生成方案（待审批）
 
 > **文档类型**：Active（一次性施工方案，执行完归档）
-> **创建**：2026-09-05　**状态**：待用户审批，批准前不动任何数据/脚本
+> **创建**：2026-09-05　**状态**：✅ 已执行完成（M0–M6，verify_migration 18/18 通过；旧成品按 M5 保留待阶段③消化、阶段④清退）
 > **上游范式**：[ADR-012](decisions/ADR-012-三层解耦与按知识点聚合.md)、[WORKFLOW 四阶段](../WORKFLOW.md)、[DIRECTORY_STRUCTURE](../DIRECTORY_STRUCTURE.md)
 > **执行 SOP**：迁移本身是"把旧按讲存量搬进三层 + 生成 manifest"，为阶段①②③铺好原料；不替代四阶段 SOP。
 
