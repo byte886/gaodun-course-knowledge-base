@@ -151,12 +151,65 @@ function qualitativeAnswer(analysis) {
 }
 
 /**
+ * 数题干「要求：…（1）…（2）…」里要求回答的小问数 N（从 1 连续递增 1..N 的长度）。
+ * 只取「要求/根据上述资料/回答」之后的序号，避开题干业务描述里的括号数字（如 业务（4）、硫酸雾（100））。
+ * 顶层独立 type6 大题的多个小问写在题干纯文本里（subQuestionList 为空），必须靠它识别要答几问。
+ */
+function countAskedSubs(title) {
+  const t = stripHtml(title || '');
+  const tail = t.split(/要求|根据上述资料|回答下列|回答问题|问题如下/).pop();
+  const set = new Set();
+  const re = /[（(]\s*(\d+)\s*[)）]/g; let mm;
+  while ((mm = re.exec(tail))) set.add(parseInt(mm[1], 10));
+  let n = 0; while (set.has(n + 1)) n += 1; // 最长 1..N 连续前缀
+  return n;
+}
+
+/** 答案文本中实际出现的顶层小问序号集合（1..N 哪些在） */
+function coveredSubs(text, askedN) {
+  const have = new Set();
+  const re = /[（(]\s*(\d+)\s*[)）]/g; let mm;
+  while ((mm = re.exec(text || ''))) { const x = parseInt(mm[1], 10); if (x >= 1 && x <= askedN) have.add(x); }
+  return have;
+}
+
+/**
+ * 多小问主观大题的【提交答案】：完整保留解析里的全部小问，绝不按【点拨】截断。
+ * 背景（2026-09-05 45题/1843142 实锤）：解析形态为 (1)(2)【点拨】…(3)…【点拨】…(4)，
+ * 旧 canonAnswer 用 split('【点拨】')[0] 会把第一个点拨之后的(3)(4)正式小问整段丢弃，导致漏答丢分、知识源残缺。
+ * 做法：去教辅标记但保留点拨内容（含采分语境、冗余不扣分）；在每个顶层小问序号前换行，保证(1)(2)…分点清晰。
+ */
+function multiSubAnswer(analysis, askedN) {
+  let t = stripHtml(analysis)
+    .replace(/【点拨】|【提示】/g, '；')
+    .replace(/；\s*；+/g, '；').replace(/^；+|；+$/g, '')
+    .replace(/\s+/g, ' ').trim();
+  for (let n = askedN; n >= 1; n -= 1) { // 每个正式小问序号前换行分点（从大到小替换，避免位移；只换第一处=正式小问）
+    t = t.replace(new RegExp(`\\s*[（(]\\s*${n}\\s*[)）]`), `\n（${n}）`);
+  }
+  return t.trim();
+}
+
+/**
  * 处理一个主观判分叶子（type6）：统一用于「type5 大题下的子题」与「顶层独立 type6（无 type5 包裹）」。
  * 答案取解析提炼（analysis），兜底 answer；按 aiCorrect.cpaBotType 分到可 AI 批改 / 平台未配 AI。
  */
-function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported) {
+function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported, askedN = 1, answerGaps = null) {
   const qa = leaf.questionAnswer || {};
-  const canon = canonAnswer(qa.analysis) || stripHtml(qa.answer);
+  // 多小问大题（题干要求≥2问）：用完整解析分点版，避免点拨截断丢小问；单小问维持 canon（取点拨前）
+  let canon = askedN >= 2
+    ? (multiSubAnswer(qa.analysis, askedN) || stripHtml(qa.answer))
+    : (canonAnswer(qa.analysis) || stripHtml(qa.answer));
+  // 完整性校验门：题干要求的每个小问都必须出现在提交答案里，缺则用整段解析分点兜底并显式记录（禁止静默漏答）
+  if (askedN >= 2 && answerGaps) {
+    const have = coveredSubs(canon, askedN);
+    const miss = [];
+    for (let i = 1; i <= askedN; i += 1) if (!have.has(i)) miss.push(i);
+    if (miss.length) {
+      canon = multiSubAnswer(qa.analysis, Math.max(askedN, 12)) || fullAnswer(qa.analysis); // 放大序号范围重排，仍缺则整段
+      answerGaps.push({ questionId: leaf.questionId, askedN, missing: miss, fallbackUsed: true });
+    }
+  }
   userAnswerList.push({
     questionId: leaf.questionId, questionType: 6,
     userAnswer: canon, userClozeAnswers: [], userAnswerImageList: [],
@@ -167,7 +220,8 @@ function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported) {
     canon,
     qual: qualitativeAnswer(qa.analysis),
     full: fullAnswer(qa.analysis),
-    judge: judgeAnswer(qa.analysis) || canon,
+    judge: askedN >= 2 ? canon : (judgeAnswer(qa.analysis) || canon), // 多小问首次AI批改也用完整分点版
+    askedN,
     score: leaf.score,
   };
   if (ai.cpaBotType === 3) {
@@ -188,14 +242,16 @@ function buildUserAnswers(redo) {
   const userAnswerList = [];
   const subjective = [];
   const unsupported = [];
+  const answerGaps = []; // 多小问大题答案覆盖缺口（完整性校验门，正常应为空）
   for (const m of redo.moduleList || []) {
     for (const q of m.questionList || []) {
       if (q.questionType === 5 && Array.isArray(q.subQuestionList) && q.subQuestionList.length) {
-        // 大题容器自身不作答，平铺其 type6 子题
-        for (const sub of q.subQuestionList) pushSubjectiveLeaf(sub, userAnswerList, subjective, unsupported);
+        // 大题容器自身不作答，平铺其 type6 子题（每个子题=1 问，askedN=1，内部(1)(2)是正文列举不拆）
+        for (const sub of q.subQuestionList) pushSubjectiveLeaf(sub, userAnswerList, subjective, unsupported, 1, answerGaps);
       } else if (q.questionType === 6) {
-        // 顶层独立主观题（无 type5 父容器，如 85916/85917）
-        pushSubjectiveLeaf(q, userAnswerList, subjective, unsupported);
+        // 顶层独立主观题：数题干要求的小问数，多小问必须完整覆盖（修复点拨截断漏答）
+        const askedN = countAskedSubs(q.title);
+        pushSubjectiveLeaf(q, userAnswerList, subjective, unsupported, askedN, answerGaps);
       } else {
         // 客观题（单选/多选/判断/填空等系统自动判分）：直接用标准答案 answer
         userAnswerList.push({
@@ -206,7 +262,7 @@ function buildUserAnswers(redo) {
       }
     }
   }
-  return { userAnswerList, subjective, unsupported };
+  return { userAnswerList, subjective, unsupported, answerGaps };
 }
 
 /** 对单个 type6 子题做 AI 批改直到终态，结果写回 out（aiFull/aiPartial/aiFailed/aiUnsupported） */
@@ -346,7 +402,7 @@ async function doPaperViaApi(opts) {
     submitted: false, fullScore: false, platformDone: false, objectiveAllRight: false,
     logId: null, userScore: null, totalScore: null,
     aiTotal: 0, aiFull: 0, aiPartial: [], aiFailed: [], aiUnsupported: [], aiCeiling: [],
-    wrong: null, error: null,
+    answerGaps: [], wrong: null, error: null,
   };
 
   try {
@@ -380,7 +436,11 @@ async function doPaperViaApi(opts) {
     out.logId = r.paperDataLogId;
 
     // 3) 平铺答案（subjective=配了 CPA 机器人可 AI 批改的子题；unsupported=题库未配 AI 评分标准、答案照交但不批改）
-    const { userAnswerList, subjective, unsupported } = buildUserAnswers(r);
+    const { userAnswerList, subjective, unsupported, answerGaps } = buildUserAnswers(r);
+    if (answerGaps.length) {
+      out.answerGaps = answerGaps;
+      log(`  ⚠ 答案完整性校验：${answerGaps.length} 道多小问大题曾缺小问、已用整段解析兜底：${JSON.stringify(answerGaps)}`);
+    }
     const hasSub = subjective.length > 0;
     // 真正由系统自动判分的客观题数：type5 子题与「顶层独立 type6」都是主观（questionType=6），不计入客观
     const objectiveCount = userAnswerList.filter((u) => u.questionType !== 6).length;
@@ -471,6 +531,6 @@ async function doPaperViaApi(opts) {
 
 module.exports = {
   findJwt, makeHeaders, dwellSec, stripHtml, canonAnswer, fullAnswer, judgeAnswer, aiPoints,
-  qualitativeAnswer, buildUserAnswers, doPaperViaApi,
+  qualitativeAnswer, countAskedSubs, coveredSubs, multiSubAnswer, buildUserAnswers, doPaperViaApi,
   MINERVA_BASE, AITUTOR_BASE, COURSE_ID, SOURCE_FROM_TYPE,
 };

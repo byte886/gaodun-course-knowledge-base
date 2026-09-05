@@ -719,6 +719,15 @@
 | **可靠性** | ✅ 高；免费可达最优=客观全对+AI 题尽量满，未配 AI 题（cpaBotType=0）须人工批改、本流程不购买 |
 | **相关文档** | gaodun-exam-api.md、任务报告_冲刺模考* |
 
+### `cdp/run_redo_all.sh` — 冲刺 6 卷批量重做入口（顺序跑、独立日志、末尾汇总）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 修复答案生成逻辑后对 6 卷批量重做补全答案；顺序 s1→s2→s3→m1→m2→m3（避免并发风控），每卷调 `do_sprint_paper.js`，末尾汇总各卷最新 exam_result 分数与 answerGaps |
+| **用法** | `bash scripts/cdp/run_redo_all.sh`，日志 `logs/sprint_redo_all_<ts>.log`，建议后台 `nohup bash scripts/cdp/run_redo_all.sh > /tmp/redo.log 2>&1 &` |
+| **验收线** | 6 卷全部 `answerGaps=0`（答案完整性校验门无缺口）、`objectiveAllRight=true`、`wrong=[]`、`failed=0` |
+| **相关** | do_sprint_paper.js、gaodun_paper_core.js（canonAnswer/multiSubAnswer/countAskedSubs）、exam-workflow.md §4.3.1 |
+
 ---
 
 ## 十一、飞书知识库同步（4个）
