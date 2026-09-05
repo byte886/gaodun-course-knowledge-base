@@ -102,6 +102,36 @@ function fullAnswer(analysis) {
   return stripHtml(analysis);
 }
 
+// AI 判分友好答案（首次提交用）：标准解之外，把【点拨】里影响结论的判定语境一并给出（去掉教辅标记）。
+// 实测 86722：业务(1)第二个采分点"购入免税货物取得普票不得抵扣"藏在【点拨】，canon 砍掉后被判漏点 0 分。
+// 冗余的政策说明不会导致扣分（判分按采分点命中），只可能帮助命中，故首次直接给最完整版本，避免 cs=2 终态锁死无补救机会。
+function judgeAnswer(analysis) {
+  return stripHtml(analysis)
+    .replace(/【点拨】/g, '；')
+    .replace(/\s+/g, ' ')
+    .replace(/；\s*；+/g, '；')
+    .replace(/^；|；$/g, '')
+    .trim();
+}
+
+// 从 correct-ai/status 结果提取采分点与真实得分。showStatus：1=命中，2=未命中。
+// 注意 cs=2 只代表"批改完成"，全命中(userScore=questionScore)才是满分；cs=2 且采分点 show=2 是"判完但 0 分"。
+function aiPoints(rr) {
+  const points = [];
+  let got = 0; let full = 0;
+  ((rr && rr.corrects) || []).forEach((c) => {
+    const ct = c.correctText || {};
+    if (typeof ct.userScore === 'number') got += ct.userScore;
+    if (typeof ct.questionScore === 'number') full += ct.questionScore;
+    (ct.correctPointList || []).forEach((p) => points.push(p));
+  });
+  if (!full && rr && typeof rr.userScore === 'number') { got = rr.userScore; full = rr.userScore; }
+  // 满分以"记分为准"：userScore 累计达到 questionScore 即满分（实测存在不记分的参考采分点 show=2 但仍给满分，如 1686288 1/1）；
+  // 只有在拿不到记分（full=0）时才退化为"所有采分点命中"。
+  const isFull = full > 0 ? got + 1e-9 >= full : (points.length > 0 && points.every((p) => p.showStatus === 1));
+  return { points, got, full, isFull };
+}
+
 /**
  * 从【点拨】段提炼干净的法理 / 定性陈述句（cs=6 补定性采分点用）。
  * 做法：取【点拨】之后文本 → 砍掉“即/也就是…”引导的通用公式尾巴（其含“账面成本”等占位词，
@@ -137,6 +167,7 @@ function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported) {
     canon,
     qual: qualitativeAnswer(qa.analysis),
     full: fullAnswer(qa.analysis),
+    judge: judgeAnswer(qa.analysis) || canon,
     score: leaf.score,
   };
   if (ai.cpaBotType === 3) {
@@ -201,11 +232,17 @@ async function correctSubjective(call, logId, s, log, out) {
     return r;
   };
 
-  const st = await call('POST', '/question/correct-ai/cpa', body(s.canon), AITUTOR_BASE);
-  if (st.status === 11193404) { // 该题已批改过：直接读既有结果
+  // 首次直接提交"判分友好"完整答案（标准解+点拨判定语境），最大化一次命中，规避 cs=2 终态锁死
+  const st = await call('POST', '/question/correct-ai/cpa', body(s.judge), AITUTOR_BASE);
+  if (st.status === 11193404) { // 该题已批改过：直接读既有结果，按真实采分点核对（cs=2≠满分）
     const z = await call('GET',
       `/question/correct-ai/cpa/status?paperDataLogId=${logId}&itemId=${s.questionId}`, null, AITUTOR_BASE);
-    if (z.result && z.result.correctStatus === 2) { out.aiFull += 1; log(`    子题${s.questionId} 已批过 cs=2 满分`); return; }
+    const sp = aiPoints(z.result);
+    if (z.result && z.result.correctStatus === 2 && sp.isFull) { out.aiFull += 1; log(`    子题${s.questionId} 已批过且采分点全命中 ${sp.got}/${sp.full} 满分`); return; }
+    if (z.result && z.result.correctStatus === 2) {
+      out.aiCeiling.push({ q: s.questionId, got: sp.got, full: sp.full, reason: 'already-graded-cs2-notfull' });
+      log(`    子题${s.questionId} 已批过但未满分 ${sp.got}/${sp.full}，cs=2 锁死归判分上限`); return;
+    }
   }
   if (st.status === 11193401) { // 题库未配该题 AI 评分标准：平台无判分通道，非我方失败（防御性，build 阶段通常已分流）
     out.aiUnsupported.push({ q: s.questionId, code: 11193401 });
@@ -248,26 +285,37 @@ async function correctSubjective(call, logId, s, log, out) {
     r = await poll();
   }
 
-  if (r && r.correctStatus === 2) { out.aiFull += 1; log(`    子题${s.questionId} cs=2 满分`); return; }
+  // 终态统一按真实采分点判定（cs=2 只代表批改完成，必须采分点全命中才是满分）
+  const finish = (rr, tag) => {
+    if (!rr) { out.aiFailed.push({ q: s.questionId, cs: null, tag }); log(`    子题${s.questionId} 无批改结果(${tag})`); return; }
+    const sp = aiPoints(rr);
+    if (rr.correctStatus === 2 && sp.isFull) { out.aiFull += 1; log(`    子题${s.questionId} ${tag} 采分点全命中 ${sp.got}/${sp.full} ✔满分`); return; }
+    if (rr.correctStatus === 2) {
+      out.aiCeiling.push({ q: s.questionId, got: sp.got, full: sp.full, reason: `cs2-notfull-${tag}` });
+      log(`    子题${s.questionId} ${tag} 批改完成但未满分 ${sp.got}/${sp.full}，答案正确、归判分上限`); return;
+    }
+    if (rr.correctStatus === 6) {
+      out.aiCeiling.push({ q: s.questionId, got: sp.got, full: sp.full, reason: `cs6-partial-${tag}` });
+      log(`    子题${s.questionId} ${tag} 多次补全仍部分分 ${sp.got}/${sp.full}，归判分上限`); return;
+    }
+    out.aiFailed.push({ q: s.questionId, cs: rr.correctStatus, got: sp.got, full: sp.full });
+    log(`    子题${s.questionId} 未达满分 cs=${rr.correctStatus} ${sp.got}/${sp.full}`);
+  };
+
+  if (r && r.correctStatus === 2) return finish(r, '首次');
   if (r && r.correctStatus === 6) {
-    // best-of-N：三级文本补全仍 cs=6，答案内容已是标准答案、属 AI 语义判分波动，原样重交标准答案碰一次 cs=2
-    const rerunAns = s.full || s.canon;
+    // best-of-N：补全文本仍 cs=6，答案内容已是标准答案、属 AI 语义判分波动，用整段解析再碰几次
+    const rerunAns = s.full || s.judge || s.canon;
     for (let k = 1; k <= AI_CS6_RERUN; k += 1) {
       await sleep(3000);
-      log(`    子题${s.questionId} cs=6 AI判分波动，best-of-N 原样重取 ${k}/${AI_CS6_RERUN}`);
+      log(`    子题${s.questionId} cs=6 AI判分波动，best-of-N 重取 ${k}/${AI_CS6_RERUN}`);
       await call('POST', '/question/correct-ai/cpa', body(rerunAns), AITUTOR_BASE);
       r = await poll();
-      if (!r || r.correctStatus !== 6) break; // cs=2 成功 / 其它异常状态都退出循环
+      if (!r || r.correctStatus !== 6) break; // 离开 cs=6（cs=2 成功 / 其它异常）即退出
     }
-    if (r && r.correctStatus === 2) { out.aiFull += 1; log(`    子题${s.questionId} best-of-N 重取到 cs=2 满分`); return; }
-    if (r && r.correctStatus === 6) {
-      out.aiCeiling.push({ q: s.questionId, rerun: AI_CS6_RERUN });
-      log(`    子题${s.questionId} ${AI_CS6_RERUN} 次重取仍 cs=6，归 aiCeiling（答案=标准答案原文、AI 反复判不满，平台判分上限）`);
-      return;
-    }
+    return finish(r, 'best-of-N');
   }
-  out.aiFailed.push({ q: s.questionId, cs: r && r.correctStatus });
-  log(`    子题${s.questionId} 未达满分 cs=${r && r.correctStatus}`);
+  return finish(r, '终态');
 }
 
 /**
@@ -422,7 +470,7 @@ async function doPaperViaApi(opts) {
 }
 
 module.exports = {
-  findJwt, makeHeaders, dwellSec, stripHtml, canonAnswer, fullAnswer,
-  buildUserAnswers, doPaperViaApi,
+  findJwt, makeHeaders, dwellSec, stripHtml, canonAnswer, fullAnswer, judgeAnswer, aiPoints,
+  qualitativeAnswer, buildUserAnswers, doPaperViaApi,
   MINERVA_BASE, AITUTOR_BASE, COURSE_ID, SOURCE_FROM_TYPE,
 };

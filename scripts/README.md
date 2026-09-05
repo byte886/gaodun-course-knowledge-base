@@ -9,12 +9,12 @@
 
 ---
 
-## 脚本总览（已登记 61 个，与 `scripts/` 磁盘文件一一对应）
+## 脚本总览（已登记 65 个，与 `scripts/` 磁盘文件一一对应）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
 | 做题自动化（旧·UI） | 3 | 单选题、多选题、交卷（UI 点选，接口链路的兜底） |
-| 视频处理 | 7 | 单文件下载解密/压缩；CDP 抓 HLS key、单讲下载、分阶段下载/压缩与总控（scripts/cdp/） |
+| 视频处理 | 10 | 单文件下载解密/压缩；CDP 抓 HLS key、单讲下载、分阶段下载/压缩与总控；冲刺点播视频侦查/纯接口下载/转写压缩后处理（scripts/cdp/） |
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 5 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传 |
@@ -22,7 +22,7 @@
 | 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
-| 高顿做题接口链路 | 11 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采（scripts/cdp/） |
+| 高顿做题接口链路 | 12 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采、冲刺 6 卷统一入口（scripts/cdp/） |
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
@@ -71,7 +71,7 @@
 
 ---
 
-## 二、视频处理（7个）
+## 二、视频处理（10个）
 
 ### `download_decrypt.js` — HLS视频下载解密合并
 
@@ -152,6 +152,39 @@
 | **用法** | `bash scripts/cdp/fetch_all_videos.sh [idx ...]` |
 | **可靠性** | ✅ 高 |
 | **相关文档** | video-processing.md |
+
+---
+
+### `cdp/probe_sprint_video.js` — 冲刺点播视频取流链路只读侦查
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | CDP 打开冲刺「视频解析」播放页，监听并落盘 videoId→m3u8 的取流请求（侦查/排障用，不下载） |
+| **用法** | `node scripts/cdp/probe_sprint_video.js [卷=1] [采集秒=22]` |
+| **关键结论** | 冲刺点播走 `GET /glive2-vod/api/v1/live/resource?code=<videoId>&res=FHD` 直出 m3u8、`encrypt=0` 不加密，区别于正课直播回放（加密、需 CDP 抓 key） |
+| **可靠性** | ✅ 只读 |
+
+---
+
+### `cdp/fetch_sprint_video.js` — 冲刺视频纯接口下载器（不加密、并发下 ts 合并）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | JWT 调取流接口拿 FHD m3u8 → 并发 12 下载相对分片 → 顺序合并 `.vfetch/merged.ts`（无需 CDP/解密）；幂等，已合并则跳过 |
+| **用法** | `node scripts/cdp/fetch_sprint_video.js 1|2|3|all`，产物在 `data/sprint-videos/<标题>/.vfetch/` |
+| **实测** | 单卷约 480 片 / 300MB / 约 24 秒（FHD 126 分钟） |
+| **可靠性** | ✅ 高（分片 3 次重试、断点续下） |
+
+---
+
+### `cdp/process_sprint_videos.sh` — 冲刺视频「并行转写 + 串行压缩」后处理
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 阶段1：3 个 merged.ts 并行 FunASR 转写（每进程限 5 线程）出 transcript.md/json；阶段2：复用 compress.sh 串行 H.265 压 video.mp4；均断点续跑 |
+| **用法** | `bash scripts/cdp/process_sprint_videos.sh`，日志 `logs/sprint_video_process.log` |
+| **注意** | macOS 自带 bash 3.2，已用 glob 数组替代 mapfile；压缩阶段全局只允许一个 ffmpeg |
+| **可靠性** | ✅ 高 |
 
 ---
 
@@ -554,7 +587,7 @@
 
 ---
 
-## 十、高顿做题接口链路（11个，位于 `scripts/cdp/`）
+## 十、高顿做题接口链路（12个，位于 `scripts/cdp/`）
 
 > 「接口为主、UI 兜底」的侦查与验证脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)，过程见《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》。报文落 `data/cdp-sniff/`（不入库）。除 `answer_submit_capture.js` 走 UI 交卷外，其余只读或纯接口。
 
@@ -673,6 +706,18 @@
 | **用法** | `node scripts/cdp/collect_paper_sources.js [--all] [paperId...]`（默认只补本地缺失卷，`--all` 强制重拉） |
 | **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 课程 `_workspace/papers/<id>.json` + `_workspace/manifest/paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
 | **相关文档** | gaodun-exam-api.md、standards 2.2.4、SOP 步骤1 |
+
+---
+
+### `cdp/do_sprint_paper.js` — 冲刺模考 6 卷统一纯接口做卷入口（3 试卷 + 3 机考）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 冲刺模考专用：record→create/redo→submit→AI 批改（correct-ai/cpa）→exam-report 全接口闭环；客观题用 questionAnswer.answer、主观用 analysis 提炼（core 的 judgeAnswer），按真实记分判定满分（aiPoints），cs=2 不再虚报满分 |
+| **用法** | `node scripts/cdp/do_sprint_paper.js s1|s2|s3|m1|m2|m3`（兼容旧参数 1/2/3）；机考自动带 `origin=https://mock-cpa.gaodun.com`；结果落 `data/cdp-sniff/exam_result_<paperId>_<ts>.json` |
+| **6 卷映射** | s1/s2/s3=86722/86723/86724（glivepro 试卷）；m1/m2/m3=86726/86727/86728（mock-cpa 机考，与试卷同题） |
+| **可靠性** | ✅ 高；免费可达最优=客观全对+AI 题尽量满，未配 AI 题（cpaBotType=0）须人工批改、本流程不购买 |
+| **相关文档** | gaodun-exam-api.md、任务报告_冲刺模考* |
 
 ---
 
