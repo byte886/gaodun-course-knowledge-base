@@ -9,7 +9,7 @@
 
 ---
 
-## 脚本总览（已登记 57 个，与 `scripts/` 磁盘文件一一对应）
+## 脚本总览（已登记 61 个，与 `scripts/` 磁盘文件一一对应）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
@@ -17,16 +17,16 @@
 | 视频处理 | 7 | 单文件下载解密/压缩；CDP 抓 HLS key、单讲下载、分阶段下载/压缩与总控（scripts/cdp/） |
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
-| 百度网盘上传 | 4 | 单文件上传、批量上传、课程上传、整课程并发同步 |
-| 环境与工具 | 5 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听 |
+| 百度网盘上传 | 5 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传 |
+| 环境与工具 | 7 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询 |
 | 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
 | 高顿做题接口链路 | 11 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采（scripts/cdp/） |
-| 飞书知识库同步 | 3 | 批量同步建节点、节点内容更新两版 |
+| 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
-> **全量对齐（2026-09-04）**：历史脚本已一次性补登完毕，上表 57 个与 `scripts/`（顶层 + `cdp/` + `ocr/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr` 核对，避免再次出现"在跑但没上台账"。
+> **全量对齐（2026-09-05）**：历史脚本已一次性补登完毕，并补登阶段④新增的 4 个同步/守护脚本（sync_raw_resources、run_supervised、progress、sync_wiki_new），上表 61 个与 `scripts/`（顶层 + `cdp/` + `ocr/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr` 核对，避免再次出现"在跑但没上台账"。
 
 ---
 
@@ -266,7 +266,7 @@
 
 ---
 
-## 五、百度网盘上传（4个）
+## 五、百度网盘上传（5个）
 
 ### `baidu_upload.py` — 单文件上传到百度网盘
 
@@ -314,7 +314,18 @@
 
 ---
 
-## 六、环境与工具（5个）
+### `sync_raw_resources.sh` — 原始资源(notes/videos)断点补传网盘
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 阶段④门禁：把课程「原始资源」下的 notes（用户笔记/留言正本/题答解析）与 videos（压缩视频）按讲并发补传到百度网盘。xargs -P 并发、断点续传（`logs/raw_done/{notes,videos}_*.done` 标记成功讲、重跑跳过）、单讲失败不影响其他、百度侧已存在走 MD5 秒传。配合 run_supervised.sh 可脱离 AI 会话自动续跑到底 |
+| **用法** | `bash scripts/sync_raw_resources.sh <notes\|videos\|all> [并发数=2]`（网盘 IO 建议并发 2） |
+| **可靠性** | ✅ 高（已用于税法课 notes 17/17、videos 39/39；每讲独立日志 `logs/raw_<类型>_batch.log`） |
+| **相关文档** | long-task-supervisor-guide.md、finalize-sop.md、standards 2.2（L1/L2 备份） |
+
+---
+
+## 六、环境与工具（7个）
 
 ### `playwright_connect.sh` — Playwright连接恢复
 
@@ -376,6 +387,28 @@
 | **用法** | `bash scripts/watch_stage_done.sh <监听目录> <文件名匹配> <预期数量> <标记文件路径> [检查间隔秒]` |
 | **可靠性** | ✅ 高（纯文件计数，无外部依赖） |
 | **相关文档** | WORKFLOW「多任务并发调度」 |
+
+---
+
+### `run_supervised.sh` — 长任务守护器（脱离 AI 会话自动续跑）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 解决 AI `run_in_background` 约 8 分钟被回收、且 AI 是请求-响应模式无法被系统进程反向唤醒的问题：用 `nohup ... & disown` 让进程 PPID=1 被 launchd 接管，while 循环反复执行断点续传命令，用完成检测命令判终，连续 3 轮无进展判异常，完成/异常调 osascript 发 macOS 通知。配套「定时唤醒 AI + 临门一脚 + 完成自清理」实现 AI 自动接续 |
+| **用法** | `nohup bash scripts/run_supervised.sh <任务名> "<单次命令>" "<完成检测test命令>" > logs/supervisor_<任务名>.log 2>&1 & disown` |
+| **可靠性** | ✅ 高（已用于 videos 39 个自动续跑到完成；BSD 兼容：完成统计用 `find -name` 不用 `ls glob`，画进度条前先判数量>0 避开 `seq 1 0`） |
+| **相关文档** | docs/development/performance/long-task-supervisor-guide.md（含第七章 AI 自动接续） |
+
+---
+
+### `progress.sh` — 后台长任务一键进度查询（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 一条命令查看后台长任务：进度条、守护器是否存活、正在处理的单元、最近日志；并取最近 9 个 done 标记时间戳与实际文件大小现算合计/单路速率、平均单耗、剩余总量与 ETA、预计完成时刻。只读，不影响任务运行 |
+| **用法** | `bash scripts/progress.sh`（已 chmod 755，也可直接 `./scripts/progress.sh`） |
+| **可靠性** | ✅ 高（纯文件/日志统计，无外部依赖；ETA 为基于近期完成速率的估算） |
+| **相关文档** | long-task-supervisor-guide.md 3.4 节 |
 
 ---
 
@@ -643,7 +676,7 @@
 
 ---
 
-## 十一、飞书知识库同步（3个）
+## 十一、飞书知识库同步（4个）
 
 > 旧时期的批量同步脚本。飞书同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准；下列脚本保留用于批量场景，存量迁移到 14 组→知识点结构后，使用前必须核对与现行节点结构一致。
 
@@ -677,6 +710,17 @@
 | **用法** | `bash scripts/update_wiki_v2.sh <起始章号> <结束章号>` |
 | **可靠性** | ⚠️ 中（34 讲同步优先按 SOP / lark-cli） |
 | **相关文档** | WORKFLOW 步骤8 |
+
+---
+
+### `sync_wiki_new.sh` — 新结构(课程根→14组→92知识点)同步飞书【现役】
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 阶段④门禁现役脚本：按「课程根 → 14 组节点(写 README) → 组下 92 个知识点文档 + 课程全局篇」三层把本地知识详解同步到飞书知识库。断点续传（`logs/wiki_done/<标题>.done` 记 node_token/obj_token，`logs/wiki_node_map.tsv` 记标题→token），同名节点复用不重建，写入 3 次重试；正文经 stdin `cat f \| lark-cli docs +update --content -` 绕开 @file allowlist |
+| **用法** | `bash scripts/sync_wiki_new.sh`（课程根/space_id/父节点已内置，换课时改脚本头部常量；可反复续跑） |
+| **可靠性** | ✅ 高（已用于税法课 107/107：14 组+92 点+课程全局篇，回读逐组对平） |
+| **相关文档** | finalize-sop.md、lark-wiki/lark-doc skill、long-task-supervisor-guide.md |
 
 ---
 
