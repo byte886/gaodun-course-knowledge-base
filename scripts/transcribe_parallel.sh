@@ -8,7 +8,9 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+# 加载课程配置（环境变量可覆盖默认值）
+source "$ROOT/scripts/course_config.sh"
+COURSE="$COURSE_DESKTOP_ROOT"
 WORK="$ROOT/transcription/.parallel_work"
 QUEUE="$WORK/pending.txt"; QLOCKDIR="$WORK/pending.lock.d"
 LOGDIR="$WORK/logs"; MAINLOG="$WORK/parallel.log"

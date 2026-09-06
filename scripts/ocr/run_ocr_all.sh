@@ -5,7 +5,9 @@
 # 用法：bash scripts/ocr/run_ocr_all.sh [--dry]
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+# 加载课程配置（环境变量可覆盖默认值）
+source "$ROOT/scripts/course_config.sh"
+COURSE="$COURSE_DESKTOP_ROOT"
 DRY=0; [ "${1:-}" = "--dry" ] && DRY=1
 TODO=0; SKIP=0
 find "$COURSE" -path "*/docs/*.pdf" -print0 | while IFS= read -r -d '' pdf; do

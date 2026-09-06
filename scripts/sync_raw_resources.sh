@@ -17,9 +17,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-TAX="data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
-REMOTE="/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
-export BAIDU_ENC_PASS="lover123"
+# 加载课程配置（环境变量可覆盖默认值）
+source "$SCRIPT_DIR/course_config.sh"
+TAX="$COURSE_LOCAL_ROOT"
+REMOTE="$COURSE_REMOTE_ROOT"
 
 TYPE="${1:?用法: sync_raw_resources.sh <notes|videos|all> [并发数]}"
 PARALLEL="${2:-2}"

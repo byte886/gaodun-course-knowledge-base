@@ -9,7 +9,7 @@
 
 ---
 
-## 脚本总览（已登记 60 个，与 `scripts/` 磁盘文件一一对应）
+## 脚本总览（已登记 61 个，与 `scripts/` 磁盘文件一一对应）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
@@ -26,7 +26,36 @@
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
-> **全量对齐（2026-09-05）**：历史脚本已一次性补登完毕，并补登阶段④新增的 4 个同步/守护脚本（sync_raw_resources、run_supervised、progress、sync_wiki_new），上表 61 个与 `scripts/`（顶层 + `cdp/` + `ocr/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr` 核对，避免再次出现"在跑但没上台账"。
+> **全量对齐（2026-09-05）**：历史脚本已一次性补登完毕，并补登阶段④新增的 4 个同步/守护脚本（sync_raw_resources、run_supervised、progress、sync_wiki_new），上表 61 个与 `scripts/`（顶层 + `cdp/` + `ocr/` + `knowledge/` + `migrate/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/migrate` 核对，避免再次出现"在跑但没上台账"。
+
+---
+
+## 课程配置（多课程支持）
+
+所有课程相关脚本通过 `scripts/course_config.sh` 统一配置，默认指向税法课。切换课程只需设置环境变量：
+
+```bash
+# 切换到会计课
+export COURSE_NAME="【26考季】VIPCPA系列-会计（罗翔老师）"
+
+# 然后运行任意课程脚本（会自动读取配置）
+bash scripts/sync_raw_resources.sh all
+bash scripts/transcribe_parallel.sh 4
+bash scripts/ocr/run_ocr_all.sh --dry
+python3 scripts/knowledge/collect_point_questions.py --all
+```
+
+**配置变量**：
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `COURSE_NAME` | 税法课（蔡俊峻） | 课程名称，用于拼接路径 |
+| `COURSE_LOCAL_ROOT` | `data/高顿/CPA/课程库/$COURSE_NAME` | 仓库内课程根目录 |
+| `COURSE_REMOTE_ROOT` | `/apps/CPA课程归档/高顿/CPA/课程库/$COURSE_NAME` | 网盘课程根目录 |
+| `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
+| `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
+
+**已参数化的脚本**：`sync_raw_resources.sh`、`transcribe_parallel.sh`、`ocr/run_ocr_all.sh`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`sync_course_netdisk.sh`（已参数化）。其他脚本如需支持多课程，按相同模式改造。
 
 ---
 
