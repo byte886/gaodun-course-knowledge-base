@@ -191,22 +191,73 @@ function multiSubAnswer(analysis, askedN) {
 }
 
 /**
+ * 点拨段保守精简：去掉①-⑩条目编号；删「20XX 年取消/调整/变更…政策」这类纯政策变迁背景句，
+ * 其余本题判定 / 法理 / 公式一律保留（6 卷实测含点拨满分率 8/9，8 道满分题采分点就藏在点拨，整段删除会丢分）。
+ */
+function pruneBasis(t) {
+  if (!t) return '';
+  const s = t.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, '');
+  const kept = s.split(/(?<=。|；|;)/).map((x) => x.trim()).filter(Boolean)
+    .filter((x) => !( /20\d{2}\s*年/.test(x) && /(取消|调整|变更|改为|政策)/.test(x)
+      && !/(不得|应当|免征|转出)/.test(x) ));
+  return kept.join('').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * 按题干要求的小问数 N，把整段解析切成 N 个小问块。正式小问序号位置必须从 1 开始严格递增，
+ * 因而自动跳过点拨 / 正文内部的噪声括号（业务（1）、硫酸雾（100））；切不齐则返回整段兜底，绝不丢小问。
+ */
+function splitAskedBlocks(t, askedN) {
+  if (askedN <= 1) return [t];
+  const pos = []; let from = 0;
+  for (let n = 1; n <= askedN; n += 1) {
+    const m = new RegExp(`[（(]\\s*${n}\\s*[)）]`).exec(t.slice(from));
+    if (!m) { pos.push(-1); continue; }
+    const abs = from + m.index; pos.push(abs); from = abs + 1;
+  }
+  if (pos.filter((p) => p >= 0).length < askedN) return [t];
+  const blocks = [];
+  for (let n = 0; n < askedN; n += 1) blocks.push(t.slice(pos[n], n + 1 < askedN ? pos[n + 1] : t.length));
+  return blocks;
+}
+
+/**
+ * 主观题统一答案生成（2026-09-06 重构，统一旧 canon/judge/multiSub 三套互相矛盾口径）：
+ *   每个小问 = 正式答案（算式/结论，主体） + 「依据：」+ 点拨里精简后的本题判定/法理；多小问 (1)..(N) 逐行分点。
+ * 结论依据 6 卷列联表：含点拨 9 题满分 8、无点拨 6 题满分 4（1681714/1681715 零点拨逐字一致仍 0=平台误判），
+ * 故点拨不是 0 分元凶、不能整段删，但要去条目化、删政策背景句，让答案像作答而不是照抄解析堆砌。
+ * 交卷答案与 correct-ai 首次批改答案统一用本函数（旧 judgeAnswer 含点拨全文不再使用）。
+ */
+function cleanSubjectiveAnswer(analysis, askedN) {
+  const raw = stripHtml(analysis);
+  const blocks = splitAskedBlocks(raw, askedN);
+  const lines = blocks.map((b, i) => {
+    const parts = b.split(/【点拨】|【提示】/);
+    const main = parts[0].replace(/^\s*[（(]\s*\d+\s*[)）]\s*/, '').replace(/\s+/g, ' ').trim();
+    const basis = pruneBasis(parts.slice(1).join(' '));
+    let line = main;
+    if (basis) line += ` 依据：${basis}`;
+    line = line.replace(/[;；\s]+$/, '').trim();
+    return askedN >= 2 ? `（${i + 1}）${line}` : line;
+  });
+  return lines.join('\n').trim();
+}
+
+/**
  * 处理一个主观判分叶子（type6）：统一用于「type5 大题下的子题」与「顶层独立 type6（无 type5 包裹）」。
  * 答案取解析提炼（analysis），兜底 answer；按 aiCorrect.cpaBotType 分到可 AI 批改 / 平台未配 AI。
  */
 function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported, askedN = 1, answerGaps = null) {
   const qa = leaf.questionAnswer || {};
-  // 多小问大题（题干要求≥2问）：用完整解析分点版，避免点拨截断丢小问；单小问维持 canon（取点拨前）
-  let canon = askedN >= 2
-    ? (multiSubAnswer(qa.analysis, askedN) || stripHtml(qa.answer))
-    : (canonAnswer(qa.analysis) || stripHtml(qa.answer));
-  // 完整性校验门：题干要求的每个小问都必须出现在提交答案里，缺则用整段解析分点兜底并显式记录（禁止静默漏答）
+  // 统一答案：正式答案为主体 + 点拨精简为「依据：」+ 多小问分点（交卷与首次 AI 批改同一版，不再含点拨全文）
+  let canon = cleanSubjectiveAnswer(qa.analysis, askedN) || stripHtml(qa.answer);
+  // 完整性校验门：题干要求的每个小问都必须出现在提交答案里，缺则放大序号范围重切、仍缺用整段解析兜底并显式记录（禁止静默漏答）
   if (askedN >= 2 && answerGaps) {
     const have = coveredSubs(canon, askedN);
     const miss = [];
     for (let i = 1; i <= askedN; i += 1) if (!have.has(i)) miss.push(i);
     if (miss.length) {
-      canon = multiSubAnswer(qa.analysis, Math.max(askedN, 12)) || fullAnswer(qa.analysis); // 放大序号范围重排，仍缺则整段
+      canon = cleanSubjectiveAnswer(qa.analysis, Math.max(askedN, 12)) || fullAnswer(qa.analysis);
       answerGaps.push({ questionId: leaf.questionId, askedN, missing: miss, fallbackUsed: true });
     }
   }
@@ -220,7 +271,7 @@ function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported, asked
     canon,
     qual: qualitativeAnswer(qa.analysis),
     full: fullAnswer(qa.analysis),
-    judge: askedN >= 2 ? canon : (judgeAnswer(qa.analysis) || canon), // 多小问首次AI批改也用完整分点版
+    judge: canon, // 首次 AI 批改与交卷同版（干净结构化）；cs=6 部分分时再由 correctSubjective 用 qual/full 逐级补全
     askedN,
     score: leaf.score,
   };
@@ -531,6 +582,6 @@ async function doPaperViaApi(opts) {
 
 module.exports = {
   findJwt, makeHeaders, dwellSec, stripHtml, canonAnswer, fullAnswer, judgeAnswer, aiPoints,
-  qualitativeAnswer, countAskedSubs, coveredSubs, multiSubAnswer, buildUserAnswers, doPaperViaApi,
+  qualitativeAnswer, countAskedSubs, coveredSubs, multiSubAnswer, cleanSubjectiveAnswer, buildUserAnswers, doPaperViaApi,
   MINERVA_BASE, AITUTOR_BASE, COURSE_ID, SOURCE_FROM_TYPE,
 };

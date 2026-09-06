@@ -661,7 +661,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 被 `api_do_paper.js`/`batch_redo_papers.js` 复用：record→(首次先 create-paper)→redo→平铺答案（type5 父题不答、平铺其 type6 子题；顶层独立 type6 同样处理）→按 `aiCorrect.cpaBotType` 分流（=3 进 AI 批改、=0 未配 AI 只交答案）→最小停留→submit 全量交卷→交卷后并发=3 逐题 correct-ai/cpa：cs=6 走「canon+qual / full / AI 未命中点」三级补全 → best-of-N×4 原样重取 → 仍不满且答案=标准答案则归 aiCeiling→exam-report 两层核对（fullScore / platformDone）。导出 `doPaperViaApi/buildUserAnswers/canonAnswer/qualitativeAnswer/findJwt` 等 |
+| **用途** | 被 `api_do_paper.js`/`batch_redo_papers.js` 复用：record→(首次先 create-paper)→redo→平铺答案（type5 父题不答、平铺其 type6 子题；顶层独立 type6 同样处理）→按 `aiCorrect.cpaBotType` 分流（=3 进 AI 批改、=0 未配 AI 只交答案）→最小停留→submit 全量交卷→交卷后并发=3 逐题 correct-ai/cpa：cs=6 走「canon+qual / full / AI 未命中点」三级补全 → best-of-N×4 原样重取 → 仍不满且答案=标准答案则归 aiCeiling→exam-report 两层核对（fullScore / platformDone）。主观答案统一走 `cleanSubjectiveAnswer`（算式主体+点拨精简「依据：」+多小问分点，交卷与首次 AI 批改同版；点拨不全删——六卷实证其含采分点，只删年份政策背景句）。导出 `doPaperViaApi/buildUserAnswers/cleanSubjectiveAnswer/canonAnswer/qualitativeAnswer/findJwt` 等 |
 | **答案来源** | 客观取 `questionAnswer.answer`；主观（type5 子题与顶层 type6）从 `questionAnswer.analysis` 提炼（canon 等式句 / qual 点拨定性句 / full 整段兜底），无需本地题库 |
 | **可靠性** | ✅ 基础卷 116 张全部达成（109 严格满分 + 7 平台最优）；73 张客观精讲卷一次满分零失败；交卷与 AI 批改解耦（交卷即完成，批改异常只标记不崩）；AI 判分抖动应对见 [flaky-ai-judging.md](../docs/development/guides/flaky-ai-judging.md) |
 | **相关文档** | gaodun-exam-api.md §2.3/2.5/2.6/2.7、§3 |
@@ -713,7 +713,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 冲刺模考专用：record→create/redo→submit→AI 批改（correct-ai/cpa）→exam-report 全接口闭环；客观题用 questionAnswer.answer、主观用 analysis 提炼（core 的 judgeAnswer），按真实记分判定满分（aiPoints），cs=2 不再虚报满分 |
+| **用途** | 冲刺模考专用：record→create/redo→submit→AI 批改（correct-ai/cpa）→exam-report 全接口闭环；客观题用 questionAnswer.answer、主观用 core 的 `cleanSubjectiveAnswer`（算式为主体+点拨精简为「依据：」+多小问分点，交卷与首次 AI 批改同版），按真实记分判定满分（aiPoints），cs=2 不再虚报满分 |
 | **用法** | `node scripts/cdp/do_sprint_paper.js s1|s2|s3|m1|m2|m3`（兼容旧参数 1/2/3）；机考自动带 `origin=https://mock-cpa.gaodun.com`；结果落 `data/cdp-sniff/exam_result_<paperId>_<ts>.json` |
 | **6 卷映射** | s1/s2/s3=86722/86723/86724（glivepro 试卷）；m1/m2/m3=86726/86727/86728（mock-cpa 机考，与试卷同题） |
 | **可靠性** | ✅ 高；免费可达最优=客观全对+AI 题尽量满，未配 AI 题（cpaBotType=0）须人工批改、本流程不购买 |
@@ -726,7 +726,7 @@
 | **用途** | 修复答案生成逻辑后对 6 卷批量重做补全答案；顺序 s1→s2→s3→m1→m2→m3（避免并发风控），每卷调 `do_sprint_paper.js`，末尾汇总各卷最新 exam_result 分数与 answerGaps |
 | **用法** | `bash scripts/cdp/run_redo_all.sh`，日志 `logs/sprint_redo_all_<ts>.log`，建议后台 `nohup bash scripts/cdp/run_redo_all.sh > /tmp/redo.log 2>&1 &` |
 | **验收线** | 6 卷全部 `answerGaps=0`（答案完整性校验门无缺口）、`objectiveAllRight=true`、`wrong=[]`、`failed=0` |
-| **相关** | do_sprint_paper.js、gaodun_paper_core.js（canonAnswer/multiSubAnswer/countAskedSubs）、exam-workflow.md §4.3.1 |
+| **相关** | do_sprint_paper.js、gaodun_paper_core.js（cleanSubjectiveAnswer/pruneBasis/splitAskedBlocks/countAskedSubs）、exam-workflow.md §4.3.1 |
 
 ---
 
