@@ -75,7 +75,8 @@
 
 ### 飞书知识库整理 / 维护
 1. `docs/development/guides/feishu-knowledge-base-maintenance.md` — 盘点分类、结构整理SOP、父节点导航规范与覆盖校验（先读）
-2. `docs/development/api/feishu-api.md` — lark-cli 通用命令踩坑（移动 / 删除 / 传参 / token）
+2. `docs/development/guides/wiki-link-verification-sop.md` — 飞书链接三层验证SOP（总览页→章README→知识点详解，回读比对node_token）
+3. `docs/development/api/feishu-api.md` — lark-cli 通用命令踩坑（移动 / 删除 / 传参 / token）
 
 ---
 
