@@ -67,6 +67,17 @@ def main():
     if not targets:
         raise SystemExit("no target points")
 
+    # 别名/泛名标签归一：genericPoint(单对象，历史)+aliasPoints(数组)，归点前替换为目标id
+    ALIAS = {}
+    gp = k.get("genericPoint")
+    if isinstance(gp, dict) and gp.get("id") and gp.get("mergedInto"):
+        ALIAS[int(gp["id"])] = int(gp["mergedInto"])
+    for ap in k.get("aliasPoints", []) or []:
+        if ap.get("id") and ap.get("mergedInto"):
+            ALIAS[int(ap["id"])] = int(ap["mergedInto"])
+    def norm(ids):
+        return {ALIAS.get(x, x) for x in ids}
+
     bucket = {pid: [] for pid in targets}
     for fp in sorted(glob.glob(os.path.join(WS, "papers", "*.json"))):
         paper_id = int(os.path.splitext(os.path.basename(fp))[0])
@@ -74,7 +85,7 @@ def main():
         ptitle = titles.get(paper_id, "")
         for mod in d.get("moduleList", []):
             for q in mod.get("questionList", []):
-                top_ids = {int(x["id"]) for x in q.get("knowledgePointList", []) or []}
+                top_ids = norm({int(x["id"]) for x in q.get("knowledgePointList", []) or []})
                 qt = q.get("questionType")
                 if qt in (1, 2, 3):
                     for pid in top_ids & set(targets):
@@ -83,7 +94,7 @@ def main():
                         bucket[pid].append(rec)
                 elif qt == 5:
                     for sq in q.get("subQuestionList", []) or []:
-                        s_ids = {int(x["id"]) for x in sq.get("knowledgePointList", []) or []}
+                        s_ids = norm({int(x["id"]) for x in sq.get("knowledgePointList", []) or []})
                         for pid in s_ids & set(targets):
                             rec = question_brief(sq)
                             rec["bigStem"] = clean(q.get("title"))   # 保留大题题干
