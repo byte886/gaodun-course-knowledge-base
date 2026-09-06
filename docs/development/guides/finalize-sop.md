@@ -43,9 +43,11 @@
 
 2. **不传** `_workspace/`、`transcript.json`、tmp、logs；
 
-3. 命令：`BAIDU_ENC_PASS=*** python3 scripts/baidu_upload.py`（凭证 `.secrets/baidu_credentials.enc`，国内直连）；分片上传 + MD5 秒传、断点续传；
+3. **知识来源原料先归位再备份（重要）**：`papers/`（接口采集的试卷题答 JSON，含题目/标准答案/解析/知识点标签）与 `user-notes-raw/`（用户笔记与留言原件）虽位于 `_workspace/`，但本质是**知识来源原料、不是可丢弃过程件**。清 `_workspace` 前必须先把它们复制归位到 `原始资源/papers/`、`原始资源/user-notes/`（Desktop 与 data 两份都归位），随本步骤一并传网盘；归位并核对一致后，`_workspace` 内的原件才允许在步骤 3 清。最终 `原始资源/` 为四类：`notes/`（讲义 PDF+OCR）、`videos/`（video.mp4+transcript.md）、`papers/`（题答 JSON）、`user-notes/`（笔记留言原件）；
 
-4. 传后核对本地↔网盘**文件数与大小**一致；改名走 rename 级联、不重传。
+4. 命令：`BAIDU_ENC_PASS=*** python3 scripts/baidu_upload.py`（凭证 `.secrets/baidu_credentials.enc`，国内直连）；分片上传 + MD5 秒传、断点续传；同名覆盖 precreate/create 都传 `rtype=3`（见 netdisk-setup.md）；
+
+5. 传后核对本地↔网盘**文件数与大小**一致，且要**逐讲核对到文件类型**：videos 每讲必须同时有 `video.mp4` 和 `transcript.md`（不能只核 mp4 数量，本课程曾出现单讲漏传 transcript.md）；papers/user-notes 按文件名集合 diff；改名走 rename 级联、不重传。
 
 ### 步骤 2　飞书知识库统一同步（只同步 "知识详解" 成品）
 
@@ -77,14 +79,16 @@
 | -- | -------------------------------------- | ------------------------------------------- |
 | 1  | `_workspace/tmp/{download,transcribe}` | 单任务成功即清                                     |
 | 2  | `_workspace/sniff`                     | 抓包结论已沉淀进文档 / 接口档案即删                         |
-| 3  | `_workspace/user-notes-raw`            | 留言已 **100% 提炼吸收**进 "学员补充" 后才删（门槛最高）         |
-| 4  | `_workspace` 整体                        | **双门禁**：92 篇校验通过 + 原始资源已传完网盘，**且**飞书同步回读一致后 |
+| 3  | `_workspace/papers`、`_workspace/user-notes-raw` | **先按步骤1归位到 `原始资源/` 并传网盘、核对一致**；笔记还需已提炼进"学员补充"，才可删（原料门槛最高） |
+| 4  | `_workspace` 整体                        | **双门禁**：92 篇校验通过 + 原始资源（含 papers/user-notes、videos 逐讲 transcript）已传完网盘，**且**飞书同步回读一致后 |
+
+> 清理一律 `mv` 到废纸篓（带时间戳后缀，Desktop 与 data 两份分别处理），不 `rm -rf` 硬删；清理后确认课程根只留 `原始资源/`、`知识详解/`（及待步骤 4 清退的旧目录）。
 
 ### 步骤 4　旧范式件清退（迁移期）
 
 
 
-* 旧按讲目录里的 video/transcript/docs/docs\_text 已迁入 `原始资源/`、旧成品已被阶段③消化后，清旧讲目录与 `.vfetch` 缓存；
+* 旧按讲目录里的 video/transcript/docs/docs\_text 已迁入 `原始资源/`、旧成品已被阶段③消化后，清旧讲目录与 `.vfetch` 缓存；**清退前必须做交叉校验**：递归统计每个旧讲目录的原料文件（video.mp4/transcript.md/docs PDF/docs_text OCR），按"文件大小→文件名"与新 `原始资源/` 全量集合比对，做到 100% 覆盖、逐个列出未覆盖项并补齐（本课程即以此发现 1 讲漏传 transcript.md，补传后才 100%）；旧成品（知识拆解/考试指导）确认已被 `知识详解/` 按知识点重组消化。**网盘旧目录删除属云端不可逆操作，必须把交叉校验结论列给用户、获明确授权后再删；本地旧目录移废纸篓。**
 
 * `knowledge-base/organized-content/`、`source-materials/` 被消化、与新成品交叉校验后清退；`lecture-resource-map.json` 职责已由 course-manifest 承接，随之移除；
 
