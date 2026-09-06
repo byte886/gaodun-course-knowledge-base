@@ -230,11 +230,39 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 
 ---
 
-## 九、冲刺模考（特殊模式，最后进行）
+## 九、冲刺模考（特殊分支，所有基础作业完成后进行）
 
-- **前置**：所有课程/讲座的视频、讲义、基础作业（100%）、题答采集、知识库、速查手册都完成后，才做 3 张 48 题冲刺模考，顺序不可提前（基础未全就做模考逻辑不成立）。
-- 接口是否完全适用（redo 是否回答案、dwell 阈值）**【待验证】**，到阶段先只读侦查、单独打通；当前主链路脚本硬排除、坚决不碰。
-- 模考的题/答/解析同为知识来源，完成后走采集→知识库迭代→速查手册更新→同步飞书（见 WORKFLOW 步骤5"冲刺模考"小节与步骤7/8）。
+### 9.1 定位与现状
+- **前置**：所有讲座视频、讲义、基础作业（100%）完成后才进入；冲刺是与基础作业并列的一条分支，不是同步飞书之后的步骤。
+- 每"套"冲刺含三类对象：**试卷**（origin=glivepro）、**机考**（origin=mock-cpa，paperType=109，题目与对应试卷相同）、**课后整卷视频解析**。26 税法考季共 3 套 = 6 卷 + 3 整卷视频。
+- 试卷/机考同样走接口主链路（redo 取题、submit 交卷），已全部跑通；主观答案与平台 AI 判分边界见 §4.3.1 与 [flaky-ai-judging.md](flaky-ai-judging.md)。
+
+### 9.2 冲刺的三类知识源与分流
+| 知识源 | 获取方式 | 加密 | 内容定位（分流） |
+|---|---|---|---|
+| 试卷/机考 题面+标准答案+解析 | `collect_paper_sources.js`（只读） | 无 | 题答解析、知识点 |
+| 整卷视频解析（126 分钟级串讲） | `fetch_sprint_video.js` | encrypt=0 不加密 | 考点串讲 → 知识拆解 |
+| **题目级讲解视频**（按大题，18–42 分钟/个） | 见 9.3 | **encrypt=1 AES-128** | "这道大题怎么一步步解" → 做题思路/题答解析 |
+
+### 9.3 题目级讲解视频抓取 SOP（加密，三段式）
+**事实（2026-09-06 CDP 侦查实证）**
+- vid 挂在子题 `questionAnswer.questionVideo.vid`，**按 type5 综合大题聚合**（一道大题一个 vid，其下子题共用）；解析页 URL 的 `cs_item_id/resource_id` 从 `syllabus_full.json` 取（每卷 `resourceIds[0]` = 试卷解析页 resource_id），答题卡入口是大题主序号"N-1"（普通题与大题父级各占一个主序号，子题不占）。
+- m3u8 为标准 HLS AES-128，分片在 glive2-video-resource。**key 不直接下发**：`replay/authorize` 直连返 40301、带 cookie fetch 报登录超时；播放器 sub-study-player 用 wasm 把 authorize 的 108B 加密包解成 16B key，明文只存在于 Worker 内存。
+- **key 是视频级固定值**（同 vid 跨会话抓取一致），故只需 CDP 抓一次，之后全部离线。
+
+**三段式流程**
+1. **抓 key（唯一需要 Chrome 的一步，一次性）**
+   `node scripts/cdp/fetch_question_video_keys.js`
+   CDP 打开逐题解析页→全部解析→对每个大题：开答题卡点"N-1"→点 `.sub-tiku__video-box img` 封面加载播放器→注入 Worker hook（hook `postMessage`，从 `to_worker` 的 `response` 取前 16B ASCII 即 key）→落 `data/cdp-sniff/qvideo_keys.json`。
+2. **下载解密（纯 Node，可并发/断点重跑，不再依赖浏览器）**
+   `node scripts/cdp/download_question_videos.js all`
+   JWT 取 **SD** m3u8（转写对分辨率不敏感，SD 又快又小；要高清改 res=FHD 需播放器切档另抓 key）→解析全局 IV→并发下载→逐片 `AES-128-CBC` 解密（校验首字节 0x47=MPEG-TS 同步字节）→顺序合并 merged.ts。**完成后必须 ffprobe 校验时长 == 接口 duration**。
+3. **remux + 并发转写**
+   `ffmpeg -i merged.ts -c copy -bsf:a aac_adtstoasc video.mp4`（TS→MP4 必须带 aac_adtstoasc），再 `bash scripts/transcribe_qvideos.sh 6`（FunASR，本机约 20x 实时、单进程约 2 核 3.3G，20 逻辑核默认并发 6）。
+
+### 9.4 踩坑（macOS）
+- **无 `flock`、无 `timeout`**：并发队列互斥锁不能用 flock（会静默失效、多 worker 重复抢同一任务），改用 `mkdir` 原子锁（见 transcribe_qvideos.sh / transcribe_parallel.sh）；限时等待用 node `setTimeout` 或后台任务，不用 timeout。
+- 抓 key 必须在 `evaluateOnNewDocument` 注入 hook（晚于播放器创建就 hook 不到 Worker）；切下一大题前以注入后 `__wd` 长度为基线，只取本次新增消息，避免串 vid。
 
 ---
 

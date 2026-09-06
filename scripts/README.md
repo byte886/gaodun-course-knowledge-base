@@ -188,7 +188,29 @@
 
 ---
 
-## 三、音频转写（6个）
+### `cdp/fetch_question_video_keys.js` — 题目级讲解视频抓 AES key（一次性，需 Chrome）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 题目级视频 encrypt=1、key 不下发（authorize 被鉴权拦，wasm 解密后只在 Worker 内存）；CDP 打开逐题解析页→点封面加载播放器→hook Worker `postMessage`，从 `to_worker.response` 取前 16B ASCII key，落 `data/cdp-sniff/qvideo_keys.json` |
+| **用法** | `node scripts/cdp/fetch_question_video_keys.js`（卷/大题入口/vid 已在脚本内配置，来自 syllabus_full.json 与 redo） |
+| **关键事实** | key 为视频级固定值、跨会话不变，故只需抓一次；hook 必须 evaluateOnNewDocument 注入 |
+| **可靠性** | ✅ 高（7/7 一次成功；缺哪个补哪个，已抓自动跳过） |
+
+---
+
+### `cdp/download_question_videos.js` — 题目级视频纯接口下载解密（离线可重跑）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 读 qvideo_keys.json 固定 key，JWT 取 SD m3u8→解析 IV→并发 10 下载→逐片 AES-128-CBC 解密（校验 0x47）→合并 merged.ts；产物 `data/sprint-videos/题目级讲解/qvideo_<pid>_<entry>_<vid8>/.vfetch/` |
+| **用法** | `node scripts/cdp/download_question_videos.js all` 或 `<vid8>`；分片落盘缓存、断点续跑 |
+| **实测** | 7 个共 175 分钟 / 约 458MB(SD)，全量下载解密约 40 秒；ffprobe 时长逐一==接口 duration |
+| **可靠性** | ✅ 高（分片 3 次重试、解密非 TS 立即报错） |
+
+---
+
+## 三、音频转写（7个）
 
 ### `transcribe_pipeline.py` — 单视频音频转写
 
@@ -255,10 +277,21 @@
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 待转讲列表写入队列文件，N 个 worker 用 flock 互斥取第一个空闲任务、做完再取（哪个 worker 快就多处理，天然负载均衡），失败讲自动写回队尾重试；单进程实测约占 2 核/3.3GB，本机 20 线程默认并发 6（约 12 核，留余量给 IO/系统） |
-| **用法** | `bash scripts/transcribe_parallel.sh [并发数N]`（默认 6） |
+| **用途** | 待转讲列表写入队列文件，N 个 worker 用 mkdir 原子锁互斥取第一个空闲任务（macOS 无 flock）、做完再取（哪个 worker 快就多处理，天然负载均衡），失败讲自动写回队尾重试；单进程实测约占 2 核/3.3GB，本机 20 线程默认并发 6（约 12 核，留余量给 IO/系统） |
+| **用法** | `bash scripts/transcribe_parallel.sh [并发数N]`（默认 6，对象=正课课程库） |
 | **可靠性** | ✅ 高（动态调度，优于固定分片） |
 | **相关文档** | WORKFLOW「多任务并发调度」、ADR-003 |
+
+---
+
+### `transcribe_qvideos.sh` — 题目级讲解视频并发转写
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 队列式并发转写 `data/sprint-videos/题目级讲解/qvideo_*/video.mp4`，输出 transcript.md/json 到各目录；结构同 transcribe_parallel，区别是临时目录用 vid8 唯一化（避免首段前缀都叫 qvideo 撞车）、对象是题目级视频 |
+| **用法** | `bash scripts/transcribe_qvideos.sh [并发数N]`（默认 6，已有 >1000 字 transcript 自动跳过） |
+| **实测** | FunASR 约 20x 实时，7 个共 175 分钟音频并发 6 约 8 分钟出齐（约 5.7 万字） |
+| **可靠性** | ✅ 高 |
 
 ---
 

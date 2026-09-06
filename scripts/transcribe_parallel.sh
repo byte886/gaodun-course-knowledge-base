@@ -10,9 +10,10 @@ PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
 COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
 WORK="$ROOT/transcription/.parallel_work"
-QUEUE="$WORK/pending.txt"; QLOCK="$WORK/pending.lock"
+QUEUE="$WORK/pending.txt"; QLOCKDIR="$WORK/pending.lock.d"
 LOGDIR="$WORK/logs"; MAINLOG="$WORK/parallel.log"
 mkdir -p "$WORK" "$LOGDIR"
+rm -rf "$QLOCKDIR"   # macOS 无 flock，用 mkdir 原子锁；启动清残留
 N="${1:-6}"
 
 # 生成待转写队列：有 video.mp4 且无 >1000 字 transcript 的讲
@@ -26,16 +27,18 @@ done
 TOTAL=$(wc -l < "$QUEUE")
 echo "==== 并发转写开始 $(date '+%F %T') 待转写 $TOTAL 讲 并发 $N ====" | tee "$MAINLOG"
 
-take_task() {  # flock 取队列首行，空则返回空
+lock_acquire(){ while ! mkdir "$QLOCKDIR" 2>/dev/null; do sleep 0.05; done; }
+lock_release(){ rmdir "$QLOCKDIR" 2>/dev/null||true; }
+take_task() {  # mkdir 原子锁取队列首行，空则返回空（macOS 无 flock）
   local line=""
-  exec 9<>"$QLOCK"; flock -x 9
+  lock_acquire
   line=$(head -1 "$QUEUE" 2>/dev/null || true)
   if [ -n "$line" ]; then tail -n +2 "$QUEUE" > "${QUEUE}.tmp" 2>/dev/null && mv "${QUEUE}.tmp" "$QUEUE"; fi
-  flock -u 9; exec 9>&-
+  lock_release
   printf '%s' "$line"
 }
 requeue() {  # 失败写回队列尾部
-  exec 9<>"$QLOCK"; flock -x 9; echo "$1" >> "$QUEUE"; flock -u 9; exec 9>&-
+  lock_acquire; echo "$1" >> "$QUEUE"; lock_release
 }
 process_one() {
   local d="$1" wid="$2"; local prefix; prefix=$(basename "$d" | cut -c1-2)
