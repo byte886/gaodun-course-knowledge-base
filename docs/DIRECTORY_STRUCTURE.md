@@ -58,7 +58,7 @@ gaodun-course-knowledge-base/
 ```
 
 要点：
-1. **Git 不再版本化课程成品**（旧 `knowledge-base/organized-content`、`source-materials` 是旧范式产物，作为阶段③输入被消化、校验后清退；`lecture-resource-map.json` 的职责由 `_workspace/manifest/course-manifest.json` 承接，见 ADR-012）。
+1. **Git 不再版本化课程成品**（旧 `knowledge-base/organized-content`、`source-materials` 已在阶段④清退；旧 `lecture-resource-map.json` 及其校验脚本 `verify_lecture_map.py`/`check_course_lib.py` 已按 ADR-012 退役——讲↔资源↔知识点路由统一由课程 `_workspace/manifest/course-manifest.json` 承接，可 rebuild、不入库）。
 2. 工程文档怎么分类、何时新建/删除/调整目录，见本文档第六章。
 
 ---

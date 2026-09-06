@@ -109,7 +109,8 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 2. 是否需要用 **git diff 追踪它随上游的变化**（如官方讲义调整后能看到改了什么）；
 3. 是否为**多个脚本共享的路由 / 索引 / 校验基线**。
 
-- 满足：入库，如 `knowledge-base/lecture-resource-map.json`（讲次→来源讲课件映射，`scripts/verify_lecture_map.py --rebuild` 可重建，入库留变化痕迹）。
+- 满足三问且**跨课程复用、属工程规则/基线**：入库（如脚本内的别名归一规则、模板、SOP、校验基线）。
+- **ADR-012 修订口径**：与**具体课程强绑定、可由 syllabus+papers 完全 rebuild** 的课程级路由（`course-manifest.json`，以及已退役的 `lecture-resource-map.json`/`verify_lecture_map.py`）即便体量轻也**不入库**，放课程 `_workspace/manifest/`；入库的是"如何生成它的规则与脚本"，而非某门课的实例。
 - 不满足：不入库，如 papers 正文 JSON、视频、PDF（大体量 L1，只本地 + 网盘）。
 
 #### 2.2.4 papers：物理集中存，逻辑按讲视图（存储与视图分离）

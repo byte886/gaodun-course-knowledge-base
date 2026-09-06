@@ -524,17 +524,6 @@
 
 ---
 
-### `verify_lecture_map.py` — 讲次课件映射校验 / 重建
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 校验 `knowledge-base/lecture-resource-map.json`（ADR-011 跨讲取料路由表）与课程库磁盘一致：结构完整（每讲有条目）、map 逻辑路径在真实目录存在、磁盘标准件反向被 map 收录、`讲义_/课件_` 旧命名件列 legacy；`--rebuild` 保留各讲「课件来源讲次」按磁盘重建文件清单写回 |
-| **用法** | `python3 scripts/verify_lecture_map.py`（只校验，不一致退出 1）；加 `--rebuild` 重建写回；`--course-root PATH` 指定课程 |
-| **可靠性** | ✅ 高（讲00/01 去重后复验 legacy=0、退出 0；幂等；自动选含 NN_ 目录最多的课程、避开空占位课程） |
-| **相关文档** | ADR-012、`knowledge-detail-build-sop.md`、standards 2.2 |
-
----
-
 ### `papers_view.py` — papers 题源按讲只读视图
 
 | 项目 | 说明 |
@@ -543,17 +532,6 @@
 | **用法** | `python3 scripts/papers_view.py`（全讲概览）；`--lecture 01` 或 `--lecture 增值税`（讲号/关键词）；`--json`（结构化输出供脚本消费） |
 | **可靠性** | ✅ 高（实测 34 讲 / 116 套 / 1296 题；chapter 前导空格自动 strip） |
 | **相关文档** | standards 2.2.4、ADR-011 |
-
----
-
-### `check_course_lib.py` — 课程库逐讲标准构成体检（只读）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 逐讲查标准构成与污染：A 线三件套（video.mp4/transcript.md/transcript.json）缺失、PDF 与 OCR 不成对、`讲义_/课件_` 旧命名 legacy、过程文件误入（*.log/*.tmp/*.done/VERIFICATION/SYNC/验证* 等）、未知子目录、docs 内杂项、空讲目录。与 verify_lecture_map 分工：后者管「跨讲取料路由」、本脚本管「单讲自身构成」 |
-| **用法** | `python3 scripts/check_course_lib.py`（发现问题退出 1、全干净 0）；`--course-root PATH` 指定课程 |
-| **可靠性** | ✅ 高（真实 39 讲全绿退出 0；/tmp 问题夹具 6 类问题全捕获退出 1） |
-| **相关文档** | standards 2.2、ADR-011 |
 
 ---
 
