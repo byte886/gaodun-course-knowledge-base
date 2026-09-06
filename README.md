@@ -47,7 +47,6 @@
 | 给项目做体检/维护（执行型） | `以项目架构师身份做一次维护检查：结构一致性+文档健康度，出报告` |
 | 项目整体进度 | `查询概览：给我一个项目整体状态的总结` |
 | 为什么这样做 | `查询历史：为什么[某个决策]是这样做的？` |
-| **刷新Playwright token** | `刷新Playwright token` |
 | 不确定想查什么 | `我想了解项目状态，请给我几个选项让我选择` |
 
 **完整速查表**：[PROJECT_STATUS_QUERY.md](docs/project-management/standards/PROJECT_STATUS_QUERY.md) 第零节
