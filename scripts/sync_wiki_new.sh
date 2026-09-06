@@ -32,15 +32,32 @@ create_and_fill() {
   local node_token="" obj_token=""
 
   # 先查找 parent 下是否已存在同名节点（复用之前创建的空节点，避免重复）
-  local existing=$(lark-cli wiki +node-list --space-id "$SPACE_ID" --parent-node-token "$parent" --as user --format json 2>/dev/null | python3 -c "
+  # 限流/内部错误时 node-list 可能返回空，必须重试，确认"查询成功且确无同名"后才允许新建
+  local existing="" qrc=1 q
+  for q in 1 2 3 4; do
+    existing=$(lark-cli wiki +node-list --space-id "$SPACE_ID" --parent-node-token "$parent" --as user --format json 2>/dev/null | python3 -c "
 import sys,json
-d=json.load(sys.stdin)
+try:
+    d=json.load(sys.stdin)
+except Exception:
+    sys.exit(3)
+if d.get('ok') is False:
+    sys.exit(3)
 target=sys.argv[1]
 for n in d.get('data',{}).get('nodes',[]):
     if n.get('title')==target:
         print(n.get('node_token',''), n.get('obj_token',''))
         break
 " "$title" 2>/dev/null)
+    qrc=$?
+    [ $qrc -eq 0 ] && break
+    echo "[查询重试${q}] ${title}（疑似限流）" >&2
+    sleep $((q*2))
+  done
+  if [ $qrc -ne 0 ]; then
+    echo "[FAIL查询] $title: 多次查询仍失败，为避免误建重复节点已跳过，请重跑" >&2
+    return 1
+  fi
 
   if [ -n "$existing" ]; then
     node_token=$(echo "$existing" | awk '{print $1}')
@@ -60,7 +77,7 @@ for n in d.get('data',{}).get('nodes',[]):
   # 写入 markdown 内容（通过 stdin 管道，避免 @file allowlist 限制），失败重试 3 次
   local upd=""
   for attempt in 1 2 3; do
-    upd=$(cat "$file" | lark-cli docs +update --doc "$obj_token" --command overwrite --doc-format markdown --content - --as user --format json 2>&1)
+    upd=$(cat "$file" | python3 "$SCRIPT_DIR/wiki_link_resolve.py" | lark-cli docs +update --doc "$obj_token" --command overwrite --doc-format markdown --content - --as user --format json 2>&1)
     if echo "$upd" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('ok') else 1)" 2>/dev/null; then
       break
     fi
@@ -89,9 +106,9 @@ echo "============================================"
 # 1. 课程全局篇（课程根下）
 echo "--- 课程全局篇 ---"
 create_and_fill "$PARENT" "课程做题思路解析" "$TAX/知识详解/课程做题思路解析.md"
-sleep 0.3
+sleep 0.8
 create_and_fill "$PARENT" "考试指导速查手册" "$TAX/知识详解/考试指导速查手册.md"
-sleep 0.3
+sleep 0.8
 
 # 2. 14个组
 TOTAL_GROUPS=0; TOTAL_POINTS=0
@@ -103,7 +120,7 @@ for group_dir in "$TAX/知识详解"/*/; do
   echo "--- 组: $group_name ---"
   group_node=$(create_and_fill "$PARENT" "$group_name" "$readme")
   TOTAL_GROUPS=$((TOTAL_GROUPS+1))
-  sleep 0.3
+  sleep 0.8
 
   # 组下知识点文档（排除README）
   for md in "$group_dir"/*.md; do
@@ -113,7 +130,7 @@ for group_dir in "$TAX/知识详解"/*/; do
     point_title="${fname%.md}"
     create_and_fill "$group_node" "$point_title" "$md" > /dev/null
     TOTAL_POINTS=$((TOTAL_POINTS+1))
-    sleep 0.25
+    sleep 0.7
   done
 done
 
