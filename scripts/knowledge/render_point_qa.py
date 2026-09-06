@@ -84,8 +84,10 @@ def main():
             groups.append([q.get("bigStem", ""), q.get("paperTitle", ""), q.get("paperId"), []])
         groups[idx[key]][3].append(q)
     n_sub = sum(len(g[3]) for g in groups)
-    lines += [f"### （二）计算 / 综合大题（{len(groups)} 道大题、{n_sub} 个小问）", ""]
-    lines += render_subj(groups)
+    # 无大题/小问时不渲染该分类标题（避免出现“（0 道大题、0 个小问）”空小节），与 assemble_point.py 对齐
+    if groups:
+        lines += [f"### （二）计算 / 综合大题（{len(groups)} 道大题、{n_sub} 个小问）", ""]
+        lines += render_subj(groups)
 
     text = "\n".join(lines).rstrip() + "\n"
     if a.out:
