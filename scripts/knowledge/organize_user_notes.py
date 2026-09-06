@@ -106,13 +106,10 @@ def organize_notes(kp_notes, kp_to_file):
             for kp, n in top_notes:
                 text = n.get("noteContent", "").strip()
                 student = n.get("studentName", "")
-                fab = n.get("fabulousNum", 0)
                 # 清理文本中的换行
                 text = re.sub(r'\n+', '；', text)
-                if fab > 0:
-                    md_lines.append(f"- {text}（学员 {student}，{fab} 赞）")
-                else:
-                    md_lines.append(f"- {text}（学员 {student}）")
+                # 点赞数仅用于排序筛选，不写入最终知识产物；只保留学员名作为来源标注
+                md_lines.append(f"- {text}（学员 {student}）")
                 total_count += 1
             md_lines.append("")
 
