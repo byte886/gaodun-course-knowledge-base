@@ -69,10 +69,10 @@ UI 兜底 ───────────────────────�
 node scripts/cdp/connectBrowser.js
 
 # 2) 抓包演示：抓 URL 含 baidu 的标签、刷新、采集 6 秒，结果落 data/cdp-sniff/*.jsonl
-node scripts/cdp/sniff_demo.js baidu 6 --reload
+node scripts/cdp/connectBrowser.js  # 环境自检：连接→列标签→断开
 
 # 3) 真实抓高顿（默认不刷新页面，避免误动作），先在日常 Chrome 打开并登录做题页
-node scripts/cdp/sniff_demo.js gaodun 20
+# 业务脚本 require('./cdp/connectBrowser') 复用连接
 ```
 
 可复用模块 `scripts/cdp/`：
@@ -81,7 +81,7 @@ node scripts/cdp/sniff_demo.js gaodun 20
 |---|---|
 | `connectBrowser.js` | 连接模块：Chrome 没开自动拉起（选上次/首个 Profile）、读端点、串行自动授权、退避重试、找页、安全断开；直接运行=自检 |
 | `press_allow.applescript` | macOS AX 代点「允许」（被连接模块自动调用，一般不用手动跑） |
-| `sniff_demo.js` | 最小抓包骨架：监听请求/响应、过滤静态噪音、XHR/fetch 取 body、落 JSONL |
+| `connectBrowser.js` | 连接日常 Chrome（可复用模块 + 自检）：读取 CDP 端点、自动 AXPress 授权、403 退避重试 |
 
 在自己的业务脚本里这样用：
 
@@ -185,7 +185,7 @@ Profile 选择规则（`pickProfile()`，可传 `{profile:'Profile 1'}` 强制�
 
 ## 7. 与现状 Playwright 扩展通道的边界
 
-- **UI 兜底继续用 Playwright 扩展**（`playwright_connect.sh`、`answer_*.sh` 等），其连接与 Token 刷新见同目录 [playwright-cli-guide.md](./playwright-cli-guide.md)；扩展模式下 CDP 被禁用，**不要在扩展通道里尝试 CDP**。
+- **纯接口主链路**：`cdp/api_do_paper.js` / `cdp/batch_redo_papers.js` / `cdp/do_sprint_paper.js`，零 UI 点选；CDP 仅用于 connectBrowser 连接日常 Chrome 复用登录态。
 - **接口化主链路用本手册的 puppeteer-core 通道**；两条通道可同时 attach 到同一个日常 Chrome，互不冲突。
 - 页面内 hook 方案 `scripts/capture_exam_net.js`（经扩展注入 fetch/XHR hook 到 `window.__net`）是另一种采集思路，可作为 CDP 抓包的交叉校验，不替代连接层。
 

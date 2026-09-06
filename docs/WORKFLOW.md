@@ -118,7 +118,7 @@
 | 音频转写 | `scripts/transcribe_pipeline.py` |
 | 网盘上传 | `scripts/baidu_upload.py` |
 | 做题/交卷（接口主链路） | `scripts/cdp/api_do_paper.js`（syllabus→redo取答案→submit交卷→exam-report回查） |
-| 做题/交卷（UI 兜底，仅异常） | `answer_option.sh`、`answer_multi.sh`、`submit_exam.sh` |
+| 做题/交卷（纯接口主链路） | `cdp/api_do_paper.js`（单卷）、`cdp/batch_redo_papers.js`（批量）、`cdp/do_sprint_paper.js`（冲刺） |
 
 完整索引见 [scripts/README.md](../scripts/README.md)。
 

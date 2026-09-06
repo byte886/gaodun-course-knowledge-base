@@ -25,7 +25,7 @@
 3. 课程目录 `知识详解/NN_模块组/{官方知识点}.md` — 知识点单篇（一篇 4 节，含题答解析）
 4. `docs/development/guides/knowledge-detail-build-sop.md` — 题答如何加工成知识详解
 5. 课程库层 `通用做题思路解析.md`、课程层 `知识详解/课程做题思路解析.md` — 做题方法论
-6. `scripts/cdp/api_do_paper.js` — 纯接口做卷（推荐）；`scripts/answer_option.sh`/`scripts/answer_multi.sh`/`scripts/submit_exam.sh` — 旧 UI 做题脚本（兜底）
+6. `scripts/cdp/api_do_paper.js` — 纯接口做卷（单卷推荐）；`scripts/cdp/batch_redo_papers.js` — 批量补做；`scripts/cdp/do_sprint_paper.js` — 冲刺模考 6 卷
 
 ### 视频下载/压缩
 1. `docs/WORKFLOW.md` 第2节

@@ -9,7 +9,7 @@
 
 ---
 
-## 脚本总览（已登记 65 个，与 `scripts/` 磁盘文件一一对应）
+## 脚本总览（已登记 60 个，与 `scripts/` 磁盘文件一一对应）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
@@ -30,48 +30,15 @@
 
 ---
 
-## 一、做题自动化（3个）
+---
 
-### `answer_option.sh` — 单选题选项点击
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 点击单选题的单个选项（A/B/C/D） |
-| **用法** | `bash scripts/answer_option.sh C` |
-| **可靠性** | ✅ 高（已验证，JavaScript直接点击，不依赖ref） |
-| **相关文档** | `docs/development/guides/exam-workflow.md` |
-
-**原理**：通过文本内容匹配选项元素，使用 `element.click()` 直接点击。过滤条件：文本精确匹配、元素可见、top>150（排除导航）、尺寸合理。
 
 ---
 
-### `answer_multi.sh` — 多选题选项点击
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 点击多选题的多个选项（可传多个参数） |
-| **用法** | `bash scripts/answer_multi.sh A B D` |
-| **可靠性** | ✅ 高（已验证，解决了ref失效问题） |
-| **相关文档** | `docs/development/guides/exam-workflow.md` |
-
-**注意**：多选题点击后不会自动跳题，需要手动点击"下一题"。
 
 ---
 
-### `submit_exam.sh` — 交卷并查看成绩
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 点击交卷按钮，等待成绩页面加载 |
-| **用法** | `bash scripts/submit_exam.sh` |
-| **可靠性** | ✅ 高（已验证） |
-| **相关文档** | `docs/development/guides/exam-workflow.md` |
-
-**注意**：交卷前必须检查所有题目已作答（打开答题卡确认无未做题）。
-
----
-
-## 二、视频处理（10个）
+## 二、视频处理（9个）
 
 ### `download_decrypt.js` — HLS视频下载解密合并
 
@@ -155,14 +122,6 @@
 
 ---
 
-### `cdp/probe_sprint_video.js` — 冲刺点播视频取流链路只读侦查
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | CDP 打开冲刺「视频解析」播放页，监听并落盘 videoId→m3u8 的取流请求（侦查/排障用，不下载） |
-| **用法** | `node scripts/cdp/probe_sprint_video.js [卷=1] [采集秒=22]` |
-| **关键结论** | 冲刺点播走 `GET /glive2-vod/api/v1/live/resource?code=<videoId>&res=FHD` 直出 m3u8、`encrypt=0` 不加密，区别于正课直播回放（加密、需 CDP 抓 key） |
-| **可靠性** | ✅ 只读 |
 
 ---
 
@@ -391,18 +350,8 @@
 
 ---
 
-## 六、环境与工具（7个）
+## 六、环境与工具（6个）
 
-### `playwright_connect.sh` — Playwright连接恢复
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 检查Playwright连接状态，失败时自动刷新Token并重连 |
-| **用法** | `bash scripts/playwright_connect.sh` |
-| **可靠性** | ✅ 高（已验证，自动恢复流程） |
-| **相关文档** | `docs/development/tools/playwright-cli-guide.md` 第4节 |
-
-**注意**：连接失败时先运行此脚本自动恢复，**禁止直接要求用户手动操作**。
 
 ---
 
@@ -561,7 +510,7 @@
 
 ---
 
-## 九、浏览器 CDP 连接（3个，位于 `scripts/cdp/`）
+## 九、浏览器 CDP 连接（2个，位于 `scripts/cdp/`）
 
 > 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
 
@@ -587,84 +536,28 @@
 
 ---
 
-### `cdp/sniff_demo.js` — 网络抓包骨架
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | attach 指定 URL 标签，监听请求/响应（XHR/fetch 取 body），过滤静态噪音，落 JSONL 到 `data/cdp-sniff/`（不入库） |
-| **用法** | `node scripts/cdp/sniff_demo.js [URL关键词] [秒数] [--reload]`，如 `node scripts/cdp/sniff_demo.js gaodun 20` |
-| **可靠性** | ✅ 高（百度页实测 93 请求、记录 57 条）；真实高顿接口待抓 |
-| **相关文档** | `docs/development/tools/browser-cdp-connect-guide.md` |
 
 ---
 
-## 十、高顿做题接口链路（12个，位于 `scripts/cdp/`）
+## 十、高顿做题接口链路（6个，位于 `scripts/cdp/`）
 
-> 「接口为主、UI 兜底」的侦查与验证脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)，过程见《任务报告_做题接口侦查与纯接口闭环验证_2026-09-02》。报文落 `data/cdp-sniff/`（不入库）。除 `answer_submit_capture.js` 走 UI 交卷外，其余只读或纯接口。
+> 「接口为主、UI 兜底」的纯接口做题脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)。报文落 `data/cdp-sniff/`（不入库）。
 
-### `cdp/probe_exam_entry.js` — 只读列课程表做题/考试入口
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 解析 class-schedule 页，区分可重做知识点卷（button.ant-btn-link「重新做题」）与正式/模考卷，避免误点 |
-| **用法** | `node scripts/cdp/probe_exam_entry.js` |
-| **可靠性** | ✅ 高（只读，不点击、不进卷） |
-| **相关文档** | gaodun-exam-api.md §2.1 |
 
 ---
 
-### `cdp/probe_quiz_dom.js` — 只读探做题页 DOM/iframe
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 确认做题页无 iframe、选项为 `div.sub-tiku__question-select-item`、逐题分页、交卷/确认按钮结构 |
-| **用法** | `node scripts/cdp/probe_quiz_dom.js`（需已打开一张做题标签） |
-| **可靠性** | ✅ 高（只读） |
-| **相关文档** | gaodun-exam-api.md §0 |
 
 ---
 
-### `cdp/capture_quiz_load.js` — 进卷抓 redo-paper
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 在课程表精准点指定可重做卷（最小单卷容器判卷、拒绝正式卷），监听新标签加载期请求/响应落 JSONL |
-| **用法** | `node scripts/cdp/capture_quiz_load.js [卡片关键字=计税依据] [等待秒=14]` |
-| **可靠性** | ✅ 高（已两次稳定抓到完整 redo-paper） |
-| **相关文档** | gaodun-exam-api.md §2.3 |
 
 ---
 
-### `cdp/capture_schedule_list.js` — 抓 syllabus 全量大纲
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | reload 课程表+滚动触发懒加载，抓课程大纲接口（枚举全部作业入口），标注含 paperId/resourceId 的响应 |
-| **用法** | `node scripts/cdp/capture_schedule_list.js` |
-| **可靠性** | ✅ 高（单接口返回 119 张卷、无分页；大响应上限已设 4MB 防截断） |
-| **相关文档** | gaodun-exam-api.md §2.1 |
 
 ---
 
-### `cdp/answer_submit_capture.js` — UI 作答+交卷抓包（对照实验）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 实时取 redo-paper 答案后用 UI 逐题点选并交卷，抓 submit-question/submit-paper/exam-report；用于定位 UI 路线不稳根因 |
-| **用法** | `node scripts/cdp/answer_submit_capture.js [卡片关键字=计税依据]`（**会真实交一次可重做卷**） |
-| **可靠性** | ⚠️ 仅实验用：UI 题序/时序问题会导致错位（实测 1/6），生产走纯接口 |
-| **相关文档** | 任务报告 §4 |
 
 ---
 
-### `cdp/api_submit_test.js` — 6 题卷纯接口闭环验证
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 不做任何 UI 点选，Node 直连 record→redo-paper→submit-paper→exam-report，验证纯接口满分与「最小作答时长」风控 |
-| **用法** | `node scripts/cdp/api_submit_test.js`（JWT 从最近抓包自动提取；会真实交一次可重做卷） |
-| **可靠性** | ✅ 验证通过（6/6）；通用场景用 `api_do_paper.js` |
-| **相关文档** | gaodun-exam-api.md §2.5、任务报告 §5 |
 
 ---
 
@@ -741,40 +634,16 @@
 
 ---
 
-## 十一、飞书知识库同步（4个）
+## 十一、飞书知识库同步（1个）
 
-> 旧时期的批量同步脚本。飞书同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准；下列脚本保留用于批量场景，存量迁移到 14 组→知识点结构后，使用前必须核对与现行节点结构一致。
+> 飞书同步现役脚本。同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准。
 
-### `sync_wiki.sh` — 批量同步知识库到飞书（建节点）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 按区间，批量把本地知识详解同步为飞书 wiki 节点（旧脚本，按 14 组→知识点结构核对后再用） |
-| **用法** | `bash scripts/sync_wiki.sh <起始章号> <结束章号>`，如 `bash scripts/sync_wiki.sh 04 15` |
-| **可靠性** | ⚠️ 中（旧 15 章结构，34 讲用前先核对） |
-| **相关文档** | WORKFLOW 步骤8、lark-wiki/lark-doc skill |
 
 ---
 
-### `update_wiki_content.sh` — 更新飞书节点内容（旧版）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 节点已创建时，按章号区间只更新节点正文内容 |
-| **用法** | `bash scripts/update_wiki_content.sh <起始章号> <结束章号>` |
-| **可靠性** | ⚠️ 中（旧版，保留备查；更健壮版本见 update_wiki_v2.sh） |
-| **相关文档** | WORKFLOW 步骤8 |
 
 ---
 
-### `update_wiki_v2.sh` — 批量更新飞书节点内容（v2）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | v2 更健壮版本，批量更新已建飞书节点的正文 |
-| **用法** | `bash scripts/update_wiki_v2.sh <起始章号> <结束章号>` |
-| **可靠性** | ⚠️ 中（34 讲同步优先按 SOP / lark-cli） |
-| **相关文档** | WORKFLOW 步骤8 |
 
 ---
 
@@ -789,7 +658,104 @@
 
 ---
 
-## 十二、侦查 / PoC 网络采集（3个）
+
+## 十二、知识详解生成（4个，位于 `scripts/knowledge/`）
+
+> 按官方知识点聚合生成知识详解 md 的核心生产脚本。流程：collect_point_questions（按知识点收题）→ render_point_qa（渲染题答解析）→ organize_user_notes（整理学员补充）→ assemble_point（组装成篇）。
+
+### `knowledge/collect_point_questions.py` — 按知识点收集题目
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 从 papers 原料中按官方知识点标签聚合题目，客观题取顶层、主观题下钻 subQuestionList 小问层 |
+| **用法** | `python3 scripts/knowledge/collect_point_questions.py` |
+| **可靠性** | ✅ 高（92 知识点全覆盖，含小问层知识点等价归一） |
+| **相关文档** | ADR-012、knowledge-detail-build-sop.md |
+
+---
+
+### `knowledge/render_point_qa.py` — 题答解析渲染
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把收集到的题目渲染为「三、题答解析」节，客观题（答案+解析）与主观题（分点答案+点拨）两型；题量为 0 的分类整段不渲染（`if groups:` 保护） |
+| **用法** | `python3 scripts/knowledge/render_point_qa.py` |
+| **可靠性** | ✅ 高（已根治 0 空小节问题；与 assemble_point.py 的 if groups 逻辑对齐） |
+| **相关文档** | ADR-012、KNOWLEDGE_BASE_TEMPLATE.md |
+
+---
+
+### `knowledge/organize_user_notes.py` — 用户笔记整理（四分类+去元数据）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把原始用户笔记（含学员名/点赞数/日期）按四分类（记忆口诀/易错点辨析/解题技巧/知识补充）整理，每类按赞 Top5 筛选，输出纯知识内容（**不输出学员名/点赞数/用户ID/日期**，元数据仅保留在原始资料中用于溯源） |
+| **用法** | `python3 scripts/knowledge/organize_user_notes.py` |
+| **可靠性** | ✅ 高（744 条覆盖 92 篇；已彻底移除元数据输出） |
+| **相关文档** | ADR-013、collect_user_notes.js |
+
+---
+
+### `knowledge/assemble_point.py` — 知识点篇组装（四节合一）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把知识拆解/考试指导/题答解析/学员补充四节组装为一篇知识点 md，写入课程「知识详解/」对应章节目录；`if groups:` 保护空分类不渲染 |
+| **用法** | `python3 scripts/knowledge/assemble_point.py` |
+| **可靠性** | ✅ 高（92 篇+2 全局篇，已用于税法课全量生成） |
+| **相关文档** | ADR-012、knowledge-detail-build-sop.md |
+
+---
+
+## 十三、存量迁移工具（4个，位于 `scripts/migrate/`）
+
+> 为税法课从旧「按讲端到端」结构迁移到新「三层解耦+按知识点聚合」结构而写的一次性工具。新课程不直接套用，通用化属「会计课开工前工具建设」另议。详见 `scripts/migrate/README.md`。
+
+### `migrate/align_m0.py` — M0 存量对齐
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 迁移前存量对齐：核对旧按讲目录与新三层结构的资源映射 |
+| **用法** | `python3 scripts/migrate/align_m0.py` |
+| **可靠性** | ⚠️ 一次性迁移工具，新课程不直接套用 |
+| **相关文档** | scripts/migrate/README.md、ADR-012 |
+
+---
+
+### `migrate/build_course_manifest.py` — 构建课程 manifest
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 从 syllabus 接口报文 + papers 生成 course-manifest.json（讲↔资源↔知识点完整映射），可 rebuild、可校验 |
+| **用法** | `python3 scripts/migrate/build_course_manifest.py` |
+| **可靠性** | ⚠️ 为税法课定制（硬编码课程路径、读 data/cdp-sniff 旧输入），非通用生成器 |
+| **相关文档** | scripts/migrate/README.md、ADR-012 |
+
+---
+
+### `migrate/migrate_resources.py` — 资源迁移（旧按讲→新三层）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把旧按讲目录中的 videos/notes/papers 迁移到新三层结构（原始资源/按类型分桶） |
+| **用法** | `python3 scripts/migrate/migrate_resources.py` |
+| **可靠性** | ⚠️ 一次性迁移工具 |
+| **相关文档** | scripts/migrate/README.md、ADR-012 |
+
+---
+
+### `migrate/verify_migration.py` — 迁移总校验
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 对照《存量迁移方案》验收清单逐项核验，全绿才判定迁移完成 |
+| **用法** | `python3 scripts/migrate/verify_migration.py` |
+| **可靠性** | ✅ 高（税法课迁移已全绿通过） |
+| **相关文档** | scripts/migrate/README.md、ADR-012 |
+
+---
+
+## 十四、侦查 / PoC 网络采集（3个）
 
 > 路线探索期脚本。现役浏览器链路是 `cdp/connectBrowser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 PoC 备查与 Playwright 备用采集手段，**非生产链路**。
 
@@ -830,7 +796,7 @@
 
 1. **先查本文档再用脚本**：执行任务前，先在本文档中找到对应脚本，了解用途、用法、可靠性
 2. **优先用脚本，不手动写命令**：已有脚本的功能，必须用脚本，不要手动写JavaScript或curl
-3. **做题必须用脚本**：`answer_option.sh` / `answer_multi.sh` / `submit_exam.sh`，禁止手动写ref点击
+3. **做题必须用脚本**：`cdp/api_do_paper.js`（单卷）/ `cdp/batch_redo_papers.js`（批量）/ `cdp/do_sprint_paper.js`（冲刺模考），纯接口主链路，禁止手动 UI 点选
 4. **批量任务在iTerm中运行**：`batch_transcribe.sh`、`batch_ocr.sh`、`compress.sh`（批量模式）必须在iTerm中运行，不要后台运行
 5. **新增脚本必须更新本文档**：新增脚本时，必须在本文档对应分类中添加说明（用途/用法/可靠性/相关文档）
 

@@ -437,9 +437,9 @@
   - 讲义OCR：`scripts/batch_ocr.sh`
   - 音频转写：`scripts/transcribe_pipeline.py`
   - 网盘上传：`scripts/baidu_upload.py`
-  - 做题（单选）：`scripts/answer_option.sh`
-  - 做题（多选）：`scripts/answer_multi.sh`
-  - 交卷：`scripts/submit_exam.sh`
+  - 做题（单卷）：`scripts/cdp/api_do_paper.js`
+  - 做题（批量）：`scripts/cdp/batch_redo_papers.js`
+  - 冲刺模考：`scripts/cdp/do_sprint_paper.js`
 - **OCR统一工具**：macOS Vision框架
 - **浏览器操作**：使用Playwright附加到已登录Chrome（Extension模式），不新开窗口（新窗口没有登录状态）
 - **下载方式**：使用后台下载（curl），不弹出Chrome下载确认框
