@@ -90,6 +90,8 @@ def upload_file(local_path, remote_path, token):
 
     # 2. precreate
     print("[1/3] Precreate...")
+    # rtype=3 覆盖同名（官方文档：0冲突/1冲突即重命名[默认]/2内容不同才重命名/3覆盖）
+    # 注意：上传三步接口用 rtype，不是 ondup（ondup 是 filemanager 复制/移动接口的参数）
     result = curl_api(API_BASE, {
         "method": "precreate",
         "access_token": token,
@@ -98,6 +100,7 @@ def upload_file(local_path, remote_path, token):
         "size": str(file_size),
         "isdir": "0",
         "autoinit": "1",
+        "rtype": "3",
         "block_list": json.dumps(block_list),
     })
     if result.get("errno") != 0:
@@ -137,6 +140,7 @@ def upload_file(local_path, remote_path, token):
 
     # 4. create (合并)
     print("[3/3] Merging chunks...")
+    # rtype=3 覆盖同名（precreate/create 都要传；默认 1 会重命名为 文件名_日期.后缀）
     result = curl_api(API_BASE, {
         "method": "create",
         "access_token": token,
@@ -144,6 +148,7 @@ def upload_file(local_path, remote_path, token):
         "path": remote_path,
         "size": str(file_size),
         "isdir": "0",
+        "rtype": "3",
         "block_list": json.dumps(block_list),
         "uploadid": uploadid,
     })

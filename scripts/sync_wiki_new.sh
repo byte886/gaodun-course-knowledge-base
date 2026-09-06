@@ -90,6 +90,8 @@ echo "============================================"
 echo "--- 课程全局篇 ---"
 create_and_fill "$PARENT" "课程做题思路解析" "$TAX/知识详解/课程做题思路解析.md"
 sleep 0.3
+create_and_fill "$PARENT" "考试指导速查手册" "$TAX/知识详解/考试指导速查手册.md"
+sleep 0.3
 
 # 2. 14个组
 TOTAL_GROUPS=0; TOTAL_POINTS=0

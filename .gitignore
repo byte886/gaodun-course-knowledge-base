@@ -43,6 +43,7 @@ segments/
 *.tmp
 *.bak
 *.orig
+_workspace/
 
 # --- 运行日志与阶段完成哨兵（本地运行状态；进度正式记录在 project-management/active 台账）---
 *.log

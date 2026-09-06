@@ -196,6 +196,23 @@ BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py <本地文件> <网盘�
 
 流程：precreate（预创建）→ upload（4MB分片上传）→ create（合并）。支持 MD5 秒传和断点续传。
 
+> [!IMPORTANT]
+> **同名文件覆盖必须传 `rtype=3`（2026-09-06 踩坑沉淀，官方文档：pan.baidu.com/union/document/upload）**
+>
+> 上传三步接口（precreate/create）控制重名的参数是 **`rtype`（int）**，不是 `ondup`：
+>
+> | rtype | 行为 |
+> |---|---|
+> | 0 | 不重命名，同名直接返回冲突错误 |
+> | 1 | **默认**，只要 path 冲突就重命名为 `文件名_YYYYMMDD_HHMMSS.后缀` |
+> | 2 | path 冲突且 block_list（内容）不同才重命名 |
+> | 3 | **覆盖同名**（更新文件时必须用这个） |
+>
+> - `rtype` 在 **precreate 和 create 两步都要传**，放在 POST body（与 path/size/block_list 一起，官方示例即 `-d` 表单）。
+> - `ondup` 是 **filemanager 复制/移动（copy/move）接口** 的参数，对上传三步接口**完全无效**；误传 ondup 不会报错，只会静默走默认 rtype=1，产生大量 `_时间戳` 改名文件。
+> - `scripts/baidu_upload.py` 已在 precreate/create 固定 `rtype=3`；若将来看到网盘出现 `xxx_20260906_*.md` 这类文件，先检查 rtype 是否被改回。
+> - 通用参数 `access_token` 必须在 URL query 里；业务参数在 body。
+
 #### 删除文件/文件夹
 
 ```bash
