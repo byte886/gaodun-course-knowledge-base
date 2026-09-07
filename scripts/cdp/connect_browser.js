@@ -1,5 +1,5 @@
 /**
- * connectBrowser.js — 连接「用户正在使用的日常 Chrome」
+ * connect_browser.js — 连接「用户正在使用的日常 Chrome」
  *
  * 两大职责：
  *   A. Chrome 生命周期：Chrome 没开时自动拉起（用「上次使用的 Profile」，第一次用第一个 Profile）；
@@ -339,7 +339,7 @@ async function safeDisconnect(browser) {
 }
 
 // 直接运行本文件 = 环境自检：确保 Chrome 运行 → 连接 → 打印浏览器版本与标签 → 断开
-// 用法：node scripts/cdp/connectBrowser.js
+// 用法：node scripts/cdp/connect_browser.js
 if (require.main === module) {
   (async () => {
     const t0 = Date.now();

@@ -549,12 +549,12 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 > 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
 
-### `cdp/connectBrowser.js` — 连接日常 Chrome（可复用模块 + 自检）
+### `cdp/connect_browser.js` — 连接日常 Chrome（可复用模块 + 自检）
 
 | 项目 | 说明 |
 |------|------|
 | **用途** | 读取带 UUID 的 CDP 端点、自动 AXPress 授权、403 退避重试，导出 `connectDailyChrome/findPage/listPages/safeDisconnect` |
-| **用法** | `node scripts/cdp/connectBrowser.js`（环境自检：连接→列标签→断开）；业务脚本 `require('./cdp/connectBrowser')` |
+| **用法** | `node scripts/cdp/connect_browser.js`（环境自检：连接→列标签→断开）；业务脚本 `require('./cdp/connect_browser')` |
 | **可靠性** | ✅ 高（已实测，连续连接稳定，1.4~3.6s 连上且保留用户页面） |
 | **相关文档** | `docs/development/tools/browser-cdp-connect-guide.md`、ADR-010 |
 
@@ -565,7 +565,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 递归遍历 Chrome 控件，对「允许」按钮执行元素级 AXPress（文字在 AXDescription），多屏可靠；无弹窗时无副作用 |
-| **用法** | 一般由 connectBrowser.js 自动调用；手工调试：`osascript scripts/cdp/press_allow.applescript` |
+| **用法** | 一般由 connect_browser.js 自动调用；手工调试：`osascript scripts/cdp/press_allow.applescript` |
 | **可靠性** | ✅ 高（需在系统设置授予「辅助功能」权限） |
 | **相关文档** | `docs/development/guides/macos-accessibility-automation.md` |
 
@@ -825,13 +825,13 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ## 十四、侦查 / PoC 网络采集（3个）
 
-> 路线探索期脚本。现役浏览器链路是 `cdp/connectBrowser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 PoC 备查与 Playwright 备用采集手段，**非生产链路**。
+> 路线探索期脚本。现役浏览器链路是 `cdp/connect_browser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 PoC 备查与 Playwright 备用采集手段，**非生产链路**。
 
 ### `poc_persistent_browser.js` —【PoC】持久化专用 Chrome + 进程外抓包
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 可行性验证：脚本自开浏览器/导航/抓包，无需 Extension 授权，独立 profile 存 `data/browser-profile/`，context.on 增量落 JSONL/HAR。**属未采用路线**：现役改走 cdp/connectBrowser 直连用户日常 Chrome 复用登录态，独立 profile 已删，本脚本仅留作路线备查 |
+| **用途** | 可行性验证：脚本自开浏览器/导航/抓包，无需 Extension 授权，独立 profile 存 `data/browser-profile/`，context.on 增量落 JSONL/HAR。**属未采用路线**：现役改走 cdp/connect_browser 直连用户日常 Chrome 复用登录态，独立 profile 已删，本脚本仅留作路线备查 |
 | **用法** | `node scripts/poc_persistent_browser.js`（POC_DURATION_MS 可改常驻时长） |
 | **可靠性** | ⚠️ PoC 备查，非现役链路 |
 | **相关文档** | ADR-010、browser-cdp-connect-guide.md |

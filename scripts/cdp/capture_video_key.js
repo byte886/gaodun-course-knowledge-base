@@ -11,7 +11,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { connectDailyChrome, safeDisconnect } = require('./connectBrowser');
+const { connectDailyChrome, safeDisconnect } = require('./connect_browser');
 const { workspaceDir } = require('./load_profile');
 
 const playUrl = process.argv[2];

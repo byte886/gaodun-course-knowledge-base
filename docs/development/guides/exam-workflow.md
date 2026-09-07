@@ -52,7 +52,7 @@
 ## 二、执行前准备
 
 1. **登录态（唯一需要用户的环节）**：日常 Chrome 保持登录高顿。JWT 存于业务请求头 `authentication`，HS256、**7天有效**；缺失/过期 → **暂停交用户登录，不自行试探、不读取密码**。登录后脚本自动从 `data/_workspace/_account/auth/*.jsonl` 倒序提取 JWT，JWT/Cookie 禁止入库。
-2. **连接自检**：`node scripts/cdp/connectBrowser.js`（连接→列标签→断开）。连接通道与"允许远程调试"弹窗处理见 ADR-010 与 [浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)。
+2. **连接自检**：`node scripts/cdp/connect_browser.js`（连接→列标签→断开）。连接通道与"允许远程调试"弹窗处理见 ADR-010 与 [浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)。
 3. **刷新作业基线（只读，必做）**：`node scripts/cdp/refresh_inventory.js`（约1–2分钟，低频只读）。它拉 syllabus 枚举全部 paper、对每张只读 record 审计，产出：
    - `data/_workspace/<profile>/manifest/papers_inventory.json`（全量）
    - `data/_workspace/<profile>/manifest/papers_audit.json`（待做：非满分且非冲刺）
@@ -271,7 +271,7 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 ## 十、做题任务检查清单（接口版）
 
 **执行前**
-- [ ] 日常 Chrome 已登录、connectBrowser 自检通过、JWT 有效（无效交用户）
+- [ ] 日常 Chrome 已登录、connect_browser 自检通过、JWT 有效（无效交用户）
 - [ ] 已跑 refresh_inventory，audit 清单与实际一致、已排除冲刺模考
 - [ ] 批量先 dry-run 确认待做卷清单
 

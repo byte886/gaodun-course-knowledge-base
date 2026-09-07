@@ -113,7 +113,7 @@
 
 | 任务 | 统一使用 |
 |------|----------|
-| 连接日常 Chrome（主通道，ADR-010） | `scripts/cdp/connectBrowser.js`（puppeteer-core 经 CDP 连已登录日常 Chrome，免重登） |
+| 连接日常 Chrome（主通道，ADR-010） | `scripts/cdp/connect_browser.js`（puppeteer-core 经 CDP 连已登录日常 Chrome，免重登） |
 | 视频下载解密 | `scripts/download_decrypt.js` |
 | 视频压缩 | `scripts/compress.sh` |
 | 讲义 OCR | `scripts/batch_ocr.sh` |

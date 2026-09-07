@@ -66,27 +66,27 @@ UI 兜底 ───────────────────────�
 
 ```bash
 # 1) 环境自检：自动点授权 → 连接日常 Chrome → 打印版本和所有标签 → 干净断开
-node scripts/cdp/connectBrowser.js
+node scripts/cdp/connect_browser.js
 
 # 2) 抓包演示：抓 URL 含 baidu 的标签、刷新、采集 6 秒，结果落 data/_workspace/_account/auth/*.jsonl
-node scripts/cdp/connectBrowser.js  # 环境自检：连接→列标签→断开
+node scripts/cdp/connect_browser.js  # 环境自检：连接→列标签→断开
 
 # 3) 真实抓高顿（默认不刷新页面，避免误动作），先在日常 Chrome 打开并登录做题页
-# 业务脚本 require('./cdp/connectBrowser') 复用连接
+# 业务脚本 require('./cdp/connect_browser') 复用连接
 ```
 
 可复用模块 `scripts/cdp/`：
 
 | 文件 | 作用 |
 |---|---|
-| `connectBrowser.js` | 连接模块：Chrome 没开自动拉起（选上次/首个 Profile）、读端点、串行自动授权、退避重试、找页、安全断开；直接运行=自检 |
+| `connect_browser.js` | 连接模块：Chrome 没开自动拉起（选上次/首个 Profile）、读端点、串行自动授权、退避重试、找页、安全断开；直接运行=自检 |
 | `press_allow.applescript` | macOS AX 代点「允许」（被连接模块自动调用，一般不用手动跑） |
-| `connectBrowser.js` | 连接日常 Chrome（可复用模块 + 自检）：读取 CDP 端点、自动 AXPress 授权、403 退避重试 |
+| `connect_browser.js` | 连接日常 Chrome（可复用模块 + 自检）：读取 CDP 端点、自动 AXPress 授权、403 退避重试 |
 
 在自己的业务脚本里这样用：
 
 ```js
-const { connectDailyChrome, findPage, safeDisconnect } = require('./cdp/connectBrowser');
+const { connectDailyChrome, findPage, safeDisconnect } = require('./cdp/connect_browser');
 
 const browser = await connectDailyChrome();          // Chrome 没开会自动拉起(上次/首个Profile) + 自动授权 + 重试
 const page = await findPage(browser, 'glivepro.gaodun.com');
@@ -185,7 +185,7 @@ Profile 选择规则（`pickProfile()`，可传 `{profile:'Profile 1'}` 强制�
 
 ## 7. 与现状 Playwright 扩展通道的边界
 
-- **纯接口主链路**：`cdp/api_do_paper.js` / `cdp/batch_redo_papers.js` / `cdp/do_sprint_paper.js`，零 UI 点选；CDP 仅用于 connectBrowser 连接日常 Chrome 复用登录态。
+- **纯接口主链路**：`cdp/api_do_paper.js` / `cdp/batch_redo_papers.js` / `cdp/do_sprint_paper.js`，零 UI 点选；CDP 仅用于 connect_browser 连接日常 Chrome 复用登录态。
 - **接口化主链路用本手册的 puppeteer-core 通道**；两条通道可同时 attach 到同一个日常 Chrome，互不冲突。
 - 页面内 hook 方案 `scripts/capture_exam_net.js`（经扩展注入 fetch/XHR hook 到 `window.__net`）是另一种采集思路，可作为 CDP 抓包的交叉校验，不替代连接层。
 

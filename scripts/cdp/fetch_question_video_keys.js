@@ -19,7 +19,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { connectDailyChrome, safeDisconnect } = require('./connectBrowser.js');
+const { connectDailyChrome, safeDisconnect } = require('./connect_browser.js');
 const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
