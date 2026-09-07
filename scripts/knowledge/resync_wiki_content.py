@@ -78,7 +78,7 @@ def update_one(title, path, obj):
         ["python3", RESOLVER], input=raw, capture_output=True, text=True, cwd=REPO
     ).stdout
     last = ""
-    for attempt in range(3):
+    for attempt in range(5):
         proc = subprocess.run(
             ["lark-cli", "docs", "+update", "--doc", obj, "--command", "overwrite",
              "--doc-format", "markdown", "--content", "-", "--as", "user", "--format", "json"],
@@ -87,7 +87,11 @@ def update_one(title, path, obj):
         last = proc.stdout + proc.stderr
         if '"ok":true' in last.replace(" ", "") or '"ok": true' in last:
             return True, ""
-        time.sleep(2)
+        # token 失效类错误需要更长等待让 lark-cli 刷新
+        if "temporary token" in last or "Authorization" in last or "invalid_response" in last:
+            time.sleep(10)
+        else:
+            time.sleep(2)
     return False, last[:300]
 
 
@@ -122,6 +126,12 @@ def main():
             failed.append((title, rel, err))
             print(f"[{i}/{len(items)}] ✗ 写入失败: {title}")
         time.sleep(float(os.environ.get("RESYNC_INTERVAL", "1.5")))
+        # 每 N 篇额外暂停，避免连续调用导致 lark-cli 临时 token 失效
+        batch_size = int(os.environ.get("RESYNC_BATCH_SIZE", "15"))
+        batch_pause = float(os.environ.get("RESYNC_BATCH_PAUSE", "5"))
+        if i % batch_size == 0 and i < len(items):
+            print(f"  --- 分批暂停 {batch_pause} 秒（已处理 {i}/{len(items)}）---")
+            time.sleep(batch_pause)
 
     print("\n========== 汇总 ==========")
     print(f"成功 {ok}，无映射 {len(missing)}，失败 {len(failed)}")
