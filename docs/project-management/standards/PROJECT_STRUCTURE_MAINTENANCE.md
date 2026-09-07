@@ -153,6 +153,7 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 | **讲义文字稿** | ✅ 上传 | 原始资源/notes/*_OCR.md | 讲义OCR后的文字稿（带_OCR后缀） |
 | **转写文字稿** | ✅ 上传 | transcript.md | 视频转写后的文字稿（可读） |
 | **过程留痕** | ❌ 不上传 | VERIFICATION.md、SYNC_REPORT_*.md、任务过程记录 | 技术过程文档，仅本地（验证默认并入任务报告、不单独成文） |
+| **飞书同步派生源** | ❌ 不上传 | 课程总览.md | 飞书课程根总览页的本地 markdown 源，`build_course_overview.py` 可随时再生成、无脚本消费落盘文件，正式载体是飞书 |
 | **原始数据** | ❌ 不上传 | transcript.json | 转写原始JSON，非面向使用者 |
 | **临时文件** | ❌ 不上传 | *.tmp, *.log | 临时文件和日志 |
 
@@ -167,6 +168,7 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 
 过滤在 `scripts/upload_course.sh` 的 `SKIP_PATTERNS` 生效（并发版 `sync_course_netdisk.sh` 逐讲调用它；底层 `baidu_upload.py` 只负责单文件 API 调用、不做过滤）。当前过滤清单：
 - 验证/过程类：`VERIFICATION.md`、`VERIFICATION_*.md`、`验证报告_*.md`、`验证_*.md`、`SYNC_REPORT_*.md`、`同步报告_*.md`
+- 飞书同步派生源：`课程总览.md`（飞书课程根总览页的本地 markdown 源，由 `scripts/knowledge/build_course_overview.py --format markdown` 生成、`--format xml` 推飞书；无脚本消费落盘 md、可随时再生成，故不落课程库根、不传网盘；需要时现场重新生成）
 - 转写原始数据：`transcript.json`（可读版 `transcript.md` 正常上传）
 - 临时/系统：`*.tmp`、`*.log`、`.DS_Store`
 - 点开头隐藏项（`.vfetch/`、`.uploaded` 等）：遍历用 `"$dir"/*`，bash glob 默认不匹配隐藏项，天然不会被遍历上传，无需列入清单

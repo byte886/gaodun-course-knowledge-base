@@ -45,6 +45,7 @@ SKIP_PATTERNS=(
     "验证_*.md"
     "SYNC_REPORT_*.md"      # 网盘同步报告（已下线，历史遗留）
     "同步报告_*.md"
+    "课程总览.md"           # 飞书课程根总览页的本地派生源（build_course_overview.py 可随时再生成；正式载体是飞书，不属网盘成品）
     # —— 转写/技术中间产物 ——
     "transcript.json"       # 转写原始 JSON（可读版 transcript.md 才上传）
     "*.tmp"                 # 临时文件
