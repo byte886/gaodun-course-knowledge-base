@@ -21,20 +21,8 @@
     "validUntil": "2026-10-31",
     "note": "syllabusId/gradationId 为历史记录，正式采集前用 syllabus 接口复核；wareStatus=0 不代表无内容，learnStatus=已完结且有学习记录"
   },
-  "companionCourses": [
-    {
-      "name": "【VIPCPA专享】名师专业课-全科-会计（含电话私教）",
-      "vcourseId": 50126,
-      "saasCourseId": 17244,
-      "platform": "epiphany",
-      "saasCourseType": 13,
-      "learnStatus": 2,
-      "learnStatusDesc": "已学习",
-      "studyUrl": "https://epiphany.gaodun.com/ep3/course/17244",
-      "collect": false,
-      "note": "epiphany 智能学习平台，前端/接口与 glivepro 不通用，采集前须先适配；名师课采集优先级排在 glivepro 正课之后"
-    }
-  ],
+  "companionCourses": [],
+  "companionCoursesNote": "名师课（epiphany saasCourseId=17244）是独立课程，不在本次正课开工范围；后续单独建 profile 开工。2026-09-08 从 companionCourses 移除。",
   "structure": {
     "officialGroupCount": null,
     "pointCount": null,

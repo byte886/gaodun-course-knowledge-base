@@ -23,30 +23,50 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi } = require('./gaodun_paper_core');
-const { workspaceDir } = require('./load_profile');
+const { workspaceDir, currentKey } = require('./load_profile');
 
-// 冲刺模考六卷为税法专属（EXAMS 硬编码税法 paperId），缺省 profile=cpa-tax-2026
+// 冲刺模考六卷按 profile 分组（2026-09-08 多课程适配）
+// 会计课 paperId 待从高顿 syllabus 接口拉取后填入（当前为空数组）
 const papersDir = workspaceDir('papers');
 const MOCK_ORIGIN = 'https://mock-cpa.gaodun.com';
 
-// 6 卷映射：paperId=真实试卷ID；csItemId=syllabus 节点 id；resourceId=资源 id（侦查自 syllabus_full.json）
-const EXAMS = [
-  { key: 's1', paperId: 86722, csItemId: 982347, resourceId: 2550958, title: '26考季-冲刺模考-税法01-试卷', kind: 'sprint' },
-  { key: 's2', paperId: 86723, csItemId: 982348, resourceId: 2550959, title: '26考季-冲刺模考-税法02-试卷', kind: 'sprint' },
-  { key: 's3', paperId: 86724, csItemId: 982350, resourceId: 2550960, title: '26考季-冲刺模考-税法03-试卷', kind: 'sprint' },
-  { key: 'm1', paperId: 86726, csItemId: 982351, resourceId: 2558996, title: '26考季-冲刺模考-税法01-机考', kind: 'mock', origin: MOCK_ORIGIN },
-  { key: 'm2', paperId: 86727, csItemId: 982353, resourceId: 2558998, title: '26考季-冲刺模考-税法02-机考', kind: 'mock', origin: MOCK_ORIGIN },
-  { key: 'm3', paperId: 86728, csItemId: 982354, resourceId: 2558999, title: '26考季-冲刺模考-税法03-机考', kind: 'mock', origin: MOCK_ORIGIN },
-];
+const EXAMS_BY_PROFILE = {
+  'cpa-tax-2026': [
+    { key: 's1', paperId: 86722, csItemId: 982347, resourceId: 2550958, title: '26考季-冲刺模考-税法01-试卷', kind: 'sprint' },
+    { key: 's2', paperId: 86723, csItemId: 982348, resourceId: 2550959, title: '26考季-冲刺模考-税法02-试卷', kind: 'sprint' },
+    { key: 's3', paperId: 86724, csItemId: 982350, resourceId: 2550960, title: '26考季-冲刺模考-税法03-试卷', kind: 'sprint' },
+    { key: 'm1', paperId: 86726, csItemId: 982351, resourceId: 2558996, title: '26考季-冲刺模考-税法01-机考', kind: 'mock', origin: MOCK_ORIGIN },
+    { key: 'm2', paperId: 86727, csItemId: 982353, resourceId: 2558998, title: '26考季-冲刺模考-税法02-机考', kind: 'mock', origin: MOCK_ORIGIN },
+    { key: 'm3', paperId: 86728, csItemId: 982354, resourceId: 2558999, title: '26考季-冲刺模考-税法03-机考', kind: 'mock', origin: MOCK_ORIGIN },
+  ],
+  'cpa-accounting-2026': [
+    // TODO: 会计课冲刺模考 6 卷 paperId 待从高顿 syllabus 接口拉取后填入
+    // 拉取时机：工单 02（第01章试点）或工单 04（全量做题）
+    // 格式参考 cpa-tax-2026：{ key, paperId, csItemId, resourceId, title, kind, origin? }
+  ],
+};
+
+function examsForProfile() {
+  const key = currentKey();
+  const exams = EXAMS_BY_PROFILE[key];
+  if (!exams) throw new Error(`未配置冲刺模考 EXAMS：profile=${key}（支持：${Object.keys(EXAMS_BY_PROFILE).join(', ')}）`);
+  if (exams.length === 0) throw new Error(`冲刺模考 EXAMS 为空：profile=${key}（paperId 待从 syllabus 拉取后填入；也可直接传 paperId：node do_sprint_paper.js <paperId> --profile ${key}）`);
+  return exams;
+}
 
 function resolveTarget(arg) {
+  const exams = examsForProfile();
   const a = String(arg).toLowerCase();
   // 兼容旧参数：裸 1/2/3 = s1/s2/s3
-  if (/^[123]$/.test(a)) return EXAMS.find((x) => x.key === `s${a}`);
-  const byKey = EXAMS.find((x) => x.key === a);
+  if (/^[123]$/.test(a)) return exams.find((x) => x.key === `s${a}`);
+  const byKey = exams.find((x) => x.key === a);
   if (byKey) return byKey;
-  const byPid = EXAMS.find((x) => String(x.paperId) === String(arg));
+  const byPid = exams.find((x) => String(x.paperId) === String(arg));
   if (byPid) return byPid;
+  // 直接传 paperId（不在 EXAMS 里也支持，用于会计课 paperId 未填入时）
+  if (/^\d+$/.test(arg)) {
+    return { key: 'custom', paperId: Number(arg), csItemId: null, resourceId: null, title: `自定义 paperId=${arg}`, kind: 'sprint' };
+  }
   throw new Error(`参数应为 s1-s3 / m1-m3 / paperId，收到：${arg}`);
 }
 
