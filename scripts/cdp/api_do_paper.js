@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi } = require('./gaodun_paper_core');
-const { accountAuthDir } = require('./load_profile');
+const { accountAuthDir, workspaceDir } = require('./load_profile');
 const AUTH_DIR = accountAuthDir();
 const arg = process.argv[2] || '82656';
 const dwellArg = process.argv[3] && /^\d+$/.test(process.argv[3]) ? Number(process.argv[3]) : undefined;
@@ -27,8 +27,34 @@ function latestFile(prefix) {
   return path.join(AUTH_DIR, fs.readdirSync(AUTH_DIR)
     .filter((f) => f.startsWith(prefix) && f.endsWith('.jsonl')).sort().pop());
 }
-// 从 syllabus 大纲解析 paperId -> { csItemId(章节itemId), resourceId, title, num }
+// 优先从 papers_inventory.json 解析 paperId -> { csItemId, resourceId, title, num }
+// （会计课等新课程的 syllabus 抓包可能不存在，但 papers_inventory 已由 refresh_inventory.js 生成）
+// 找不到时回退到 schedule_*.jsonl 抓包方式（税法课兼容）
 function resolvePaper() {
+  // 方式1：papers_inventory.json
+  try {
+    const invPath = path.join(workspaceDir('manifest'), 'papers_inventory.json');
+    if (fs.existsSync(invPath)) {
+      const inv = JSON.parse(fs.readFileSync(invPath, 'utf8'));
+      const hit = inv.find((p) => {
+        if (/^\d+$/.test(arg)) return String(p.paperId) === arg;
+        return (p.title || '').includes(arg);
+      });
+      if (hit) {
+        return {
+          csItemId: hit.csItemId,
+          chapter: hit.chapter,
+          paperId: hit.paperId,
+          resourceId: hit.resourceId,
+          title: hit.title,
+          num: hit.num,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('[resolvePaper] papers_inventory 读取失败，回退 schedule 抓包:', e.message);
+  }
+  // 方式2：schedule_*.jsonl 抓包（税法课兼容）
   const f = latestFile('schedule_');
   const syllabus = JSON.parse(fs.readFileSync(f, 'utf8').split('\n').filter(Boolean)
     .map((l) => JSON.parse(l)).filter((o) => o.url && o.url.includes('syllabus')).pop().body).result;
@@ -44,7 +70,7 @@ function resolvePaper() {
     Object.values(x).forEach((v) => { if (Array.isArray(v) || (typeof v === 'object' && v)) walk(v, ch); });
   };
   walk(syllabus, null);
-  if (!found.length) throw new Error(`syllabus 中找不到：${arg}`);
+  if (!found.length) throw new Error(`syllabus/papers_inventory 中找不到：${arg}`);
   return found[0];
 }
 
