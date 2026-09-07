@@ -625,7 +625,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 拉 syllabus 枚举全部 paper → 对每张基础卷只读 record 审计（满分/平台最优/非满分/未提交/未做）→ 已交卷但分低的用 `paper/analysis` 只读复核 `inspectSubmitted`：配了 AI 的题须判满、或 cs=6 且"我方答案归一化后≈标准答案"才计 AI 判分上限，未配 AI 不阻断，真答错仍判非满分 → 章节自然顺序写出 `papers_inventory.json`（全量）与 `papers_audit.json`（待做）；硬排除冲刺模考。批量开工前先跑它刷新基线，避免重复做已完成卷 |
-| **用法** | `node scripts/cdp/refresh_inventory.js`（约 1–2 分钟，每张间隔 250ms 低频只读） |
+| **用法** | `node scripts/cdp/refresh_inventory.js [--profile <key>]`（课程 ID/syllabus 读 profile，缺省税法；约 1–2 分钟，每张间隔 250ms 低频只读） |
 | **可靠性** | ✅ 已实测；分类判据见 gaodun-exam-api.md §2.1/2.2/2.10 |
 | **相关文档** | gaodun-exam-api.md §2.1、§2.2、§2.2.1、§2.10；判分上限方法论见 guides/flaky-ai-judging.md |
 

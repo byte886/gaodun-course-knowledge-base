@@ -14,21 +14,30 @@
  *        data/cdp-sniff/papers_inventory.json  全量基础卷（含入口ID/进度/最新分）
  *        data/cdp-sniff/papers_audit.json       待做卷（cls 非“满分/平台最优”），供 batch_redo_papers.js 消费
  *
- * 用法：node scripts/cdp/refresh_inventory.js
+ * 用法：node scripts/cdp/refresh_inventory.js [--profile <key>]
+ *   课程 ID/syllabus 从 config/courses/<key>.json 读取（缺省 cpa-tax-2026，或环境变量 GAODUN_COURSE_PROFILE）。
  * 只读、低频（每张 record 间隔 250ms）；JWT 从 data/cdp-sniff 最新抓包提取。
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { findJwt, makeHeaders, MINERVA_BASE, canonAnswer } = require('./gaodun_paper_core');
+const { loadProfile, primaryIds } = require('./load_profile');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'data', 'cdp-sniff');
-const COURSE_ID = 42660;
-const COURSE_SYLLABUS_ID = 75181;
+// sourceFromType：glivepro 作业来源类型枚举（平台常量、非课程 ID，跨正课通用；换 epiphany 名师课需另查）
 const SFT = 100533962;
 const isSprint = (p) => /冲刺模考/.test(p.title) || p.num === 48;
+
+// 解析 --profile <key> / --profile=<key>；未给则由 loadProfile 走环境变量/缺省
+function pickProfileKey() {
+  const i = process.argv.indexOf('--profile');
+  if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1];
+  const eq = process.argv.find((a) => a.startsWith('--profile='));
+  return eq ? eq.slice('--profile='.length) : undefined;
+}
 
 function chapterKey(ch) {
   const s = String(ch || '');
@@ -102,6 +111,14 @@ async function inspectSubmitted(H, logId) {
 }
 
 (async () => {
+  const profile = loadProfile(pickProfileKey());
+  const ids = primaryIds(profile);
+  const COURSE_ID = ids.courseId;
+  const COURSE_SYLLABUS_ID = ids.syllabusId;
+  if (!COURSE_ID || !COURSE_SYLLABUS_ID) {
+    throw new Error(`profile ${profile.key} 缺 primaryCourse.saasCourseId/syllabusId，无法刷新作业基线`);
+  }
+  console.log(`[profile] ${profile.key}｜${profile.subject.name}｜courseId=${COURSE_ID} syllabus=${COURSE_SYLLABUS_ID} platform=${ids.platform}`);
   const H = makeHeaders(findJwt(OUT));
   // 1) syllabus
   const sj = await (await fetch(
