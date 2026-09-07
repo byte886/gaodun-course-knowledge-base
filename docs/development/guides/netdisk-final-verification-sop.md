@@ -58,7 +58,7 @@ finalize 后必须检查并清理本地临时文件，**清理前必须先列清
 |------|------|
 | `data/高顿/` | 符号链接指向 Desktop 课程原料（16G+），保留 |
 | `data/高顿/CPA/待整理/` | 下一门课在途原料，用户明确"待整理的先不处理" |
-| `data/user-notes-raw/` | 用户笔记原始数据源，保留 |
+| `data/user-notes-raw/<key>/` | 用户笔记原始数据源（按课程 profile key 隔离），保留 |
 | `data/cdp-sniff/` | 抓包文件（含 JWT），见 3.3 保留策略 |
 | `logs/wiki_done/` | 飞书同步断点，保留 |
 | `logs/wiki_node_map.tsv` | 飞书节点映射，保留 |

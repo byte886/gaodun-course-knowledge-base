@@ -8,14 +8,16 @@
  *   3. 收集所有非空笔记，按 questionId 分组保存
  *   4. 输出统计和增量文件
  *
- * 用法：node scripts/cdp/collect_user_notes.js [--concurrency N] [--resume]
+ * 用法：node scripts/cdp/collect_user_notes.js [--profile <key>] [--concurrency N] [--resume]
+ *   --profile <key>  课程档案卡，缺省 cpa-tax-2026（或环境变量 GAODUN_COURSE_PROFILE）
  *   --concurrency N  并发数，默认 5
  *   --resume         断点续传，跳过已采集的 questionId
  *
- * 输出：
- *   data/user-notes-raw/all_notes.jsonl   所有笔记（JSONL，每行一条笔记）
- *   data/user-notes-raw/progress.json     采集进度（已采集的 questionId 集合）
- *   data/user-notes-raw/stats.json        统计信息
+ * 输入：<profile 课程>/原始资源/papers；输出按课程 key 隔离（env USER_NOTES_RAW_DIR 可覆盖，
+ *   与 knowledge/organize_user_notes.py 对齐）：
+ *   data/user-notes-raw/<key>/all_notes.jsonl   所有笔记（JSONL，每行一条笔记）
+ *   data/user-notes-raw/<key>/progress.json     采集进度（已采集的 questionId 集合）
+ *   data/user-notes-raw/<key>/stats.json        统计信息
  */
 'use strict';
 
@@ -23,18 +25,29 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { findJwt, makeHeaders, MINERVA_BASE } = require('./gaodun_paper_core');
+const { loadProfile } = require('./load_profile');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const PAPERS_DIR = path.join(PROJECT_ROOT, 'data', '高顿', 'CPA', '课程库', '【26考季】VIPCPA系列-税法（蔡俊峻老师）', '原始资源', 'papers');
-const OUT_DIR = path.join(PROJECT_ROOT, 'data', 'user-notes-raw');
+const _argv = process.argv.slice(2);
+function namedArg(name) {
+  const i = _argv.indexOf(`--${name}`);
+  if (i >= 0 && _argv[i + 1]) return _argv[i + 1];
+  const e = _argv.find((a) => a.startsWith(`--${name}=`));
+  return e ? e.slice(name.length + 3) : undefined;
+}
+const profile = loadProfile(namedArg('profile'));
+// 输入：该 profile 课程的 papers 原料；输出按课程 key 隔离，避免不同课的题目/进度混在一起
+const PAPERS_DIR = path.join(PROJECT_ROOT, profile.paths.localRoot, '原始资源', 'papers');
+const OUT_DIR = process.env.USER_NOTES_RAW_DIR
+  || path.join(PROJECT_ROOT, 'data', 'user-notes-raw', profile.key);
 const NOTES_FILE = path.join(OUT_DIR, 'all_notes.jsonl');
 const PROGRESS_FILE = path.join(OUT_DIR, 'progress.json');
 const STATS_FILE = path.join(OUT_DIR, 'stats.json');
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-const args = process.argv.slice(2);
-const concurrency = Number(args.find(a => a.startsWith('--concurrency='))?.split('=')[1] || 5);
+const args = _argv;
+const concurrency = Number(args.find(a => a.startsWith('--concurrency='))?.split('=')[1]) || 5;
 const resume = args.includes('--resume');
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -93,6 +106,7 @@ function fetchNote(qid, headers) {
 
 async function main() {
   console.log('=== 高顿题库用户笔记批量采集 ===');
+  console.log(`课程profile: ${profile.key}（${profile.subject.name}）`);
   console.log(`Papers目录: ${PAPERS_DIR}`);
   console.log(`输出目录: ${OUT_DIR}`);
   console.log(`并发数: ${concurrency}, 断点续传: ${resume}`);

@@ -112,7 +112,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 取回放 URL → CDP 抓 HLS key → 下 m3u8 取 IV → 下载解密合并为 `merged.ts`（**不做压缩**，压缩交队列脚本）；幂等（已有 video.mp4 跳过）；每讲实时取最新 token（m3u8/authorize token 会过期） |
-| **用法** | `node scripts/cdp/fetch_lecture_video.js <idx>`（idx=课程表下标，idx1=开班前缀00） |
+| **用法** | `node scripts/cdp/fetch_lecture_video.js <idx> [--profile <key>]`（idx=课程表下标，idx1=开班前缀00；课程目录/ID 读 profile，缺省税法） |
 | **可靠性** | ✅ 高；产物 `<讲>/.vfetch/manifest.json + merged.ts`（压缩阶段读取） |
 | **相关文档** | video-processing.md、ADR-010 |
 
@@ -752,7 +752,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 把原始用户笔记（含学员名/点赞数/日期）按四分类（记忆口诀/易错点辨析/解题技巧/知识补充）整理，每类按赞 Top5 筛选，输出纯知识内容（**不输出学员名/点赞数/用户ID/日期**，元数据仅保留在原始资料中用于溯源） |
-| **用法** | `python3 scripts/knowledge/organize_user_notes.py` |
+| **用法** | `python3 scripts/knowledge/organize_user_notes.py`（课程目录/笔记目录默认读 profile，缺省税法，笔记取 `data/user-notes-raw/<key>/`；可用 `GAODUN_COURSE_PROFILE` 或 `COURSE_LOCAL_ROOT`/`USER_NOTES_RAW_DIR` 覆盖） |
 | **可靠性** | ✅ 高（744 条覆盖 92 篇；已彻底移除元数据输出） |
 | **相关文档** | ADR-013、collect_user_notes.js |
 

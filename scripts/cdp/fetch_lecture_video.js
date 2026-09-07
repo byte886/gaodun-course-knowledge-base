@@ -6,20 +6,31 @@
  * 幂等：目标讲目录已存在 video.mp4 则跳过。
  * 时效：每讲实时从 syllabus 取最新回放 token，抓流→下载在同一轮连续完成（m3u8/authorize token 会过期）。
  *
- * 用法：node scripts/cdp/fetch_lecture_video.js <idx>
+ * 用法：node scripts/cdp/fetch_lecture_video.js <idx> [--profile <key>]
  *   idx = course_catalog / syllabus children 下标（idx1=开班前缀00，idxN→前缀 N-1）
+ *   课程目录 / courseId / syllabusId 全部读 config/courses/<key>.json（缺省税法，或 GAODUN_COURSE_PROFILE）
  * 产物：<课程库>/<前缀_讲名>/.vfetch/manifest.json + merged.ts（压缩步骤读取 manifest）
  */
 'use strict';
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync, execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..', '..');
 const { findJwt, makeHeaders } = require(path.join(ROOT, 'scripts/cdp/gaodun_paper_core.js'));
+const { loadProfile, primaryIds } = require(path.join(ROOT, 'scripts/cdp/load_profile.js'));
 const SNIFF = path.join(ROOT, 'data', 'cdp-sniff');
-const COURSE = path.join(os.homedir(), 'Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）');
-const COURSE_ID = 42660, SYLLABUS_ID = 75181;
+// 命名参数：--profile <key> / --profile=<key>
+function namedArg(name) {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1];
+  const eq = process.argv.find((a) => a.startsWith(`--${name}=`));
+  return eq ? eq.slice(name.length + 3) : undefined;
+}
+// 课程目录/ID 全部来自 profile（data/高顿 软链到外部数据盘，等价旧的 ~/Desktop 绝对路径）
+const profile = loadProfile(namedArg('profile'));
+const _ids = primaryIds(profile);
+const COURSE = path.join(ROOT, profile.paths.localRoot);
+const COURSE_ID = _ids.courseId, SYLLABUS_ID = _ids.syllabusId;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function log(...a) { console.log(`[fetch ${new Date().toLocaleTimeString()}]`, ...a); }
@@ -44,9 +55,10 @@ async function getLive(idx) {
 }
 
 (async () => {
-  const idx = Number(process.argv[2]);
-  if (!idx) { console.error('用法: node fetch_lecture_video.js <idx>'); process.exit(2); }
+  const idx = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)));
+  if (!idx) { console.error('用法: node fetch_lecture_video.js <idx> [--profile <key>]'); process.exit(2); }
   const prefix = String(idx - 1).padStart(2, '0');
+  log(`[profile] ${profile.key}｜${profile.subject.name}｜course=${COURSE_ID} syllabus=${SYLLABUS_ID}`);
   const { name, url, durationMinutes } = await getLive(idx);
   // 定位/创建讲目录（前缀匹配，避免讲名特殊字符差异）
   let dir = fs.readdirSync(COURSE).find((d) => d.startsWith(prefix + '_'));

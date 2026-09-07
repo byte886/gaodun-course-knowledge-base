@@ -14,14 +14,18 @@ organize_user_notes.py — 整理用户笔记，生成知识详解「四、学�
 import json, os, re, sys
 from collections import defaultdict
 
-# 课程路径：优先读环境变量 COURSE_LOCAL_ROOT，默认税法课（保持向后兼容）
+# 课程定位优先级：环境变量 COURSE_LOCAL_ROOT > 课程 profile（GAODUN_COURSE_PROFILE，缺省税法）
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEFAULT_DA = os.path.join(ROOT, "data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）")
+from course_profile import load_profile  # noqa: E402  同目录读取器
+_profile = load_profile()
+DEFAULT_DA = os.path.join(ROOT, _profile["paths"]["localRoot"])
 DA = os.environ.get("COURSE_LOCAL_ROOT", DEFAULT_DA)
 if not os.path.isabs(DA):
     DA = os.path.join(ROOT, DA)
 KD = os.path.join(DA, "知识详解")
-RAW_DIR = os.environ.get("USER_NOTES_RAW_DIR", os.path.join(ROOT, "data/user-notes-raw"))
+# 笔记原件：env USER_NOTES_RAW_DIR > data/user-notes-raw/<profile.key>（与 collect_user_notes.js 对齐）
+RAW_DIR = os.environ.get(
+    "USER_NOTES_RAW_DIR", os.path.join(ROOT, "data", "user-notes-raw", _profile["key"]))
 
 # 分类关键词
 CATEGORIES = {
