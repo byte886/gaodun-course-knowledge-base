@@ -40,9 +40,10 @@ const EXAMS_BY_PROFILE = {
     { key: 'm3', paperId: 86728, csItemId: 982354, resourceId: 2558999, title: '26考季-冲刺模考-税法03-机考', kind: 'mock', origin: MOCK_ORIGIN },
   ],
   'cpa-accounting-2026': [
-    // TODO: 会计课冲刺模考 6 卷 paperId 待从高顿 syllabus 接口拉取后填入
-    // 拉取时机：工单 02（第01章试点）或工单 04（全量做题）
-    // 格式参考 cpa-tax-2026：{ key, paperId, csItemId, resourceId, title, kind, origin? }
+    { key: 's1', paperId: 86479, csItemId: 2225300, resourceId: 2547649, title: '26考季-冲刺模考-会计01', kind: 'sprint' },
+    { key: 's2', paperId: 86480, csItemId: 2225310, resourceId: 2547650, title: '26考季-冲刺模考-会计02', kind: 'sprint' },
+    { key: 's3', paperId: 86481, csItemId: 2225324, resourceId: 2547651, title: '26考季-冲刺模考-会计03', kind: 'sprint' },
+    // 机考（m1/m2/m3）为 soft_link 类型，paperId 待从机考入口单独获取后填入
   ],
 };
 
