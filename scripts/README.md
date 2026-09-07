@@ -19,7 +19,7 @@
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 5 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传 |
 | 环境与工具 | 9 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
-| 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
+| 检查与验证 | 8 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检、OKF 工程记忆校验 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
 | 高顿做题接口链路 | 12 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采、冲刺 6 卷统一入口（scripts/cdp/） |
@@ -420,12 +420,23 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | Git 提交前自动检查（检查项与阈值以 git-workflow 9.2 为准）：大文件 >1MB 警告 / >10MB 硬阻止；音视频、PDF 等生成文件误提交警告；敏感信息（明文 password/token/secret/key）警告；新增 .md 未登记 DOCUMENTATION_MAP 或缺头部类型标注警告；暂存 .md 相对链接断链硬阻止；文档类型词不在 7 类白名单（Task/Concept/Reference/Governance/Active/Knowledge/Template）硬阻止；**运行产物/环境/数据误入暂存（命中模式表 ARTIFACT_RE，或被 .gitignore 忽略却 `git add -f` 强塞）硬阻止** |
+| **用途** | Git 提交前自动检查（检查项与阈值以 git-workflow 9.2 为准）：大文件 >1MB 警告 / >10MB 硬阻止；音视频、PDF 等生成文件误提交警告；敏感信息（明文 password/token/secret/key）警告；新增 .md 未登记 DOCUMENTATION_MAP 或缺头部类型标注警告；暂存 .md 相对链接断链硬阻止；文档类型词不在 7 类白名单（Task/Concept/Reference/Governance/Active/Knowledge/Template）硬阻止；**运行产物/环境/数据误入暂存（命中模式表 ARTIFACT_RE，或被 .gitignore 忽略却 `git add -f` 强塞）硬阻止**；**本次暂存触及 `docs/project-management/memory/` 或校验器本身时，跑 `okf_validate.py`，OKF 工程记忆 bundle 存在硬错误(E)硬阻止（W/I 不阻断）** |
 | **用法** | 安装后每次 `git commit` 自动执行（激活副本位于 `.git/hooks/pre-commit`） |
 | **可靠性** | ✅ 高（不依赖读文档，自动执行） |
 | **相关文档** | `docs/development/guides/git-workflow.md` 第 9 节 |
 
 **安装**：`cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
+
+---
+
+### `okf_validate.py` — OKF 工程记忆 bundle 一致性校验（vendored，零依赖）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 校验 `docs/project-management/memory/` 工程记忆 bundle：非保留 .md 必须有 frontmatter 且含非空 `type`（E1/E2 硬错误）；index/log 保留文件结构（E3）；缺 title/description、非法 status、时间格式、死链 W80、孤儿页 W81、脚注与 sources 对账等为警告 W；信任等级现算等为信息 I。只扫指定 bundle 目录，不要求全项目 .md 加 frontmatter |
+| **用法** | `python3 scripts/okf_validate.py docs/project-management/memory`（`--strict` 把 W 也判失败、`--max-warnings N`、`--json`）；E 必修、退出码 1，W 逐条确认，I 仅参考。已由 pre-commit 第 8 段在相关提交时自动调用 |
+| **可靠性** | ✅ 高（纯 Python 标准库、确定性、系统 python3 直接跑） |
+| **来源/边界** | vendored 自全局技能 okf-wiki v0.2（上游 Google Cloud OKF v0.2，Apache-2.0）；为项目自包含而复制进仓库，**勿本地分叉改逻辑**，上游升级整体替换（见 ADR-017） |
 
 ---
 

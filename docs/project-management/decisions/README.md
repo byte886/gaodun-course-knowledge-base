@@ -43,6 +43,7 @@ ADR是一种轻量级的决策记录方式，帮助AI和人理解"为什么这�
 | [ADR-014](./ADR-014-考试成绩与AI批改边界.md) | 考试成绩与AI批改边界：不追求刷满分（每套11–15分AI不支持批改、不可控），知识详解按知识点全覆盖优先级高于考试分数 | 已采纳 | 2026-09-07 |
 | [ADR-015](./ADR-015-飞书内部链接打开方式与单窗口导航方案.md) | 飞书正文跨文档链接必新开标签（CDP可信点击实测、平台硬限制），保留cite内部引用、仅导航页加左侧目录树单窗口引导；禁止以DOM target判定打开方式 | 已采纳 | 2026-09-07 |
 | [ADR-016](./ADR-016-统一运行时工作区与按profile分区.md) | 运行时过程件统一上移到唯一 data/_workspace（账号级 _account + 课程级 \<profile\> 正交分区、分层清退），课程目录回归两层，脚本经 load_profile 收口函数取路径；修订 ADR-012 工作区位置 | 已采纳 | 2026-09-07 |
+| [ADR-017](./ADR-017-采用OKF作为工程记忆格式层.md) | 采用 OKF v0.2 建工程记忆 bundle（docs/project-management/memory，结论+指针、不复制正文），校验器 vendor 进 scripts、接 pre-commit，工程自包含不依赖全局技能；知识详解 frontmatter（Bundle A）后置试点 | 已采纳 | 2026-09-07 |
 
 ---
 
@@ -104,8 +105,8 @@ ADR是一种轻量级的决策记录方式，帮助AI和人理解"为什么这�
 | ADR 中引用的脚本 | 状态 | 替代者 / 说明 | 涉及 ADR |
 |-------------------|------|---------------|----------|
 | `scripts/transcribe.py` | 已重命名 | → `scripts/transcribe_pipeline.py`（FunASR 转写管道） | ADR-003 |
-| `scripts/setup-data-symlink.sh` | 已不存在 | data 目录符号链接改为手动创建（`ln -s ~/Desktop/高顿 data/高顿`） | ADR-005 |
-| `scripts/cdp/sniff_demo.js` | 已不存在 | 一次性 CDP 抓包演示脚本，功能已整合进 `scripts/cdp/connectBrowser.js` | ADR-010 |
+| `scripts/setup-data-symlink.sh` | 已重命名 | → `scripts/setup_data_symlink.sh`（snake_case；仍自动创建 `data/高顿` 软链，支持 `--check`，并非改手动） | ADR-005 |
+| `scripts/cdp/sniff_demo.js` | 已不存在 | 一次性 CDP 抓包演示脚本，功能已整合进 `scripts/cdp/connect_browser.js` | ADR-010 |
 | `scripts/verify_lecture_map.py` | 已删除 | 随 `lecture-resource-map.json` 退役（commit f5c5373），课程路由由 `course-manifest.json` 取代 | ADR-011 |
 
 ---

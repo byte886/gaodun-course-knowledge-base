@@ -10,21 +10,15 @@
 
 set -euo pipefail
 
-# 动态获取项目目录（脚本所在目录的上一级）
+# 动态获取项目目录（脚本所在目录的上一级）；用 BASH_SOURCE 以兼容被 source 的场景
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$PROJECT_DIR/data"
 SYMLINK_PATH="$DATA_DIR/高顿"
 DEFAULT_TARGET="$HOME/Desktop/高顿"
 
 # 解析参数
-if [ "$1" = "--check" ]; then
+if [ "${1:-}" = "--check" ]; then
     echo "=== 检查符号链接状态 ==="
     if [ -L "$SYMLINK_PATH" ]; then
         echo "符号链接存在: $SYMLINK_PATH"
@@ -44,7 +38,7 @@ if [ "$1" = "--check" ]; then
 fi
 
 # 确定目标路径
-if [ -n "$1" ]; then
+if [ -n "${1:-}" ]; then
     TARGET="$1"
 else
     TARGET="$DEFAULT_TARGET"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Git pre-commit hook：提交前自动检查
-# 检查内容：大文件、敏感信息、文件类型、【运行产物误入硬拦截】、新文档登记/类型标注、相对链接有效性、文档类型词白名单、命名一致性提示(警告级)
+# 检查内容：大文件、敏感信息、文件类型、【运行产物误入硬拦截】、新文档登记/类型标注、相对链接有效性、文档类型词白名单、命名一致性提示(警告级)、【OKF工程记忆bundle硬错误拦截】
 # 运行产物模式表 ARTIFACT_RE 与 .gitignore 互为备份、两处同步（新增一类运行产物时一起改）
 # 安装：cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
@@ -105,7 +105,8 @@ echo ""
 echo "📚 检查文档关联性..."
 doc_issues=0
 for file in $(git diff --cached --name-only --diff-filter=A); do
-  if [[ "$file" == *.md ]] && [[ "$file" != CHANGELOG.md ]] && [[ "$file" != project-management/* ]]; then
+  # OKF 工程记忆 bundle 用 frontmatter type 而非中文 Context Block，其一致性由第 8 段 okf_validate 专管，此处豁免
+  if [[ "$file" == *.md ]] && [[ "$file" != CHANGELOG.md ]] && [[ "$file" != project-management/* ]] && [[ "$file" != docs/project-management/memory/* ]]; then
     # 检查是否在DOCUMENTATION_MAP.md中有记录
     if ! grep -q "$file" docs/DOCUMENTATION_MAP.md 2>/dev/null; then
       echo "  ⚠️  新文档未在DOCUMENTATION_MAP.md中记录: $file"
@@ -178,6 +179,21 @@ echo ""
 echo "🧭 检查命名一致性（仅提示，不阻止提交）..."
 if [ -f scripts/check_naming_consistency.py ]; then
   python3 scripts/check_naming_consistency.py 2>/dev/null | sed 's/^/  /' || true
+fi
+
+# 8. OKF 工程记忆 bundle 一致性（E 硬错误阻断；仅当暂存触及 memory/ 或校验器本身时运行，未触及则零输出，避免无关提交空喊检查）
+if git diff --cached --name-only --diff-filter=ACM | grep -qE '^docs/project-management/memory/|^scripts/okf_validate\.py$'; then
+  echo ""
+  echo "🧠 检查 OKF 工程记忆 bundle..."
+  if [ -f scripts/okf_validate.py ] && [ -d docs/project-management/memory ]; then
+    okf_out=$(python3 scripts/okf_validate.py docs/project-management/memory 2>&1) && {
+      echo "$okf_out" | tail -1 | sed 's/^/  /'
+    } || {
+      echo "$okf_out" | sed 's/^/  /'
+      echo "   提交被阻止：OKF 记忆 bundle 存在硬错误(E)，修复后再提交；警告(W)/信息(I)见上，W 需逐条确认。"
+      exit 1
+    }
+  fi
 fi
 
 # 总结

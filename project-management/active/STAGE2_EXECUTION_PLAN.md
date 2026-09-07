@@ -104,7 +104,7 @@ S2全部完成 ─→ S4 速查手册 ────────────┤
 | D2 | 本地 `organized-content/知识拆解总目录.md` + 飞书同名节点 | 10K+1节点 | 删 | 用户已决定不建总目录（飞书左侧树已导航） | 连带清理 `考试指导速查手册.md` 第261行指向它的链接；方法论冲突表述已在本次收拢修正 |
 | D3 | `transcription/venv/` | 1.3G | **保留** | S5冲刺/主观题讲解视频可能需转写 | 被 batch_transcribe、transcribe_one、batch_ocr 等6个活跃脚本引用，删了要按 requirements 重建 |
 | D4 | 飞书旧15章节点（00+01-15） | 16节点 | 建议新34讲生成核对无误后逐章替换、避免空窗 | 本地旧15章保留为历史版本直到替换完成 | **S3前置，必须先定**；删除是高风险写操作，逐章确认 |
-| D5 | `data/browser-profile/` | 19M | **已删（2026-09-04 复查后）** | 原以为是 CDP 登录态，复查代码查明它只被 PoC 脚本 `poc_persistent_browser.js` 使用；现役 Chrome 连接走 `scripts/cdp/connectBrowser.js` 的 `--profile-directory` 直连用户日常 Chrome（复用其登录态、免重登），与该独立 profile 无关 | 不影响 S5/登录；属 L0 可重建类，定性见 standards 2.2，已移废纸篓 |
+| D5 | `data/browser-profile/` | 19M | **已删（2026-09-04 复查后）** | 原以为是 CDP 登录态，复查代码查明它只被 PoC 脚本 `poc_persistent_browser.js` 使用；现役 Chrome 连接走 `scripts/cdp/connect_browser.js` 的 `--profile-directory` 直连用户日常 Chrome（复用其登录态、免重登），与该独立 profile 无关 | 不影响 S5/登录；属 L0 可重建类，定性见 standards 2.2，已移废纸篓 |
 | D6 | `data/exam-net-poc.{har,json,jsonl}` | 11.7M | 可删 | 9-01接口侦查POC原始抓包，结论已沉淀进 gaodun-exam-api、题答已入papers | 输出脚本 `scripts/poc_persistent_browser.js` 保留，需要时重跑会再生成；属过程数据不入库 |
 
 ## 5. 风险与兜底

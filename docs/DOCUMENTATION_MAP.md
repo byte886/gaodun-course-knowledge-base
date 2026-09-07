@@ -15,9 +15,10 @@
 ### 开始新任务前
 1. `AGENTS.md` — AI操作手册（必读）
 2. `README.md` — 项目概览、存储分工
-3. `docs/REQUIREMENTS.md` — 项目需求文档（核心诉求、功能需求、验收标准）
-4. `docs/WORKFLOW.md` — 主工作流，找到当前任务所属环节
-5. `project-management/active/TASK_STATUS.md` — 当前任务状态和前置依赖
+3. `docs/project-management/memory/index.md` — 工程记忆 bundle 入口（跨会话稳定结论/硬约束编译，按需沿 concept 下钻 ADR/规范）
+4. `docs/REQUIREMENTS.md` — 项目需求文档（核心诉求、功能需求、验收标准）
+5. `docs/WORKFLOW.md` — 主工作流，找到当前任务所属环节
+6. `project-management/active/TASK_STATUS.md` — 当前任务状态和前置依赖
 
 ### 做题验证前
 1. `docs/development/api/gaodun-exam-api.md` — **高顿做题接口契约（接口为主：syllabus 枚举作业→redo-paper 取题与标准答案→submit-paper 交卷→exam-report 回查）**
@@ -72,6 +73,7 @@
 6. `docs/project-management/standards/DOC_SYNC_CHECKLIST.md` — 文档同步清单
 7. `docs/project-management/standards/NAMING_CONVENTION.md` — 命名规范
 8. `docs/project-management/decisions/README.md` — 架构决策记录（ADR）索引，做重要决策前先查看历史决策
+9. `docs/project-management/memory/index.md`、`log.md` — 工程记忆 bundle：稳定结论变化时同步对应 concept 并记 log，跑 `scripts/okf_validate.py` 校验（ADR-017）
 
 ### 飞书知识库整理 / 维护
 1. `docs/development/guides/feishu-knowledge-base-maintenance.md` — 盘点分类、结构整理SOP、父节点导航规范与覆盖校验（先读）
@@ -138,6 +140,10 @@
 | 质量保证规范 | `docs/project-management/standards/QUALITY_ASSURANCE.md` | 验证标准、质量检查流程 |
 | 目录结构说明 | `docs/DIRECTORY_STRUCTURE.md` | 仓库/本地/网盘/飞书目录结构、Git忽略说明、维护原则 |
 | 系统要求与环境配置 | `docs/SYSTEM_REQUIREMENTS.md` | 平台兼容性、硬件要求、环境配置、迁移新Mac步骤 |
+| **工程记忆 bundle 入口** | `docs/project-management/memory/index.md` | OKF v0.2 跨会话记忆导航：架构/链路/治理/对照 10 篇 concept 索引（ADR-017） |
+| 工程记忆概念页 | `docs/project-management/memory/concepts/*.md` | 稳定结论 + 指向源 ADR/规范的相对指针，不复制正文；机器初编、人核后加 verified |
+| 工程记忆变更线 | `docs/project-management/memory/log.md` | 记忆层自身结构变更，倒序；业务流水看根 CHANGELOG |
+| OKF 一致性校验器 | `scripts/okf_validate.py` | vendored 零依赖校验，提交前 `python3 scripts/okf_validate.py docs/project-management/memory`，E 必须为 0 |
 
 ### 三、参考资料（Reference — 查什么）
 
@@ -206,6 +212,17 @@
 ---
 
 ## 文档优化记录
+
+### 2026-09-07 采用 OKF 工程记忆格式层（ADR-017）
+
+**新增**：
+- `docs/project-management/decisions/ADR-017-采用OKF作为工程记忆格式层.md`
+- 工程记忆 bundle：`docs/project-management/memory/{index.md, log.md, concepts/（10 篇）}`
+- vendored 零依赖校验器 `scripts/okf_validate.py`（不依赖全局技能）
+
+**更新**：根 `AGENTS.md`（第 2 章必读顺序、3.10 新会话恢复顺序、新增 3.11 工程记忆与项目自包含）、`scripts/pre-commit`（新增 OKF 校验段）、本地图对应登记。
+
+**原则**：只叠加格式层、不复制 ADR/规范正文、不平行重建；知识详解 108 篇 frontmatter（Bundle A）后置试点，不在本次批量回填。
 
 ### 2026-09-04 三层解耦范式切换（ADR-012）
 
