@@ -118,6 +118,7 @@
 | 飞书知识库整理与维护 | `docs/development/guides/feishu-knowledge-base-maintenance.md` | 盘点与通用分类原则、结构整理SOP、父节点导航规范与覆盖校验、安全红线 |
 | 文档下载 | `docs/development/tools/document-download.md` | CDN直链、curl后台下载、完整性校验 |
 | **并行化工具与课程参数化设计** | `docs/development/guides/parallel-toolkit-design.md` | 面向会计课复用：课程 profile 单一配置、收敛 4 套并发为 2 标准件、流水线总编排、落地与验收 |
+| 课程档案卡说明 | `config/courses/README.md` | profile 是什么、字段口径（正课/配套课、平台、learnStatus）、三语言读取器与换课用法 |
 | 项目 DAG 与并发规划 | `docs/development/project-dag.md` | 任务依赖 DAG、各节点实测时长/并发度、阶段事件触发、换课复用 |
 | CPU 并发能力评估 | `docs/development/performance/parallel-processing-guide.md` | CPU 密集任务并发度反向评估四步法、FunASR/x265 实测、xargs 队列 |
 | 任务规划与并行调度方法论 | `docs/development/methodology/task-planning-and-parallel-scheduling.md` | DAG 拆解、时长评估、实时调度、实测并发原则 |
