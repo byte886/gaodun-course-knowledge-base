@@ -95,6 +95,19 @@ ADR是一种轻量级的决策记录方式，帮助AI和人理解"为什么这�
 
 ---
 
+## 已退役/重命名脚本清单
+
+> ADR 是历史决策快照，其中引用的脚本可能后续已重命名或退役。执行 ADR 中提到的脚本前，先核对本清单。
+
+| ADR 中引用的脚本 | 状态 | 替代者 / 说明 | 涉及 ADR |
+|-------------------|------|---------------|----------|
+| `scripts/transcribe.py` | 已重命名 | → `scripts/transcribe_pipeline.py`（FunASR 转写管道） | ADR-003 |
+| `scripts/setup-data-symlink.sh` | 已不存在 | data 目录符号链接改为手动创建（`ln -s ~/Desktop/高顿 data/高顿`） | ADR-005 |
+| `scripts/cdp/sniff_demo.js` | 已不存在 | 一次性 CDP 抓包演示脚本，功能已整合进 `scripts/cdp/connectBrowser.js` | ADR-010 |
+| `scripts/verify_lecture_map.py` | 已删除 | 随 `lecture-resource-map.json` 退役（commit f5c5373），课程路由由 `course-manifest.json` 取代 | ADR-011 |
+
+---
+
 ## 维护规则
 
 1. **新增ADR时**：在本索引表格中添加条目，文件命名为 `ADR-XXX-简短标题.md`
