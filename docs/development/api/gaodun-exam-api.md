@@ -15,7 +15,8 @@
 **除登录外，发现作业 → 取题与标准答案 → 交卷 →（主观题）逐题 AI 批改冲满分 → 回查，全程可由 HTTP 接口完成，无需 UI 点选、无需“先做一遍”、不依赖本地题库预置。**
 
 ```
-syllabus(枚举全部作业+ID映射+完成状态 progress)
+vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
+  → syllabus(枚举全部作业+ID映射+完成状态 progress)
   → student/paper/record(取最近作答实例 paperDataLogId)；result=null 的【首次卷】先 create-paper 创建实例拿 logId
   → redo-paper(返回题面+选项+标准答案+解析；type5 父题套 type6 子题)
   → 平铺构造 userAnswerList（客观取 answer；主观子题从 analysis 提炼，父题不提交）
@@ -54,7 +55,10 @@ syllabus(枚举全部作业+ID映射+完成状态 progress)
 
 | 名称 | 值 / 含义 | 来源 |
 |---|---|---|
-| `courseId` | 课程 ID = 42660 | URL / syllabus |
+| `courseId` | **即 saasCourseId（SaaS 课程 ID），税法=42660**；syllabus/做题/进入课程 URL（`glivepro.gaodun.com/course/{saasCourseId}/...`）都用它，**不是 vcourseId** | URL / syllabus / 2.11 清单 |
+| `vcourseId` | 学员购课实例（虚拟课程）ID，税法=96834；听课/学习进度类接口用它 | vcourse/pc 清单（见 2.11） |
+| `projectId` | 考试项目 ID，CPA=8 | vcourse/pc |
+| `subjectId` | 科目 ID：会计37 / 审计36 / 财管45 / 经济法39 / **税法38** / 战略46 | vcourse/pc、equity |
 | `csItemId` | **章节 itemId（不是 paper 资源节点 id）**；一个章节可挂多张卷 | syllabus 章节节点 `itemId` |
 | `paperId` | 试卷 ID | syllabus 中 `discriminator==='paper'` 节点 |
 | `resourceId` | 资源 ID | 同上 |
@@ -244,6 +248,25 @@ syllabus(枚举全部作业+ID映射+完成状态 progress)
 | `paper/analysis` | POST `{paperDataLogId, openEnergyToEquity:1}` | **交卷后整卷只读回看首选**。返回 `moduleList`（题面 + `questionAnswer` 标准答案 + `userAnswer` 我方作答 + 每题 `aiCorrect`：cpaBotType/configId/botId/correctStatus/corrects 采分维度）与顶层 `correctStatus/payCorrectStatus/paperCorrectStatus/paperReviewInfo`。判平台最优、逐题核对、取 aiCeiling 证据都用它。⚠ 其 `questionAnswer`、`userAnswer` 子对象也带同一个 `questionId`，递归定位"题节点"时必须加"该节点含 questionAnswer 字段"判断，否则会被子对象覆盖。 |
 | `question/info/{qid}` | GET | 单题详情：type5 外壳、其下 `subQuestionList[0]` 为**同 qid** 的 type6 叶子（父子同 id 是接口固定包装，不代表 redo 两层嵌套）；`artificialIntelligence` 等标识多为 null，**不能用来分流**，分流只认 redo/analysis 的 `aiCorrect.cpaBotType`。 |
 
+### 2.11 用户空间 / 我的课程清单：`GET /ep-course/api/v2/front/space/vcourse/pc`【实测，2026-09-07】
+
+- **用途**：登录后"用户空间/我的课程"页的数据源，一次返回当前账号在各 project 下购买/开通的**全部课程**，是"开工前先盘点账号有哪些课、拿到各门课 saasCourseId"的入口（在调 2.1 syllabus 之前先调它）。无 query 参数、单接口全量、无分页。
+- **来源域**：`origin/referer = https://glivepro.gaodun.com`，鉴权同 1.2（`authentication` JWT）。
+- **响应结构**：`result.projectList[]`（项目，如 `{id:8,name:'CPA'}`）；`result.courseList` 是**以 projectId 为键**的对象（如 `courseList["8"]=[]`），每门课关键字段：
+
+  | 字段 | 含义 |
+  |---|---|
+  | `id` / `vcourseId` | 购课实例 ID（听课/进度用） |
+  | `saasCourseId` / `relationCourse` | **SaaS 课程 ID＝做题链路的 courseId**（syllabus/内容接口用） |
+  | `subjectId` / `subjectName` | 科目 ID / 名（见 1.3） |
+  | `wareStatus` | `"1"`=已开课、`"0"`=未开课（**26 考季会计正课=0，名师专业课-会计已开课，备料时注意区分**） |
+  | `learnStatusDesc` / `leftDays` / `courseStartTime` / `courseExpireTime` | 学习状态 / 剩余天数 / 开课 / 到期 |
+  | `currentStudyUrl` | 进入课程 URL，模式 `//glivepro.gaodun.com/course/{saasCourseId}/guide-course` |
+
+- **本账号 2026-09-07 实测 8 门**（CPA 项目）：26 考季 VIPCPA 系列 税法(96834/42660)、会计(96760/42656)；名师专业课全科六科 税法50122/17247、会计50126/17244、战略50128/17249、审计50130/17245、财管50132/17246、经济法50124/17248（括号内 vcourseId/saasCourseId）。
+- **采集脚本**：`node scripts/cdp/fetch_user_space_courses.js [--print]`（JWT 直连、可重复跑）；结构化台账落 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），当次原始响应留 `data/cdp-sniff/user_space_vcourse_<ts>.json`。
+- 同页伴随的只读接口：`ep-course/.../space/student/info`（student_id、item_done）、`space/student/exam-date?subjectIds=...`（考试日期）。
+
 ## 3. 纯接口做卷时序（实现蓝本 = gaodun_paper_core.doPaperViaApi）
 
 1. **会话**：取 `authentication`（缺失/过期 → 提示用户登录，不自行试探）。
@@ -300,5 +323,6 @@ syllabus(枚举全部作业+ID映射+完成状态 progress)
 
 - 原始报文（不入库）：`data/cdp-sniff/quiz_load_*.jsonl`、`submit_*.jsonl`、`schedule_*.jsonl`、`*sniff*.jsonl`（含 UI「帮我批改」真实 cpa 请求，证实 openEnergyToEquity）。
 - 共享实现：`scripts/cdp/gaodun_paper_core.js`（buildUserAnswers / canon/qual/full 答案提炼 / doPaperViaApi）；入口 `api_do_paper.js`、`batch_redo_papers.js`；连接见 `connectBrowser.js`（脚本索引见 [scripts/README.md](../../../scripts/README.md)）。
+- 课程发现：`scripts/cdp/fetch_user_space_courses.js`（拉 vcourse/pc 全课程清单，台账 `data/高顿/CPA/账号课程清单.json`，见 2.11）。
 - 2026-09-02 主观闭环侦查蓝本与响应快照留存于本机 `/tmp`（hw_empty_sub/hw_cpa_clean/hw_rest_clean/retry6/decisive/finish6 等，临时可弃）。
 - 连接与抓包：[浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)；做题任务怎么执行（前置准备/枚举作业/批量与单卷/回查/异常分流/UI 兜底/知识反哺）：[做题/交卷任务执行指南](../guides/exam-workflow.md)。
