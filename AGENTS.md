@@ -272,6 +272,9 @@
 - **飞书同步自动剥离**：`scripts/knowledge/resync_wiki_content.py` 写入飞书前自动剥离顶部 frontmatter（`strip_frontmatter()`，仅认文件顶部连续 `---...---`），飞书读者不看到 YAML；剥离后正文与原文逐字一致。新增 / 改写知识详解后必须重跑 resync 同步
 - **信任标注**：机器初编的 frontmatter 不写 `verified: human`（不冒充人核）；用户实际审核后才补 `verified: { by: "human:<id>", at }`
 - **校验与推广**：`python3 scripts/okf_validate.py <知识详解目录或试点目录>`，硬错误 E 必须为 0；全量推广前先试点 3–5 篇定模板，随迭代补、不一次性批量
+- **全量推广经验（2026-09-08 Bundle A 108 篇）**：
+  - Context Block 格式兼容：01-04 章 README 用「覆盖知识点：N 个 · 题量：N 题次」（有冒号），05-14 章用「本组覆盖知识点 N 个 · 题量 N 题次」（无冒号）；解析题量/知识点数时必须从全文正则匹配（冒号可选），不能只依赖 fields 解析
+  - 飞书批量同步 token 失效：连续调用 100+ 次 docx 写入 API 时 lark-cli 临时 token 会失效（`parse temporary token from Authorization failed`）；resync 已优化为每 15 篇暂停 5 秒 + token 失效类错误等待 10 秒重试 5 次（`RESYNC_BATCH_SIZE`/`RESYNC_BATCH_PAUSE` 可配置）；单篇或小批量同步不受影响
 
 ---
 

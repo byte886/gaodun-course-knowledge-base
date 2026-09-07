@@ -112,6 +112,7 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 - 满足三问且**跨课程复用、属工程规则/基线**：入库（如脚本内的别名归一规则、模板、SOP、校验基线）。
 - **ADR-012 修订口径**：与**具体课程强绑定、可由 syllabus+papers 完全 rebuild** 的课程级路由（`course-manifest.json`，以及已退役的 `lecture-resource-map.json`/`verify_lecture_map.py`）即便体量轻也**不入库**，放课程 `data/_workspace/<profile>/manifest/`；入库的是"如何生成它的规则与脚本"，而非某门课的实例。
 - 不满足：不入库，如 papers 正文 JSON、视频、PDF（大体量 L1，只本地 + 网盘）。
+- **课程级过程件归档位置（2026-09-08 补充）**：与某门课强绑定、可由脚本重建的过程件（飞书节点映射表 `wiki_node_map.tsv`、课程级同步日志等）放 `data/_workspace/<profile>/logs/`，不散落在仓库根 `logs/`；仓库根 `logs/` 仅用于跨课程通用运行日志与断点哨兵（`netdisk_done/`、`raw_done/`、`supervisor_*.log` 等）。理由与 ADR-012 一致：课程级实例不入库、按课程隔离归档，入库的是生成规则与脚本。
 
 #### 2.2.4 papers：物理集中存，逻辑按讲视图（存储与视图分离）
 
