@@ -2,8 +2,15 @@
   "_comment": "会计课档案卡(草稿)。课程级 ID/平台来自用户空间接口实测(2026-09-07)；structure 官方章组待 syllabus 接口拉取后补全，不臆造。字段口径见 parallel-toolkit-design.md。",
   "key": "cpa-accounting-2026",
   "schemaVersion": 1,
-  "project": { "id": 8, "name": "CPA" },
-  "subject": { "id": 37, "name": "会计", "examTime": null },
+  "project": {
+    "id": 8,
+    "name": "CPA"
+  },
+  "subject": {
+    "id": 37,
+    "name": "会计",
+    "examTime": null
+  },
   "season": "2026考季",
   "teacher": "罗翔",
   "primaryCourse": {
@@ -24,10 +31,139 @@
   "companionCourses": [],
   "companionCoursesNote": "名师课（epiphany saasCourseId=17244）是独立课程，不在本次正课开工范围；后续单独建 profile 开工。2026-09-08 从 companionCourses 移除。",
   "structure": {
-    "officialGroupCount": null,
-    "pointCount": null,
-    "historyHint": "历史记录为 36 章 164 考点，仅供参考；官方组结构以 primaryCourse.syllabusId 拉取结果为准后回填",
-    "groups": []
+    "officialGroupCount": 32,
+    "pointCount": 92,
+    "historyHint": "知识图谱 32 官方组 92 知识点（来自 nice/transit/with-sid 接口，2026-09-08 拉取）；历史记录 36 章 164 考点可能含入门/衔接及 syllabus 章节，后续从 syllabus 接口核对",
+    "groups": [
+      {
+        "code": "01",
+        "name": "会计入门"
+      },
+      {
+        "code": "02",
+        "name": "会计衔接"
+      },
+      {
+        "code": "03",
+        "name": "总论"
+      },
+      {
+        "code": "04",
+        "name": "存货"
+      },
+      {
+        "code": "05",
+        "name": "固定资产"
+      },
+      {
+        "code": "06",
+        "name": "无形资产"
+      },
+      {
+        "code": "07",
+        "name": "投资性房地产"
+      },
+      {
+        "code": "08",
+        "name": "资产减值"
+      },
+      {
+        "code": "09",
+        "name": "负债"
+      },
+      {
+        "code": "10",
+        "name": "职工薪酬"
+      },
+      {
+        "code": "11",
+        "name": "股份支付"
+      },
+      {
+        "code": "12",
+        "name": "借款费用"
+      },
+      {
+        "code": "13",
+        "name": "或有事项"
+      },
+      {
+        "code": "14",
+        "name": "金融工具"
+      },
+      {
+        "code": "15",
+        "name": "长期股权投资与合营安排"
+      },
+      {
+        "code": "16",
+        "name": "租赁"
+      },
+      {
+        "code": "17",
+        "name": "持有待售的非流动资产、处置组和终止经营"
+      },
+      {
+        "code": "18",
+        "name": "所有者权益"
+      },
+      {
+        "code": "19",
+        "name": "收入"
+      },
+      {
+        "code": "20",
+        "name": "政府补助"
+      },
+      {
+        "code": "21",
+        "name": "所得税"
+      },
+      {
+        "code": "22",
+        "name": "非货币性资产交换"
+      },
+      {
+        "code": "23",
+        "name": "债务重组"
+      },
+      {
+        "code": "24",
+        "name": "外币折算"
+      },
+      {
+        "code": "25",
+        "name": "财务报告"
+      },
+      {
+        "code": "26",
+        "name": "会计政策、会计估计及其变更和差错更正"
+      },
+      {
+        "code": "27",
+        "name": "资产负债表日后事项"
+      },
+      {
+        "code": "28",
+        "name": "企业合并"
+      },
+      {
+        "code": "29",
+        "name": "合并财务报表"
+      },
+      {
+        "code": "30",
+        "name": "每股收益"
+      },
+      {
+        "code": "31",
+        "name": "公允价值计量"
+      },
+      {
+        "code": "32",
+        "name": "政府及民间非营利组织会计"
+      }
+    ]
   },
   "paths": {
     "localRoot": "data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）",
