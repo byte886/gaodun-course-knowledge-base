@@ -264,7 +264,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
   | `currentStudyUrl` | 进入课程 URL，模式 `//glivepro.gaodun.com/course/{saasCourseId}/guide-course` |
 
 - **本账号 2026-09-07 实测 8 门**（CPA 项目）：26 考季 VIPCPA 系列 税法(96834/42660)、会计(96760/42656)；名师专业课全科六科 税法50122/17247、会计50126/17244、战略50128/17249、审计50130/17245、财管50132/17246、经济法50124/17248（括号内 vcourseId/saasCourseId）。
-- **采集脚本**：`node scripts/cdp/fetch_user_space_courses.js [--print]`（JWT 直连、可重复跑）；结构化台账落 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），当次原始响应留 `data/_workspace/_account/user-space/user_space_vcourse_<ts>.json`。
+- **采集脚本**：`node scripts/cdp/fetch_user_space_courses.js [--print]`（JWT 直连、可重复跑）；精简结构化台账落 `data/_workspace/_account/user-space/account_courses.json`（覆盖式、带 fetchedAt，不入库、不传网盘），当次原始响应留同目录 `user_space_vcourse_<ts>.json`。
 - 同页伴随的只读接口：`ep-course/.../space/student/info`（student_id、item_done）、`space/student/exam-date?subjectIds=...`（考试日期）。
 
 ## 3. 纯接口做卷时序（实现蓝本 = gaodun_paper_core.doPaperViaApi）
@@ -323,6 +323,6 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 
 - 原始报文（不入库）：`data/_workspace/<profile>/sniff/quiz_load_*.jsonl`、`submit_*.jsonl`、`schedule_*.jsonl`、`*sniff*.jsonl`（含 UI「帮我批改」真实 cpa 请求，证实 openEnergyToEquity）。
 - 共享实现：`scripts/cdp/gaodun_paper_core.js`（buildUserAnswers / canon/qual/full 答案提炼 / doPaperViaApi）；入口 `api_do_paper.js`、`batch_redo_papers.js`；连接见 `connectBrowser.js`（脚本索引见 [scripts/README.md](../../../scripts/README.md)）。
-- 课程发现：`scripts/cdp/fetch_user_space_courses.js`（拉 vcourse/pc 全课程清单，台账 `data/高顿/CPA/账号课程清单.json`，见 2.11）。
+- 课程发现：`scripts/cdp/fetch_user_space_courses.js`（拉 vcourse/pc 全课程清单，台账 `data/_workspace/_account/user-space/account_courses.json`，见 2.11）。
 - 2026-09-02 主观闭环侦查蓝本与响应快照留存于本机 `/tmp`（hw_empty_sub/hw_cpa_clean/hw_rest_clean/retry6/decisive/finish6 等，临时可弃）。
 - 连接与抓包：[浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)；做题任务怎么执行（前置准备/枚举作业/批量与单卷/回查/异常分流/UI 兜底/知识反哺）：[做题/交卷任务执行指南](../guides/exam-workflow.md)。

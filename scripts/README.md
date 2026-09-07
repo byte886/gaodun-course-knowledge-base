@@ -642,7 +642,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | JWT 直连 `ep-course/.../space/vcourse/pc`，一次返回账号在各 project 下购买/开通的全部课程，提取 vcourseId/saasCourseId/subjectId/开课状态/到期等稳定字段。新开科目（如会计）开工前先跑它拿 saasCourseId（=做题链路 courseId），替代手工找 URL |
-| **用法** | `node scripts/cdp/fetch_user_space_courses.js [--print]`；台账 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），原始响应留 `data/_workspace/_account/user-space/user_space_vcourse_<ts>.json` |
+| **用法** | `node scripts/cdp/fetch_user_space_courses.js [--print]`；精简台账 `data/_workspace/_account/user-space/account_courses.json`（覆盖式、带 fetchedAt，不入库、不传网盘），当次原始响应留同目录 `user_space_vcourse_<ts>.json` |
 | **可靠性** | ✅ 已实测（2026-09-07 拉到 CPA 8 门，会计 saasCourseId=42656）；JWT 过期需先在登录态抓一次带 authentication 的请求刷新 jsonl |
 | **相关文档** | gaodun-exam-api.md §1.3、§2.11 |
 

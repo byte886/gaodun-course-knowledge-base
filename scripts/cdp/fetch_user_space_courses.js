@@ -17,8 +17,8 @@
  *   node scripts/cdp/fetch_user_space_courses.js            # 拉取并写台账
  *   node scripts/cdp/fetch_user_space_courses.js --print    # 额外在终端打印清单表格
  *
- * 输出（data 不入 Git，随网盘备份）：
- *   data/高顿/CPA/账号课程清单.json                 精简结构化台账（覆盖式，带 fetchedAt）
+ * 输出（账号/跨课级，统一在工作区，不入 Git、不传网盘）：
+ *   data/_workspace/_account/user-space/account_courses.json          精简结构化台账（覆盖式，带 fetchedAt）
  *   data/_workspace/_account/user-space/user_space_vcourse_<ts>.json  当次原始响应（保真留痕）
  */
 'use strict';
@@ -31,7 +31,7 @@ const { accountDir } = require('./load_profile');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const USER_SPACE_DIR = accountDir('user-space');
-const LEDGER = path.join(PROJECT_ROOT, 'data', '高顿', 'CPA', '账号课程清单.json');
+const LEDGER = path.join(USER_SPACE_DIR, 'account_courses.json');
 const API = 'https://apigateway.gaodun.com/ep-course/api/v2/front/space/vcourse/pc';
 
 const wantPrint = process.argv.includes('--print');
