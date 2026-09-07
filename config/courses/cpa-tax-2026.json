@@ -31,7 +31,7 @@
       "learnStatusDesc": "已学习",
       "studyUrl": "https://epiphany.gaodun.com/ep3/course/17247",
       "collect": false,
-      "note": "epiphany 智能学习平台，前端/接口与 glivepro 不通用，采集链路需单独适配，默认不采集"
+      "note": "epiphany 智能学习平台，前端/接口与 glivepro 不通用，采集前须先适配；名师课采集优先级排在 glivepro 正课之后"
     }
   ],
   "structure": {

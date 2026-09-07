@@ -30,8 +30,9 @@ GAODUN_COURSE_PROFILE=cpa-accounting-2026 node scripts/cdp/refresh_inventory.js
 
 - `primaryCourse`：**主采集源**。26 考季正课在 `glivepro` 平台，和现有工具链同构，默认走它。
 - `companionCourses`：配套课（如"名师专业课"）。它们在另一个学习平台 `epiphany`（智能学习平台，
-  前端和接口与 glivepro 不通用），`collect:false` 表示默认不采集，需要时先单独适配其接口。
-- `learnStatus`：学习状态，`0=待学习 / 2=已学习 / 3=已完结`。**"待学习"的课不录制、不采集。**
+  前端和接口与 glivepro 不通用），`collect:false` 表示**当前阶段**不采集，需要时先单独适配其接口。
+- `learnStatus`：学习状态，`0=待学习 / 2=已学习 / 3=已完结`。**"待学习"不是永久不录，而是优先级最低、排到最后**：
+  采集顺序＝先 glivepro 正课 → 再已学习的 epiphany 名师课（须先适配接口）→ 最后才轮到待学习名师课（战略/审计/财管，学完或到收尾阶段再录）。
 - `structure.groups`：官方章组清单；`paths`：本地/网盘根路径。
 - `overview`：**可选**的总览页教学内容（课程信息、全局资料、概述、章节重要性层级、学习方法）。
   属于"一门课一份的成品文案"而非课程参数；税法已填，会计等新课在内容生产前留空即可——

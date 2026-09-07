@@ -88,8 +88,19 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 }
 ```
 
-- **主采集源 vs 配套课**：26 考季正课在 `glivepro`（与现有工具链同构，走 `primaryCourse`）；名师专业课在另一个学习平台 `epiphany`（`saasCourseType=13`，URL 为 `epiphany.gaodun.com/ep3/course/{id}`，前端/接口不通用），列入 `companionCourses` 且默认 `collect:false`，要采需先适配其接口。
-- **学习状态看 `learnStatus`（不是 wareStatus）**：实测 `0=待学习 / 2=已学习 / 3=已完结`；`wareStatus` 语义不等于"是否开课/有无内容"（会计正课 wareStatus=0 但 learnStatus=已完结、有学习记录）。**"待学习"的课不录制、不采集。**
+- **主采集源 vs 配套课（两套学习平台，字段级实测 2026-09-07）**：
+
+  | 维度 | glivepro 正课 | epiphany 名师专业课 |
+  |---|---|---|
+  | `saasCourseType` | 16 | 13 |
+  | 学习入口 | `glivepro.gaodun.com/course/{id}/guide-course` | `epiphany.gaodun.com/ep3/course/{id}` |
+  | 本账号课程 | 税法 42660、会计 42656（均已完结） | 六科名师课（ID 见账号课程清单） |
+  | 工具链 | 现有采集脚本同构，直接走 `primaryCourse` | 前端/接口不通用，须先单独探查适配 |
+
+  名师课列入 `companionCourses` 且当前 `collect:false`，要采需先适配 epiphany 接口。六门名师课同属 epiphany 一个平台（彼此结构一致），真正的分界是"正课 vs 名师课"两类，而非每门课都不同。
+- **学习状态看 `learnStatus`（不是 wareStatus）**：实测 `0=待学习 / 2=已学习 / 3=已完结`；`wareStatus` 语义不等于"是否开课/有无内容"（会计正课 wareStatus=0 但 learnStatus=已完结、有学习记录）。
+- **采集优先级（"待学习"≠永久不录，而是排最后）**：① glivepro 正课 → ② 已学习的 epiphany 名师课（税法/会计/经济法，须先适配 epiphany）→ ③ 待学习名师课（战略/审计/财管，learnStatus=0）排最后，等学完或项目收尾阶段再录。
+- **epiphany 探查时机（不阻塞当前会计正课）**：先把会计正课主链路（DAG 节点 1–9）跑通；在真正决定要采名师课之前，用真实 Chrome CDP 对一门已学习名师课（优先会计 epiphany saas=17244）做一次接口探查（大纲/视频资源/进度接口），产出 epiphany 适配结论后再决定是否批量接入，现阶段不提前投入。
 - ID 口径以 [gaodun-exam-api.md §1.3/§2.11](../api/gaodun-exam-api.md) 为准：`saasCourseId`＝做题/内容接口的 courseId，`vcourseId`＝购课实例（听课/进度），二者不可混用。
 - profile 由 `fetch_user_space_courses.js` 台账**半自动生成草稿**（ID/课程名/科目/平台/状态直接来自接口），`structure`（官方章组、考点数）由 syllabus 脚本补全，人手确认后入库。样板见 `config/courses/`（税法已填全、会计为草稿）。
 
