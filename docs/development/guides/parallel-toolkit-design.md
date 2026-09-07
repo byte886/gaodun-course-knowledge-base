@@ -101,14 +101,14 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 
 ### 3.4 硬编码消灭清单（改造点，逐个可独立提交）
 
-| 文件 | 现状硬编码 | 改为读 profile |
+| 文件 | 原硬编码 | 改造状态 |
 |---|---|---|
-| `cdp/refresh_inventory.js` | 42660 / 75181 | `--profile` 或 env |
-| `cdp/fetch_lecture_video.js` | 42660/75181 + 桌面路径 | 同上 |
-| `cdp/collect_user_notes.js` | 税法 papers 路径 | profile.paths |
-| `cdp/gaodun_paper_core.js` | 默认 42660 | 已支持 env，对齐 profile 即可 |
-| `knowledge/build_course_overview.py` | 税法路径/14 章名/层级/title | profile.structure/subject |
-| `course_config.sh` | 默认税法名 | 支持 `COURSE_PROFILE` |
+| `cdp/refresh_inventory.js` | 42660 / 75181 | ✅ 读 profile（`--profile`/env） |
+| `cdp/fetch_lecture_video.js` | 42660/75181 + 桌面路径 | ✅ 读 profile，去 `os.homedir` |
+| `cdp/collect_user_notes.js` | 税法 papers 路径 | ✅ `profile.paths`，输出按 `key` 隔离 |
+| `cdp/gaodun_paper_core.js` | 默认 42660 | ✅ env 优先、缺省读 profile 主源 ID |
+| `knowledge/build_course_overview.py` | 税法路径/14 章名/层级/title | ✅ structure/paths + 可选 `overview` 段（空则省略） |
+| `course_config.sh` | 默认税法名 | ✅ 支持 `COURSE_PROFILE` |
 | `cdp/do_sprint_paper.js`、`fetch_sprint_video.js` | 税法冲刺卷/视频 ID | **保持税法专属**（冲刺卷每课不同，改为读 profile 内 sprint 段，不做通用化抽象） |
 
 ## 四、层 2：统一并发执行器与选型契约

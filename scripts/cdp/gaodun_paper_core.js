@@ -26,9 +26,10 @@ const path = require('path');
 
 const MINERVA_BASE = 'https://apigateway.gaodun.com/minerva/api/v1/front';
 const AITUTOR_BASE = 'https://apigateway.gaodun.com/aitutor/api/v1/front';
-// 课程 ID：优先读环境变量 GAODUN_COURSE_ID，默认税法课 42660（保持向后兼容）
-// 会计课等其他课程需设置此环境变量，或从 syllabus 抓包中获取
-const COURSE_ID = parseInt(process.env.GAODUN_COURSE_ID || '42660', 10);
+// 课程 ID：env GAODUN_COURSE_ID 最高优先；否则取课程 profile 主源 saasCourseId（缺省税法 42660）
+// 换课设 GAODUN_COURSE_PROFILE=<key> 即可，无需再手抄 ID
+const { loadProfile, primaryIds } = require('./load_profile');
+const COURSE_ID = parseInt(process.env.GAODUN_COURSE_ID || String(primaryIds(loadProfile()).courseId), 10);
 const SOURCE_FROM_TYPE = parseInt(process.env.GAODUN_SOURCE_FROM_TYPE || '100533962', 10); // 作业卷固定 sourceFromType，可环境变量覆盖
 const CPA = { aiTutorConfigId: 55, sourceType: 100536073, cpaAiBotType: 3, botId: '171109285178801048' }; // 兜底默认值；实际以每题 redo 的 aiCorrect 为准
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36';
