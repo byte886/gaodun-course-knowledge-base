@@ -259,6 +259,20 @@
 - **机械校验（提交前必过）**：`python3 scripts/okf_validate.py docs/project-management/memory`，硬错误 E 必须为 0（已挂入 `scripts/pre-commit`）；警告 W 需逐条确认。
 - **项目自包含 / 可移植（硬约束）**：工程运行**不得依赖全局 `~/Doubao/AGENTS.md` 或任何全局技能**——校验器等工具一律 vendor 进本仓库 `scripts/`，规则与指针只引用仓库内相对路径；保证仅 clone 本仓库、换一个 Agent 也能按自身文档接手。
 
+### 3.12 知识详解 OKF frontmatter（格式层延伸，强制）
+
+课程库 `知识详解/` 下 108 篇成品采用 OKF v0.2 标准档 frontmatter（ADR-017 格式层向知识成品的延伸；Bundle A 试点 2026-09-08 通过飞书端到端验证）。
+
+- **type 词表（项目统一，不得自造）**：
+  - `KnowledgePoint`：92 篇知识点详解
+  - `Reference`：2 篇课程全局篇（《考试指导速查手册》《课程做题思路解析》）
+  - `ChapterIndex`：14 篇章 README
+- **标准档字段**：`type` + `title` + `description` + `tags` + `sources`（讲义 OCR / 题目 paperId）+ `generated`（`process:knowledge-build`）+ `status: stable` + `stale_after`（新教材发布前复审，默认 `2027-03-31T23:59:59+08:00`）+ 自定义 key（`chapter` / `exam_season` / `question_count` / `point_count` / `scope`）
+- **与正文分工**：frontmatter 是机器权威（结构化元数据、可校验、可查询）；正文顶部 `>` Context Block 保留为人读展示（飞书读者看到的就是它），二者内容对齐、不重复维护；正文四节结构（知识拆解 / 考试指导 / 题答解析 / 学员补充）一律不动
+- **飞书同步自动剥离**：`scripts/knowledge/resync_wiki_content.py` 写入飞书前自动剥离顶部 frontmatter（`strip_frontmatter()`，仅认文件顶部连续 `---...---`），飞书读者不看到 YAML；剥离后正文与原文逐字一致。新增 / 改写知识详解后必须重跑 resync 同步
+- **信任标注**：机器初编的 frontmatter 不写 `verified: human`（不冒充人核）；用户实际审核后才补 `verified: { by: "human:<id>", at }`
+- **校验与推广**：`python3 scripts/okf_validate.py <知识详解目录或试点目录>`，硬错误 E 必须为 0；全量推广前先试点 3–5 篇定模板，随迭代补、不一次性批量
+
 ---
 
 ## 4. Things to Avoid（明确禁止事项）

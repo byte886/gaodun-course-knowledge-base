@@ -29,6 +29,21 @@ RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
 COURSE_DIR = os.path.join(REPO, load_profile()["paths"]["localRoot"], "知识详解")
 
 
+def strip_frontmatter(text):
+    """剥离文件顶部的 YAML frontmatter（连续 ---...---），无则原样返回。
+
+    仅当文件以 --- 开头时才剥离；正文中间的 --- 分隔线（前面有标题/blockquote）不会被误判。
+    剥离后去掉前导空行，保证正文从 # 标题开始。
+    """
+    if not text.startswith("---"):
+        return text
+    lines = text.splitlines(keepends=True)
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "".join(lines[i + 1:]).lstrip("\n")
+    return text  # 无闭合 ---，原样返回（不破坏文件）
+
+
 def load_title2obj():
     m = {}
     with open(MAP_FILE, encoding="utf-8") as f:
@@ -58,6 +73,7 @@ def collect_files():
 
 def update_one(title, path, obj):
     raw = open(path, encoding="utf-8").read()
+    raw = strip_frontmatter(raw)
     resolved = subprocess.run(
         ["python3", RESOLVER], input=raw, capture_output=True, text=True, cwd=REPO
     ).stdout
