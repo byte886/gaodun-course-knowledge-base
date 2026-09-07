@@ -6,15 +6,16 @@
  *
  * 纯只读：不 redo、不建实例、不交卷、不耗 AI 权益、无副作用。
  * 输出：
- *   data/knowledge-source/papers/<paperId>.json   每卷精简题/答/解析
- *   data/knowledge-source/paper_index.json       paperId -> 章/标题/题数/文件
- * 用法：node scripts/cdp/collect_paper_sources.js [--all] [paperId...]
- *   默认只补本地缺失的卷；--all 强制重拉；可跟指定 paperId。
+ *   data/knowledge-source/papers/<paperId>.json   每卷精简题/答/解析（paperId 全局唯一，跨课共享）
+ *   data/knowledge-source/paper_index[__<profile>].json  paperId -> 章/标题/题数/文件（按 profile 隔离，税法无后缀）
+ * 用法：node scripts/cdp/collect_paper_sources.js [--profile <key>] [--all] [paperId...]
+ *   默认只补本地缺失的卷；--all 强制重拉；可跟指定 paperId；课程由 --profile/GAODUN_COURSE_PROFILE 决定。
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { findJwt, makeHeaders, MINERVA_BASE, stripHtml } = require('./gaodun_paper_core');
+const { loadProfile, scopedPath, argvProfileKey } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const SNIFF = path.join(ROOT, 'data', 'cdp-sniff');
@@ -48,9 +49,12 @@ function pickQuestion(q) {
 }
 
 (async () => {
+  const profile = loadProfile(argvProfileKey());
   fs.mkdirSync(OUTDIR, { recursive: true });
   const H = makeHeaders(findJwt(SNIFF));
-  const inv = JSON.parse(fs.readFileSync(path.join(SNIFF, 'papers_inventory.json'), 'utf8'));
+  const invPath = scopedPath(SNIFF, 'papers_inventory.json', profile.key);
+  const inv = JSON.parse(fs.readFileSync(invPath, 'utf8'));
+  console.log(`[profile] ${profile.key}｜inventory=${path.basename(invPath)}｜卷数=${inv.length}`);
   const forceAll = process.argv.includes('--all');
   const only = process.argv.slice(2).filter((a) => /^\d+$/.test(a)).map(Number);
   let list = inv;
@@ -99,7 +103,7 @@ function pickQuestion(q) {
   }
 
   // 合并已有 index（增量补采时保留旧条目）
-  const idxPath = path.join(ROOT, 'data', 'knowledge-source', 'paper_index.json');
+  const idxPath = scopedPath(path.join(ROOT, 'data', 'knowledge-source'), 'paper_index.json', profile.key);
   let old = [];
   if (!only.length && fs.existsSync(idxPath)) old = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
   const merged = only.length || forceAll ? (only.length ? [...old.filter((x) => !only.includes(x.paperId)), ...index] : index)

@@ -73,7 +73,29 @@ function primaryIds(p) {
   };
 }
 
-module.exports = { loadProfile, primaryIds, listProfiles, PROFILE_DIR };
+/**
+ * 按 profile 隔离的过程件文件名：默认税法保持历史原名（零变化回归），其它课程在扩展名前
+ * 插 `__<key>`，避免多门课共用同一个全局单文件（inventory/audit/index）互相覆盖。
+ *   scopedName('papers_inventory.json','cpa-tax-2026')       -> 'papers_inventory.json'
+ *   scopedName('paper_index.json','cpa-accounting-2026')     -> 'paper_index__cpa-accounting-2026.json'
+ */
+function scopedName(file, key) {
+  const k = key || process.env.GAODUN_COURSE_PROFILE || DEFAULT_KEY;
+  if (k === DEFAULT_KEY) return file;
+  return file.replace(/(\.[^.]+)$/, `__${k}$1`);
+}
+function scopedPath(dir, file, key) { return path.join(dir, scopedName(file, key)); }
+
+/** 从命令行参数解析 --profile <key> / --profile=<key>；未给返回 undefined（交由 loadProfile 走 env/缺省） */
+function argvProfileKey(argv) {
+  const a = argv || process.argv;
+  const i = a.indexOf('--profile');
+  if (i >= 0 && a[i + 1]) return a[i + 1];
+  const eq = a.find((x) => x.startsWith('--profile='));
+  return eq ? eq.slice('--profile='.length) : undefined;
+}
+
+module.exports = { loadProfile, primaryIds, listProfiles, scopedName, scopedPath, argvProfileKey, PROFILE_DIR };
 
 // 命令行自检
 if (require.main === module) {

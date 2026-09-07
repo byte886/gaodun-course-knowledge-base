@@ -20,6 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi, dwellSec } = require('./gaodun_paper_core');
+const { loadProfile, scopedPath, argvProfileKey } = require('./load_profile');
 const ROOT = path.resolve(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'data', 'cdp-sniff');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -36,9 +37,11 @@ function chapterKey(ch) {
 }
 
 (async () => {
-  const inv = JSON.parse(fs.readFileSync(path.join(DIR, 'papers_inventory.json'), 'utf8'));
+  const profile = loadProfile(argvProfileKey());
+  const inv = JSON.parse(fs.readFileSync(scopedPath(DIR, 'papers_inventory.json', profile.key), 'utf8'));
   let audit = [];
-  try { audit = JSON.parse(fs.readFileSync(path.join(DIR, 'papers_audit.json'), 'utf8')); } catch { audit = []; }
+  try { audit = JSON.parse(fs.readFileSync(scopedPath(DIR, 'papers_audit.json', profile.key), 'utf8')); } catch { audit = []; }
+  console.log(`[profile] ${profile.key}｜inventory/audit 按 profile 读取`);
   const auditMap = new Map(audit.map((r) => [r.paperId, r]));
 
   let todo;
@@ -95,7 +98,7 @@ function chapterKey(ch) {
       console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);
     }
     results.push(rec);
-    fs.writeFileSync(path.join(DIR, `batch_result_${new Date().toISOString().slice(0, 10)}.json`), JSON.stringify(results, null, 1));
+    fs.writeFileSync(scopedPath(DIR, `batch_result_${new Date().toISOString().slice(0, 10)}.json`, profile.key), JSON.stringify(results, null, 1));
     if (idx < todo.length - 1) await sleep(4000);
   }
   const full = results.filter((r) => r.fullScore).length;
