@@ -7,21 +7,42 @@
 
 ## 目的
 
-确保飞书知识库中所有内部链接①指向正确节点（无死链、错链、占位符坏链），②在**当前窗口**导航（`target="_self"`），不新开标签页。每次知识详解同步飞书后、或知识库结构调整后，必须执行本 SOP 验证。
+确保飞书知识库中所有内部链接①指向正确节点（无死链、错链、占位符坏链），②统一采用 `<cite>` 结构化内部引用（标题渲染、obj_token 强绑定、可自动校验）。同时固化"打开方式"的平台实测结论，避免再用 DOM 属性误判跳转行为。每次知识详解同步飞书后、或知识库结构调整后，必须执行本 SOP 验证。
 
-## 核心约定：内部链接一律用 `<cite>` 文档引用
+## 核心约定一：内部链接一律用 `<cite>` 文档引用
 
-飞书文档内的站内跳转有两种写法，窗口行为不同（2026-09-07 实测）：
+选择 cite 而非完整 URL，**理由是结构化与可校验性，不是打开方式**（二者打开方式相同，见下节）：
 
-| 写法 | 飞书渲染 | target | 是否采用 |
-|------|---------|--------|---------|
-| `<cite type="doc" doc-id="obj_token"/>` | 文档标题（蓝色内部引用） | **`_self`（当前窗口）** | ✅ 唯一采用 |
-| 完整 URL `[文字](https://<域名>/wiki/<node>)` | 普通超链接 | `_blank`（新标签页） | ❌ 已弃用 |
-| `<cite type="citation">` 参考文献组件 | JS 弹层组件 | 弹层内链接仍 `_blank` | ❌ 不用于导航 |
+| 写法 | 飞书渲染 | 是否采用 | 选择理由 |
+|------|---------|---------|---------|
+| `<cite type="doc" doc-id="obj_token"/>` | 文档标题（蓝色内部引用） | ✅ 唯一采用 | 渲染为目标标题、obj_token 强绑定、可回读自动校验 0 坏链 |
+| 完整 URL `[文字](https://<域名>/wiki/<node>)` | 普通超链接 | ❌ 站内导航弃用 | URL 冗长、随节点变动易失效、无法结构化校验；仅外链使用 |
+| `<cite type="citation">` 参考文献组件 | JS 弹层组件 | ❌ 不用于导航 | 弹层内链接仍新开 |
 
 - cite 渲染文字固定为**目标文档标题**，因此本地相对链接的链接文字必须等于目标文件名（标题），税法课已全量核验 746 处一致；
 - cite 的 `doc-id` 填 **obj_token（docx token，台账第 3 列）**，不是 node_token；
 - 本地 Markdown 源文件保留 `./标题.md` 相对链接不动，仅在写入飞书的管道里由 `wiki_link_resolve.py` 转成 cite；Markdown 流中可直接内嵌该 XML 标签，飞书可识别。
+
+## 核心约定二：打开方式的平台事实（2026-09-07 可信点击实测）
+
+**飞书正文区跨文档跳转一律在新标签页打开，与写入格式无关；唯一"当前窗口切换文档"的入口是左侧知识库目录树。**
+
+用真实 Chrome + CDP 可信鼠标点击（`Input.dispatchMouseEvent`，`isTrusted=true`，飞书无法拦截）逐种实测：
+
+| 入口 | 标签页变化 | 当前页是否切换 | 结论 |
+|------|-----------|--------------|------|
+| `<cite>` 内部引用 | +1 | 否 | 新标签页 |
+| `<button action="OpenLink">` | +1 | 否 | 新标签页 |
+| `<bookmark>` 书签卡片 | +1 | 否 | 新标签页 |
+| 普通 `<a>` 完整 URL | +1 | 否 | 新标签页 |
+| 原生 `<sub-page-list/>` 子页面列表 | +1 | 否 | 新标签页 |
+| **左侧知识库目录树节点** | **不变** | **是，URL 直接切换** | **当前窗口** |
+
+佐证：lark-cli 官方仓库 issue #2399（2026-08-19）确认 API 写入的跨文档/锚点链接即新开，期望中的 `docsLink`（仅解决同一篇内滚动）至今未实现。
+
+> ⚠️ **教训：禁止用 DOM 的 `target="_self"` 属性判定"本窗口打开"。** cite 渲染出的 `a.mention-doc` 虽带 `target="_self"`，但飞书 React 的 onclick 统一接管，真人左键点击仍新开标签。DOM 属性 ≠ 真实导航行为；判定打开方式只能靠 CDP 可信点击（合成 `dispatchEvent` 因 `isTrusted=false` 会被飞书拦截，同样不可信）。
+
+**单窗口阅读方案（方案 B）**：正文 cite 全部保留（阅读中偶尔引用，新开可接受），在**导航型页面**（课程总览页、14 章 README）顶部加统一导航说明，引导读者用左侧目录树做单窗口连续阅读；92 篇知识点详解与 2 篇全局资料是纯内容页，不加，避免重复堆砌。
 
 ## 验证范围（三层）
 
@@ -30,9 +51,9 @@
 | 第一层 | 课程总览页（课程根节点） | 16 | 14 章入口 cite + 2 篇全局资料 cite |
 | 第二层 | 14 章 README「知识点目录」 | 92 | 每章指向该章各知识点详解的 cite |
 | 第三层 | 92 篇知识点详解「关联知识点」 | 654 | 知识点之间互相跳转的 cite |
-| **合计** | | **762** | 全部应为 cite、全部 `_self` |
+| **合计** | | **762** | 全部为 cite、doc-id 全部在台账内 |
 
-> 总览页不再设"知识拆解 / 考试指导"两列：每章只保留一个章入口 cite，章内"知识点目录"即知识拆解、"重点内容"即该章考试指导；跨章横向汇总由全局两篇 cite 承担。
+> 总览页不设"知识拆解 / 考试指导"两列：每章只保留一个章入口 cite，章内"知识点目录"即知识拆解、"重点内容"即该章考试指导；跨章横向汇总由全局两篇 cite 承担。
 
 ## 前置条件
 
@@ -72,9 +93,9 @@ cat "data/.../知识详解/01_税法总论/README.md" | python3 scripts/wiki_lin
 # stderr 不应出现"未找到节点映射"
 ```
 
-### 第三步：飞书回读验证（同步后）
+### 第三步：飞书回读验证（同步后，正确性主验证）
 
-cite 回读形态为 `<cite doc-id="obj_token" file-type="docx" title="标题" type="doc"></cite>`，按 **doc-id 与台账 obj_token 比对**（不再是提取 wiki URL）。
+cite 回读形态为 `<cite doc-id="obj_token" file-type="docx" title="标题" type="doc"></cite>`，按 **doc-id 与台账 obj_token 比对**。
 
 ```bash
 # 回读一篇（以课程根总览页为例）
@@ -86,7 +107,7 @@ x = json.load(open('/tmp/doc.json'))['data']['document']['content']
 cites = re.findall(r'<cite doc-id="([^"]+)"[^>]*title="([^"]*)"', x)
 obj_col = set(l.split('\t')[2] for l in open('logs/wiki_node_map.tsv', encoding='utf-8'))
 bad = [(t, o) for o, t in cites if o not in obj_col]
-# 完整 URL 普通链接应清零（这些是 _blank 的根源）
+# 站内导航不应残留完整 feishu URL（外链除外）
 plain = re.findall(r'<a href="https://[^"]*feishu[^"]*"', x)
 print(f'cite 数: {len(cites)}, 指向台账外: {len(bad)}, 残留完整URL链接: {len(plain)}')
 PY
@@ -94,30 +115,41 @@ PY
 
 批量回读可复用 `scripts/knowledge/resync_wiki_content.py` 的对应遍历逻辑，对 108 篇逐篇统计 cite 数与坏链。
 
-### 第四步：浏览器 target=_self 抽检（渲染层）
+### 第四步：导航说明存在性检查（方案 B）
 
-回读只能证明 doc-id 正确，`target` 是前端渲染属性，需在内置浏览器（plane=bu）抽检：
+导航型页面顶部必须有引导左侧树单窗口阅读的说明块，纯内容页不加：
 
-```javascript
-// 在打开的飞书文档控制台执行：
-// mention-doc 即 cite 渲染结果；页面内不应再有 target=_blank 的站内链接
-JSON.stringify({
-  cite_self: document.querySelectorAll('a.mention-doc[target="_self"]').length,
-  blank:      document.querySelectorAll('a[target="_blank"]').length
-})
+```bash
+# 总览页 + 14 章 README 各应有 1 处"导航说明/导航："；知识点篇应为 0
+python3 - << 'PY'
+import glob, subprocess, json
+# 飞书侧：fetch 后统计 "左侧知识库目录树" 出现次数；总览=1、每章 README=1
+# 本地侧快速核对：
+for rd in sorted(glob.glob('data/**/知识详解/[0-9]*/README.md', recursive=True)):
+    s = open(rd, encoding='utf-8').read()
+    assert '左侧知识库目录树' in s, rd
+print('14 章 README 导航说明齐全')
+PY
 ```
 
-- 总览页：cite_self=16、blank=0；
-- 章 README / 知识点篇：站内链接全部计入 cite_self，blank=0（外链除外）。
+### 第五步（可选）：打开方式可信点击复核
 
-### 第五步：汇总报告
+仅当怀疑飞书前端行为变化时做。**必须用真实 Chrome + puppeteer-core CDP**（连接方式见 `docs/development/tools/browser-cdp-connect-guide.md`），用 `page.mouse.click()`（底层 `Input.dispatchMouseEvent`，`isTrusted=true`）点击，监听 `browser.on('targetcreated')` 与当前页 `page.url()`：
+
+- 点正文 cite：标签数 +1、当前页 url 不变 = 新标签页（符合平台事实）；
+- 点左侧目录树节点：标签数不变、当前页 url 切换 = 当前窗口。
+
+禁止用 `bu.dispatchEvent` / `element.click()`（`isTrusted=false`，会被飞书拦截，结论失真），也禁止只看 `target` 属性下结论。
+
+### 第六步：汇总报告
 
 ```
 === 飞书链接验证报告 ===
-第一层 总览页:    16 cite, 0 坏链, 0 _blank
-第二层 章README:  92 cite, 0 坏链, 0 _blank
-第三层 知识点:   654 cite, 0 坏链, 0 _blank
+第一层 总览页:    16 cite, 0 坏链, 0 残留完整URL, 导航说明 1
+第二层 章README:  92 cite, 0 坏链, 0 残留完整URL, 导航说明 14/14
+第三层 知识点:   654 cite, 0 坏链, 0 残留完整URL（纯内容页无导航说明）
 合计:            762 cite, 0 错误
+打开方式:        正文 cite 统一新开标签（平台固定）；单窗口走左侧目录树（已在导航页说明）
 结论: 全部通过
 ```
 
@@ -125,19 +157,21 @@ JSON.stringify({
 
 | 问题 | 原因 | 修复 |
 |------|------|------|
-| 回读出现完整 URL `<a href=.../wiki/...>`（新窗口） | 旧版同步产物，或误用 markdown 链接 | 用 `resync_wiki_content.py` 以新版 `wiki_link_resolve.py`（输出 cite）重同步 |
+| 回读出现完整 URL `<a href=.../wiki/...>` | 旧版同步产物，或误用 markdown 链接 | 用 `resync_wiki_content.py` 以新版 `wiki_link_resolve.py`（输出 cite）重同步 |
 | cite 整块变空 | doc-id 误填 node_token，或拼了不存在的 obj_token | 改用台账第 3 列 obj_token；`wiki +node-get` 可反查 |
 | 转换时 stderr 报"未找到节点映射" | 本地链接目标与台账标题不一致，或台账缺该节点 | 先补/修台账或本地文件名，禁止臆造 token |
 | cite 渲染文字与原文链接文字不符 | 链接文字≠目标文档标题 | 修改本地链接文字等于文件名（标题）后重同步 |
+| 误以为"cite 带 target=_self 就本窗口打开" | 把 DOM 属性当成真实导航行为 | 见"核心约定二"：以 CDP 可信点击为准，正文 cite 一律新开 |
 | 总览页多行指向同一篇全局手册 | 误把"考试指导"列统一指向全局速查 | 每章入口 cite 必须指向该章 README 的 obj_token，全局手册只在"全局资料"出现一次 |
 | 台账出现同标题多行 | 历史同步重复追加（节点未必重复） | 先按整行去重；若同标题对应不同 obj_token，才说明飞书有重复节点需人工核对删除 |
 
 ## 验收标准
 
 - 三层合计 0 坏链、0 台账外 doc-id、0 残留完整 URL 站内链接；
-- 浏览器抽检站内链接全部 `target="_self"`，无 `_blank` 站内跳转；
 - cite 渲染标题均为有意义的文档名（无 `[链接]`、`[点击查看]` 等占位符）；
-- 课程总览页章入口行数与章数一致（税法课 14 行 + 全局 2 篇）。
+- 导航型页面（总览页 1 + 14 章 README）顶部各有 1 处左侧树单窗口导航说明，纯内容页不加；
+- 课程总览页章入口行数与章数一致（税法课 14 行 + 全局 2 篇）；
+- **不**再以 `target="_self"` 作为"本窗口打开"的验收项（DOM 属性不代表真实行为）。
 
 ## 参考
 
@@ -147,4 +181,5 @@ JSON.stringify({
 - 内容重同步：`scripts/knowledge/resync_wiki_content.py`（只覆盖内容、不建节点，`--dry-run` 预检）
 - 首次建节点同步：`scripts/sync_wiki_new.sh`
 - 飞书 API：`lark-cli docs +fetch`（回读）、`lark-cli docs +update --command overwrite`（覆盖）
+- 打开方式佐证：lark-cli issue #2399（docsLink 同文档跳转尚未实现）
 - 相关 ADR：[ADR-012](../../project-management/decisions/ADR-012-三层解耦与按知识点聚合.md)（飞书与本地同构）

@@ -2,9 +2,11 @@
 """生成课程总览页：飞书 XML（--format xml，默认）与本地 Markdown 源文件（--format markdown）。
 
 设计要点（2026-09-07 修订）：
-- 飞书侧章节入口统一用 <cite type="doc" doc-id="obj_token"/> 内部文档引用。
-  实测 cite 会渲染为文档标题且生成 target="_self"，在当前窗口导航，不新开标签页；
-  普通完整 URL（含 /wiki/<token> 与 citation 组件）均为 target="_blank" 新窗口，故弃用。
+- 飞书侧章节入口统一用 <cite type="doc" doc-id="obj_token"/> 内部文档引用：渲染为目标文档
+  标题、obj_token 强绑定、可自动校验坏链，比完整 URL 规范可靠。
+  打开方式经真实 Chrome CDP 可信点击实测：cite 与完整 URL 一样都在【新标签页】打开，飞书正文
+  跨文档跳转统一新开，写入格式无法改成当前窗口，唯一当前窗口切换是左侧知识库目录树（详见
+  wiki-link-verification-sop.md）。故页首用 NAV_HINT 如实说明并引导左侧树单窗口阅读。
 - 每章只保留一个入口（章 README）：章内"知识点目录"即知识拆解入口，"重点内容"即该章考试指导，
   不再让 14 行"考试指导"都指向同一个全局速查手册；全局横向汇总以 cite 单列于表格下方。
 - 本地 Markdown 源文件用相对链接，供 git/网盘归档，与飞书 XML 同源生成，避免两处不一致。
@@ -69,9 +71,15 @@ STUDY_METHODS = [
     "不要放弃弯道超车章节（国际税收、征管法、行政法制）",
 ]
 
+NAV_HINT = (
+    "导航说明：本页章节名与全局资料均为飞书内部文档引用，点击会在新标签页打开"
+    "（飞书正文跨文档链接的固定行为）。若希望在同一窗口连续阅读、避免标签过多迷失，"
+    "请使用左侧知识库目录树：点节点即在当前窗口切换，展开章节可见其全部知识点。"
+)
+
 LIST_NOTE = (
-    "点击章节名在当前窗口进入该章目录，不新开页面。章内“知识点目录”是知识拆解入口，"
-    "“重点内容”是该章考试指导；每篇知识点详解统一含“知识拆解 / 考试指导 / 题答解析 / 学员补充”四节。"
+    "每章只设一个入口（章 README）：章内“知识点目录”是知识拆解入口，“重点内容”是该章考试指导；"
+    "每篇知识点详解统一含“知识拆解 / 考试指导 / 题答解析 / 学员补充”四节。"
     "跨章横向汇总与通用做题方法见表格下方两篇全局资料。"
 )
 
@@ -128,6 +136,8 @@ def build_xml(chapter_obj, global_obj, counts, dirname):
     total = sum(r[2] for r in rows)
     p = []
     p.append("<title>【26考季】VIPCPA系列-税法（蔡俊峻老师）</title>")
+    # 导航说明（如实告知正文引用新开标签、单窗口走左侧目录树）
+    p.append(f"<blockquote><p>{esc(NAV_HINT)}</p></blockquote>")
     # 课程信息
     p.append("<h2>课程信息</h2>")
     p.append("<ul>" + "".join(f"<li>{esc(k)}：{esc(v)}</li>" for k, v in COURSE_INFO) + "</ul>")
@@ -136,7 +146,7 @@ def build_xml(chapter_obj, global_obj, counts, dirname):
     p.append(f"<blockquote><p>{esc(LIST_NOTE)}</p></blockquote>")
     head = "".join(
         f'<th background-color="light-gray"><p>{h}</p></th>'
-        for h in ("序号", "章节（当前窗口进入）", "知识点", "状态")
+        for h in ("序号", "章节", "知识点", "状态")
     )
     body = []
     for num, obj, n, _dn in rows:
@@ -181,7 +191,8 @@ def build_markdown(chapter_obj, counts, dirname):
     L = []
     L.append("# 【26考季】VIPCPA系列-税法（蔡俊峻老师）\n")
     L.append("> 本文件为飞书课程根节点（总览页）的本地源文件，与飞书版本同源生成。")
-    L.append("> 飞书侧章节入口为内部文档引用（当前窗口打开）；本地用相对路径链接。\n")
+    L.append("> 导航说明：飞书侧章节为内部文档引用，点击在新标签页打开（飞书正文跨文档链接固定行为），"
+             "单窗口连续阅读请用飞书左侧知识库目录树；本地源文件用相对路径链接。\n")
     L.append("## 课程信息\n")
     for k, v in COURSE_INFO:
         L.append(f"- {k}：{v}")

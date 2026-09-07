@@ -3,7 +3,8 @@
 
 适用：链接格式、正文清理等"内容层"批量修订后的重同步（如相对链接改为 <cite> 内部引用）。
 - 标题→obj_token 取自 logs/wiki_node_map.tsv（已去重，108 个标题全局唯一）；
-- 本地相对链接经 scripts/wiki_link_resolve.py 转为 <cite>（飞书内当前窗口打开）；
+- 本地相对链接经 scripts/wiki_link_resolve.py 转为 <cite> 内部文档引用（渲染为目标文档标题、
+  obj_token 强绑定可校验坏链；注意飞书正文跨文档点击统一新开标签，单窗口导航走左侧知识库目录树）；
 - 章 README 以"章目录名"为标题，知识点篇以文件名（去 .md）为标题，全局篇在知识详解根目录；
 - 找不到 obj、或 docs +update 失败均计入失败清单，失败自动重试 3 次；
 - 不写 done_flag、不追加 map，避免映射表重复膨胀。

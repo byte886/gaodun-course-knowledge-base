@@ -165,13 +165,13 @@ EOF
 
 带引号的 heredoc（`<<'EOF'`）**不会展开 shell 变量**。若正文里写 `%BASE%/xxx`、`$W/xxx` 这类占位符，会原样写入形成坏链。
 
-- **指向知识库内其他文档**：一律写 `<cite type="doc" doc-id="obj_token"/>`（`doc-id` 用 obj_token）。飞书渲染为文档标题、`target="_self"` 当前窗口导航；Markdown 流中可直接内嵌该标签，由 `wiki_link_resolve.py` 从本地相对链接自动转换。
-- **不要用完整 `/wiki/<node>` URL 做站内导航**：它会被渲染成 `target="_blank"` 新标签页；完整 URL 仅用于站外链接，或确实需要新开页的场景。
+- **指向知识库内其他文档**：一律写 `<cite type="doc" doc-id="obj_token"/>`（`doc-id` 用 obj_token）。飞书渲染为目标文档标题（蓝色内部引用），由 obj_token 强绑定、可回读自动校验坏链；Markdown 流中可直接内嵌该标签，由 `wiki_link_resolve.py` 从本地相对链接自动转换。
+- **打开方式（2026-09-07 真实 Chrome CDP 可信点击实测）**：cite 与完整 URL 一样，点击都在**新标签页**打开——飞书正文跨文档跳转统一新开，任何写入格式（cite/按钮/书签/普通链接/子页面列表）都无法改成当前窗口，唯一当前窗口切换是左侧知识库目录树。选 cite 而非完整 URL，是因为它结构化、显示标题、obj 强绑定可校验，**不是**因为打开方式不同；完整 URL 仅用于站外链接。详见 `guides/wiki-link-verification-sop.md`。
 - 写完用正则回查：不应残留 `%`、`$` 类占位符；站内导航不应残留 `href="https://.../wiki/..."` 普通链接。
 
 ### 2.5 docs +fetch / +update 可直接吃 wiki node token
 
-`--doc` 既能传 obj_token（docx token）/文档 URL，也能直接传 **wiki node token**，CLI 会自动解析，无需先 `node-get` 换 obj_token。注意区分：命令入参传 node/obj token 或 URL 均可；但**正文里的站内导航链接**用 `<cite type="doc" doc-id="obj_token"/>`（当前窗口打开），不用 `/wiki/<node_token>` 完整 URL（会新标签页打开）。
+`--doc` 既能传 obj_token（docx token）/文档 URL，也能直接传 **wiki node token**，CLI 会自动解析，无需先 `node-get` 换 obj_token。注意区分：命令入参传 node/obj token 或 URL 均可；但**正文里的站内导航链接**用 `<cite type="doc" doc-id="obj_token"/>`（结构化内部引用，点击新开标签、单窗口连续阅读走左侧知识库目录树），不用 `/wiki/<node_token>` 完整 URL（冗长、易随节点变动失效）。
 
 ---
 
