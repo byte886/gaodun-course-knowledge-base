@@ -68,7 +68,7 @@ UI 兜底 ───────────────────────�
 # 1) 环境自检：自动点授权 → 连接日常 Chrome → 打印版本和所有标签 → 干净断开
 node scripts/cdp/connectBrowser.js
 
-# 2) 抓包演示：抓 URL 含 baidu 的标签、刷新、采集 6 秒，结果落 data/cdp-sniff/*.jsonl
+# 2) 抓包演示：抓 URL 含 baidu 的标签、刷新、采集 6 秒，结果落 data/_workspace/_account/auth/*.jsonl
 node scripts/cdp/connectBrowser.js  # 环境自检：连接→列标签→断开
 
 # 3) 真实抓高顿（默认不刷新页面，避免误动作），先在日常 Chrome 打开并登录做题页

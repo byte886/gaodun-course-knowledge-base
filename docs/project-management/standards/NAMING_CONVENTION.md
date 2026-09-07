@@ -5,8 +5,8 @@
 > **维护者**：AI自动维护
 > **读者**：AI代理（所有操作必须遵守）
 
-> 本规范分两部分：**第一~八章**规范课程数据（本地 data 三层目录、百度网盘、飞书知识库节点）的命名；**第九章**规范 GitHub 仓库内工程目录与文件（脚本、规范、方法文档、过程产物等）的命名，是仓库命名的唯一事实源。
-> 课程数据三层范式基线见 [ADR-012](../decisions/ADR-012-三层解耦与按知识点聚合.md)。所有自动化脚本和手动操作必须严格遵守本规范。
+> 本规范分两部分：**第一~八章**规范课程数据（课程目录两层、统一运行时工作区 data/_workspace、百度网盘、飞书知识库节点）的命名；**第九章**规范 GitHub 仓库内工程目录与文件（脚本、规范、方法文档、过程产物等）的命名，是仓库命名的唯一事实源。
+> 课程数据分层范式基线见 [ADR-012](../decisions/ADR-012-三层解耦与按知识点聚合.md)，运行时工作区的位置与分区见 [ADR-016](../decisions/ADR-016-统一运行时工作区与按profile分区.md)（课程目录物理两层，过程件统一上移 `data/_workspace/`）。所有自动化脚本和手动操作必须严格遵守本规范。
 
 ---
 
@@ -17,7 +17,7 @@ data/高顿/
 └── CPA/
     ├── 课程库/                       # 走完整流程（有"知识详解"成品）
     │   ├── 通用做题思路解析.md        # 课程库层，跨课共用一份
-    │   └── {课程目录}/               # 内部三层：原始资源/知识详解/_workspace
+    │   └── {课程目录}/               # 内部两层：原始资源/知识详解（过程件在 data/_workspace，不进课程目录）
     └── 待整理/                       # 未走完整流程（暂无知识详解）
         └── {课程目录}/
 ```
@@ -46,17 +46,17 @@ data/高顿/
 
 ---
 
-## 三、课程内三层目录命名
+## 三、课程目录两层命名
 
-每个课程目录下固定为「一个 README + 三个层」：
+每个课程目录下固定为「一个 README + 两个层」，过程件不在课程目录内：
 
 ```
 {课程目录}/
 ├── README.md            # 课程目录说明（结构图 + 各文件来源/作用 + 对应关系）
 ├── 原始资源/            # 用户接触层，中文
-├── 知识详解/            # 用户接触层，中文（成品，同步飞书）
-└── _workspace/          # 非用户接触层，全英文（过程件，收尾清）
+└── 知识详解/            # 用户接触层，中文（成品，同步飞书）
 ```
+运行时过程件统一在仓库 `data/_workspace/`（见 3.2），不挂在课程目录下。
 
 ### 3.1 原始资源 / 知识详解（中文层）
 
@@ -74,20 +74,24 @@ data/高顿/
 - **模块组目录**：`NN_组名`，两位序号 + 下划线 + 官方模块名（税法 14 组，编号见第八章）；
 - **知识点篇**：`{官方知识点原名}.md`，**不加序号、不改写、不合并、不 AI 自造**；一个官方知识点一篇。
 
-### 3.2 _workspace（全英文层，固定六子目录，不得另造）
+### 3.2 运行时工作区 data/_workspace（全英文、固定桶名，不得另造）
+
+工作区不绑定具体课程：账号/跨课级用 `_account/`，每门课用 profile key 子目录正交区分。
 
 ```
-_workspace/
-├── README.md
-├── manifest/          # course-manifest / papers_inventory / paper_index / course_catalog
-├── papers/            # {paperId}.json
-├── sniff/             # CDP 抓包，验证完即删
-├── user-notes-raw/    # 用户留言/笔记原件，100% 吸收进成品后删
-├── logs/
-└── tmp/{download,transcribe}/NN_讲题/   # 单任务成功即清
+data/_workspace/
+├── _account/{auth,user-space}/        # 账号级：JWT 鉴权抓包、账号课程清单（跨课共享）
+└── <profile-key>/                     # 课程级，如 cpa-tax-2026
+    ├── manifest/          # course-manifest / papers_inventory / papers_audit / paper_index / syllabus
+    ├── papers/            # {paperId}.json、做题结果、qvideo_keys
+    ├── notes-raw/         # 用户留言/笔记原件，100% 吸收并归位后删
+    ├── sniff/             # CDP 抓包/侦查，验证完即删
+    ├── tmp/{download,transcribe}/NN_讲题/   # 单任务成功即清
+    ├── pipeline/          # 总编排阶段断点 <n>.done
+    └── logs/
 ```
 
-> 非用户接触层统一用英文（kebab/snake），便于 AI 与脚本处理；六子目录名固定，新增过程件归入对应子目录而非散到仓库根。
+> 非用户接触层统一用英文（kebab/snake），便于 AI 与脚本处理；桶名固定，新增过程件经 `load_profile.js` 收口函数归入对应桶，不散到 data 根、课程目录或仓库根。脚本取路径一律走 `accountDir/accountAuthDir/workspaceDir/workspaceDirFor`，禁止硬编码旧目录名。
 
 ---
 
@@ -118,10 +122,10 @@ _workspace/
 | 课程全局篇 | `课程做题思路解析.md`、`考试指导速查手册.md` | 固定中文名 |
 | 课程库层通用篇 | `通用做题思路解析.md` | 放在 `课程库/` 下，跨课一份 |
 
-### 4.4 _workspace（英文固定名）
+### 4.4 运行时工作区（英文固定名，详见 3.2）
 
-- `manifest/`：`course-manifest.json`（讲↔资源↔知识点路由 + 组→知识点映射）、`papers_inventory.json`、`paper_index.json`、`course_catalog.json`；
-- `papers/`：`{paperId}.json`；日志/临时文件一律英文小写。
+- 统一在 `data/_workspace/`：账号级 `_account/{auth,user-space}`，课程级 `<profile>/{manifest,papers,notes-raw,sniff,tmp,pipeline,logs}`；
+- `manifest/` 放 course-manifest / papers_inventory / papers_audit / paper_index / syllabus；`papers/` 放 `{paperId}.json` 与做题结果；日志/临时文件一律英文小写。
 
 ---
 
@@ -136,14 +140,14 @@ _workspace/
 | 课程库层 | 通用做题思路解析 | `课程库/通用做题思路解析.md` |
 
 - 父节点必须包含全部子节点链接清单 + 一句摘要；子页面更新后父节点题量/摘要同步；
-- 飞书只同步"知识详解"，不建原始资源、不建 _workspace 节点。
+- 飞书只同步"知识详解"，不建原始资源、不建工作区过程件节点。
 
 ---
 
 ## 六、网盘与本地一致性规则
 
 1. 网盘**只镜像"原始资源 + 知识详解"两层**，结构与本地完全一致；前缀 `/apps/CPA课程归档/高顿/`；
-2. **不传 `_workspace/`**，不传 `transcript.json`、tmp、logs；
+2. **不传 `data/_workspace/<profile>/`**，不传 `transcript.json`、tmp、logs；
 3. 必传：`video.mp4`、`transcript.md`、讲义 PDF、OCR、知识详解全部成品与全局篇；
 4. 本地改名时网盘走 rename 级联（不重传文件）；每次上传后核对本地↔网盘文件数/大小。
 
@@ -152,12 +156,12 @@ _workspace/
 ## 七、课程数据命名检查清单
 
 - [ ] 课程目录符合 `【{考季}考季】VIPCPA系列-{科目}（{老师}老师）`，以官网课程名为准
-- [ ] 课程内三层齐全（`原始资源/ 知识详解/ _workspace/` + `README.md`）
+- [ ] 课程目录两层齐全（`原始资源/ 知识详解/` + `README.md`），过程件在 `data/_workspace/<profile>/`
 - [ ] 模块组为 `NN_官方模块名`，知识点篇为官方原名（无序号、无改写、无 AI 自造）
 - [ ] videos 内固定 `video.mp4/transcript.md/transcript.json`；notes 内 OCR 带 `_OCR`
-- [ ] `_workspace` 仅六英文子目录，无中文、无自创目录、无散落到仓库根的过程件
+- [ ] 工作区桶名固定（账号级 `_account`、课程级七桶），无中文、无自创目录、无散落到 data 根/课程目录/仓库根的过程件
 - [ ] 课程全局篇/跨课通用篇为固定中文名
-- [ ] 网盘只镜像两层、无 `_workspace`；飞书节点与知识详解同构
+- [ ] 网盘只镜像课程两层、无工作区过程件；飞书节点与知识详解同构
 
 ---
 
@@ -167,7 +171,7 @@ _workspace/
 2. 只用官方分类，禁止 AI 自造组、禁止改名/合并官方知识点；
 3. **归组用"显式映射 + 脚本 assert"**：易混点（名称不含模块字样者）逐条显式指定，脚本校验每组点数与总数（税法基线 6/14/7/12/10/3/5/2/2/7/3/6/8/7＝92），不靠运行时关键词兜底；
 4. 已知特例（税法）：土地增值税归组10（不被"增值税"误归02）；委托加工/应税消费品/进口环节消费税归03；非居民企业归04；非居民个人归05；主观小问泛标签 id=112376 等价并入"增值税一般计税方法应纳税额的计算"；
-5. 换课程/考季按其官方体系重建，不套用本课清单；完整"组→知识点"清单是**课程派生数据**，落 `_workspace/manifest/course-manifest.json`，不写进本通用规范。
+5. 换课程/考季按其官方体系重建，不套用本课清单；完整"组→知识点"清单是**课程派生数据**，落 `data/_workspace/<profile>/manifest/course-manifest.json`，不写进本通用规范。
 
 ---
 
@@ -259,9 +263,9 @@ _workspace/
 |------|------|------|
 | 知识点篇 | 官方知识点原名 | `增值税税率.md`、`企业所得税应纳税额的计算.md`（篇内四节，见第一~八章） |
 | 课程/跨课全局篇 | 固定中文名 | `课程做题思路解析.md`、`考试指导速查手册.md`、`通用做题思路解析.md` |
-| 用户留言原件 | 归 `_workspace/user-notes-raw/`（过程件，吸收后清） | — |
+| 用户留言原件 | 归 `data/_workspace/<profile>/notes-raw/`（过程件，吸收后清） | — |
 
-> 题/标准答案/官方解析由接口落 `_workspace/papers/*.json`，不再手抄成中文 md；旧 `知识拆解.md/考试指导.md` 双文档已废止（ADR-012）。
+> 题/标准答案/官方解析由接口落 `data/_workspace/<profile>/papers/*.json`，不再手抄成中文 md；旧 `知识拆解.md/考试指导.md` 双文档已废止（ADR-012）。
 
 **L5 项目管理过程产物**（`project-management/` 下 task-reports / test-plans，以及 active 中的过程件）：每次任务生成、H1 为中文，文件名用中文并与 H1 对应：
 
@@ -294,7 +298,7 @@ _workspace/
 ### 9.9 目录命名
 
 - **工程目录**：全小写 kebab-case，如 `task-reports/`、`test-plans/`、`methodology/`；不用空格、不用大写；`.github/`、`.secrets/` 等隐藏/平台目录从平台约定。
-- **课程数据目录分两类**（详见第一~八章）：用户接触层 `原始资源/ 知识详解` 及其下中文组目录 `NN_官方模块名` 用中文体系；非用户接触层 `_workspace/` 及其六子目录（`manifest/papers/sniff/user-notes-raw/logs/tmp`）用英文。旧 `organized-content/`、`source-materials/` 已废止（ADR-012）。
+- **课程数据目录分两类**（详见第一~八章）：用户接触层 `原始资源/ 知识详解` 及其下中文组目录 `NN_官方模块名` 用中文体系；非用户接触层统一工作区 `data/_workspace/`（账号级 `_account`、课程级 `<profile>` 七桶 `manifest/papers/notes-raw/sniff/tmp/pipeline/logs`）用英文。旧 `organized-content/`、`source-materials/` 已废止（ADR-012），旧课程内 `_workspace`、`cdp-sniff` 已上移统一（ADR-016）。
 - 目录名与其中文件的命名风格相互独立：目录按本节，文件按 9.3–9.8。
 
 ### 9.10 跨类目录说明（避免误判"同目录不一致"）

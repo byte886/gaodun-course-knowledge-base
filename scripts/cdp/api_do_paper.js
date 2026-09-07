@@ -17,14 +17,14 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi } = require('./gaodun_paper_core');
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const SNIFF_DIR = path.join(PROJECT_ROOT, 'data', 'cdp-sniff');
+const { accountAuthDir } = require('./load_profile');
+const AUTH_DIR = accountAuthDir();
 const arg = process.argv[2] || '82656';
 const dwellArg = process.argv[3] && /^\d+$/.test(process.argv[3]) ? Number(process.argv[3]) : undefined;
 const DO_AI = !process.argv.includes('--no-ai');
 
 function latestFile(prefix) {
-  return path.join(SNIFF_DIR, fs.readdirSync(SNIFF_DIR)
+  return path.join(AUTH_DIR, fs.readdirSync(AUTH_DIR)
     .filter((f) => f.startsWith(prefix) && f.endsWith('.jsonl')).sort().pop());
 }
 // 从 syllabus 大纲解析 paperId -> { csItemId(章节itemId), resourceId, title, num }
@@ -51,7 +51,7 @@ function resolvePaper() {
 (async () => {
   const target = resolvePaper();
   console.log('[目标卷]', JSON.stringify(target), DO_AI ? '' : '(--no-ai 不做AI批改)');
-  const jwt = findJwt(SNIFF_DIR);
+  const jwt = findJwt();
   const out = await doPaperViaApi({
     target, jwt, doAi: DO_AI, dwellSecOverride: dwellArg,
     log: (...a) => console.log(...a),

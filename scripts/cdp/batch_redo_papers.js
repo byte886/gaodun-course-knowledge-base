@@ -7,7 +7,7 @@
  *   - 每张交给 gaodun_paper_core：record→redo(取标准答案，平铺 type5/6 主观)→按题量停留
  *     →submit 全量交卷→交卷后逐题 AI 批改主观子题→exam-report 回查满分；
  *   - 交卷与 AI 批改解耦：submit 成功即“已交卷(progress=1)”，主观 AI 未满分也不中断，单独标记可补批；
- *   - 单张失败不中断其它卷，结果落 data/cdp-sniff/batch_result_<日期>.json；
+ *   - 单张失败不中断其它卷，结果落 data/_workspace/<profile>/papers/batch_result_<日期>.json；
  *   - 卷间停 4s 低频拟人。全程不依赖 UI 点选。
  *
  * 用法：
@@ -20,9 +20,8 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi, dwellSec } = require('./gaodun_paper_core');
-const { loadProfile, scopedPath, argvProfileKey } = require('./load_profile');
+const { loadProfile, workspaceDirFor, argvProfileKey } = require('./load_profile');
 const ROOT = path.resolve(__dirname, '..', '..');
-const DIR = path.join(ROOT, 'data', 'cdp-sniff');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const GO = process.argv.includes('--go');
 const DO_AI = !process.argv.includes('--no-ai');
@@ -38,9 +37,11 @@ function chapterKey(ch) {
 
 (async () => {
   const profile = loadProfile(argvProfileKey());
-  const inv = JSON.parse(fs.readFileSync(scopedPath(DIR, 'papers_inventory.json', profile.key), 'utf8'));
+  const manifestDir = workspaceDirFor(profile.key, 'manifest');
+  const papersDir = workspaceDirFor(profile.key, 'papers');
+  const inv = JSON.parse(fs.readFileSync(path.join(manifestDir, 'papers_inventory.json'), 'utf8'));
   let audit = [];
-  try { audit = JSON.parse(fs.readFileSync(scopedPath(DIR, 'papers_audit.json', profile.key), 'utf8')); } catch { audit = []; }
+  try { audit = JSON.parse(fs.readFileSync(path.join(manifestDir, 'papers_audit.json'), 'utf8')); } catch { audit = []; }
   console.log(`[profile] ${profile.key}｜inventory/audit 按 profile 读取`);
   const auditMap = new Map(audit.map((r) => [r.paperId, r]));
 
@@ -64,7 +65,7 @@ function chapterKey(ch) {
     console.log(` ${String(i + 1).padStart(2)}. ${p.paperId} [${p.num}题 停${dwellSec(p.num, true)}s] 上次=${a ? a.score + '/' + a.total + ' ' + a.cls : '?'} 《${p.title}》`); });
   if (!GO) { console.log('\n[dry-run] 确认无误后加 --go 实跑。'); process.exit(0); }
 
-  const jwt = findJwt(DIR);
+  const jwt = findJwt();
   const results = [];
   for (let idx = 0; idx < todo.length; idx += 1) {
     const p = todo[idx];
@@ -98,7 +99,7 @@ function chapterKey(ch) {
       console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);
     }
     results.push(rec);
-    fs.writeFileSync(scopedPath(DIR, `batch_result_${new Date().toISOString().slice(0, 10)}.json`, profile.key), JSON.stringify(results, null, 1));
+    fs.writeFileSync(path.join(papersDir, `batch_result_${new Date().toISOString().slice(0, 10)}.json`), JSON.stringify(results, null, 1));
     if (idx < todo.length - 1) await sleep(4000);
   }
   const full = results.filter((r) => r.fullScore).length;

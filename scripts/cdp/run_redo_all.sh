@@ -22,7 +22,7 @@ echo "各卷结果:$RESULTS" | tee -a "$LOG"
 echo "" | tee -a "$LOG"
 echo "===== 各卷最新成绩汇总 =====" | tee -a "$LOG"
 for pid in 86722 86723 86724 86726 86727 86728; do
-  f=$(node -e "const fs=require('fs');const fs2=fs.readdirSync('data/cdp-sniff').filter(x=>x.startsWith('exam_result_${pid}_')).map(x=>({x,j:JSON.parse(fs.readFileSync('data/cdp-sniff/'+x))})).filter(o=>o.j.submitted).sort((a,b)=>b.x.localeCompare(a.x))[0];process.stdout.write(fs2?('data/cdp-sniff/'+fs2.x):'');" 2>/dev/null)
+  f=$(node -e "const fs=require('fs');const d='data/_workspace/cpa-tax-2026/papers';const fs2=fs.readdirSync(d).filter(x=>x.startsWith('exam_result_${pid}_')).map(x=>({x,j:JSON.parse(fs.readFileSync(d+'/'+x))})).filter(o=>o.j.submitted).sort((a,b)=>b.x.localeCompare(a.x))[0];process.stdout.write(fs2?(d+'/'+fs2.x):'');" 2>/dev/null)
   if [ -n "$f" ]; then
     node -e "const j=require('./$f');console.log('$pid', 'score='+j.userScore+'/'+j.totalScore, 'fullScore='+j.fullScore, 'objectiveAllRight='+j.objectiveAllRight, 'aiFull='+j.aiFull+'/'+j.aiTotal, 'unsupported='+j.aiUnsupported.length, 'ceiling='+j.aiCeiling.length, 'failed='+j.aiFailed.length, 'answerGaps='+(j.answerGaps||[]).length);" 2>/dev/null | tee -a "$LOG"
   fi

@@ -17,15 +17,16 @@
  *   33 分（cpaBotType=0）平台未配 AI，须人工批改权益（本账户 0 次、不购买），答案仍 100% 正确提交。
  *
  * 安全：真实交卷入口，submit 不可逆但 canTrial=true 可重做；交卷后自动 exam-report 回查对平。
- *   JWT 从 data/cdp-sniff 最新抓包提取。结果落 data/cdp-sniff/exam_result_*.json。
+ *   JWT 从 data/_workspace/_account/auth 最新抓包提取。结果落 data/_workspace/<profile>/papers/exam_result_*.json。
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { findJwt, doPaperViaApi } = require('./gaodun_paper_core');
+const { workspaceDir } = require('./load_profile');
 
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const SNIFF_DIR = path.join(PROJECT_ROOT, 'data', 'cdp-sniff');
+// 冲刺模考六卷为税法专属（EXAMS 硬编码税法 paperId），缺省 profile=cpa-tax-2026
+const papersDir = workspaceDir('papers');
 const MOCK_ORIGIN = 'https://mock-cpa.gaodun.com';
 
 // 6 卷映射：paperId=真实试卷ID；csItemId=syllabus 节点 id；resourceId=资源 id（侦查自 syllabus_full.json）
@@ -53,14 +54,14 @@ async function main() {
   const arg = process.argv[2] || 's1';
   const doAi = !process.argv.includes('--no-ai');
   const target = resolveTarget(arg);
-  const jwt = findJwt(SNIFF_DIR);
+  const jwt = findJwt();
   const tag = target.kind === 'mock' ? 'mockdo' : 'sprint';
   console.log(`[${tag}] 目标：${target.title} paperId=${target.paperId} csItemId=${target.csItemId} AI批改=${doAi} origin=${target.origin || 'glivepro'}`);
   const out = await doPaperViaApi({
     target, jwt, doAi, origin: target.origin, referer: target.origin ? `${target.origin}/` : undefined,
     log: (...a) => console.log(`[${tag}]`, ...a),
   });
-  const f = path.join(SNIFF_DIR, `exam_result_${target.paperId}_${Date.now()}.json`);
+  const f = path.join(papersDir, `exam_result_${target.paperId}_${Date.now()}.json`);
   fs.writeFileSync(f, JSON.stringify(out, null, 2));
   console.log(`[${tag}] 结果落盘 →`, f);
   console.log(`[${tag}] 汇总：`, JSON.stringify({

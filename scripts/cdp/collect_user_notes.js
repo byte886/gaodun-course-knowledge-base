@@ -15,9 +15,9 @@
  *
  * 输入：<profile 课程>/原始资源/papers；输出按课程 key 隔离（env USER_NOTES_RAW_DIR 可覆盖，
  *   与 knowledge/organize_user_notes.py 对齐）：
- *   data/user-notes-raw/<key>/all_notes.jsonl   所有笔记（JSONL，每行一条笔记）
- *   data/user-notes-raw/<key>/progress.json     采集进度（已采集的 questionId 集合）
- *   data/user-notes-raw/<key>/stats.json        统计信息
+ *   data/_workspace/<key>/notes-raw/all_notes.jsonl   所有笔记（JSONL，每行一条笔记）
+ *   data/_workspace/<key>/notes-raw/progress.json     采集进度（已采集的 questionId 集合）
+ *   data/_workspace/<key>/notes-raw/stats.json        统计信息
  */
 'use strict';
 
@@ -25,7 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { findJwt, makeHeaders, MINERVA_BASE } = require('./gaodun_paper_core');
-const { loadProfile } = require('./load_profile');
+const { loadProfile, workspaceDirFor } = require('./load_profile');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const _argv = process.argv.slice(2);
@@ -39,7 +39,7 @@ const profile = loadProfile(namedArg('profile'));
 // 输入：该 profile 课程的 papers 原料；输出按课程 key 隔离，避免不同课的题目/进度混在一起
 const PAPERS_DIR = path.join(PROJECT_ROOT, profile.paths.localRoot, '原始资源', 'papers');
 const OUT_DIR = process.env.USER_NOTES_RAW_DIR
-  || path.join(PROJECT_ROOT, 'data', 'user-notes-raw', profile.key);
+  || workspaceDirFor(profile.key, 'notes-raw');
 const NOTES_FILE = path.join(OUT_DIR, 'all_notes.jsonl');
 const PROGRESS_FILE = path.join(OUT_DIR, 'progress.json');
 const STATS_FILE = path.join(OUT_DIR, 'stats.json');
@@ -131,7 +131,7 @@ async function main() {
   }
 
   // 获取 JWT
-  const jwt = findJwt(path.join(PROJECT_ROOT, 'data', 'cdp-sniff'));
+  const jwt = findJwt();
   const headers = makeHeaders(jwt);
   console.log(`JWT长度: ${jwt.length}`);
 

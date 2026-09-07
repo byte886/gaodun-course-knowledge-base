@@ -23,9 +23,9 @@ DA = os.environ.get("COURSE_LOCAL_ROOT", DEFAULT_DA)
 if not os.path.isabs(DA):
     DA = os.path.join(ROOT, DA)
 KD = os.path.join(DA, "知识详解")
-# 笔记原件：env USER_NOTES_RAW_DIR > data/user-notes-raw/<profile.key>（与 collect_user_notes.js 对齐）
+# 笔记原件：env USER_NOTES_RAW_DIR > data/_workspace/<profile.key>/notes-raw（与 collect_user_notes.js 对齐）
 RAW_DIR = os.environ.get(
-    "USER_NOTES_RAW_DIR", os.path.join(ROOT, "data", "user-notes-raw", _profile["key"]))
+    "USER_NOTES_RAW_DIR", os.path.join(ROOT, "data", "_workspace", _profile["key"], "notes-raw"))
 
 # 分类关键词
 CATEGORIES = {

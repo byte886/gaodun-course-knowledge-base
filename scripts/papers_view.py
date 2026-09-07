@@ -4,7 +4,7 @@
 papers_view.py — papers 题源的「按讲索引视图」（只读，不落盘、不复制任何文件）
 
 遵循 standards 2.2.4「物理集中存、逻辑按讲视图」：
-  - 物理：data/knowledge-source/papers/<paperId>.json + paper_index.json（按 paperId 集中存，不按讲复制）
+  - 物理：data/_workspace/<profile>/papers/<paperId>.json + manifest/paper_index.json（按 paperId 集中存，不按讲复制）
   - 视图：本脚本由 paper_index.json 的 chapter 字段 group by 现场派生「每讲几套卷、多少题」
 
 用法：
@@ -23,7 +23,11 @@ import re
 import sys
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_INDEX = os.path.join(PROJECT_ROOT, 'data/knowledge-source/paper_index.json')
+sys.path.insert(0, os.path.join(PROJECT_ROOT, 'scripts', 'knowledge'))
+from course_profile import load_profile  # noqa: E402
+_profile = load_profile()  # 支持 env GAODUN_COURSE_PROFILE，缺省税法
+DEFAULT_INDEX = os.path.join(
+    PROJECT_ROOT, 'data', '_workspace', _profile['key'], 'manifest', 'paper_index.json')
 LECTURE_NUM_RE = re.compile(r'精讲(\d+)')
 
 

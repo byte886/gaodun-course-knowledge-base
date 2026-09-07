@@ -5,9 +5,9 @@
  * record -> paper/analysis 逐张拉出并精简落盘，供末期知识库生成使用。
  *
  * 纯只读：不 redo、不建实例、不交卷、不耗 AI 权益、无副作用。
- * 输出：
- *   data/knowledge-source/papers/<paperId>.json   每卷精简题/答/解析（paperId 全局唯一，跨课共享）
- *   data/knowledge-source/paper_index[__<profile>].json  paperId -> 章/标题/题数/文件（按 profile 隔离，税法无后缀）
+ * 输出（按 profile 子目录隔离）：
+ *   data/_workspace/<profile>/papers/<paperId>.json   每卷精简题/答/解析（paperId 全局唯一）
+ *   data/_workspace/<profile>/manifest/paper_index.json  paperId -> 章/标题/题数/文件
  * 用法：node scripts/cdp/collect_paper_sources.js [--profile <key>] [--all] [paperId...]
  *   默认只补本地缺失的卷；--all 强制重拉；可跟指定 paperId；课程由 --profile/GAODUN_COURSE_PROFILE 决定。
  */
@@ -15,11 +15,9 @@
 const fs = require('fs');
 const path = require('path');
 const { findJwt, makeHeaders, MINERVA_BASE, stripHtml } = require('./gaodun_paper_core');
-const { loadProfile, scopedPath, argvProfileKey } = require('./load_profile');
+const { loadProfile, workspaceDirFor, argvProfileKey } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const SNIFF = path.join(ROOT, 'data', 'cdp-sniff');
-const OUTDIR = path.join(ROOT, 'data', 'knowledge-source', 'papers');
 const SFT = 100533962;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -50,9 +48,11 @@ function pickQuestion(q) {
 
 (async () => {
   const profile = loadProfile(argvProfileKey());
-  fs.mkdirSync(OUTDIR, { recursive: true });
-  const H = makeHeaders(findJwt(SNIFF));
-  const invPath = scopedPath(SNIFF, 'papers_inventory.json', profile.key);
+  const manifestDir = workspaceDirFor(profile.key, 'manifest');
+  const papersDir = workspaceDirFor(profile.key, 'papers');
+  fs.mkdirSync(papersDir, { recursive: true });
+  const H = makeHeaders(findJwt());
+  const invPath = path.join(manifestDir, 'papers_inventory.json');
   const inv = JSON.parse(fs.readFileSync(invPath, 'utf8'));
   console.log(`[profile] ${profile.key}｜inventory=${path.basename(invPath)}｜卷数=${inv.length}`);
   const forceAll = process.argv.includes('--all');
@@ -65,7 +65,7 @@ function pickQuestion(q) {
   let ok = 0, skip = 0;
   for (let i = 0; i < list.length; i += 1) {
     const p = list[i];
-    const dest = path.join(OUTDIR, `${p.paperId}.json`);
+    const dest = path.join(papersDir, `${p.paperId}.json`);
     if (!forceAll && fs.existsSync(dest)) { skip += 1; continue; }
     let logId = null;
     try {
@@ -103,7 +103,7 @@ function pickQuestion(q) {
   }
 
   // 合并已有 index（增量补采时保留旧条目）
-  const idxPath = scopedPath(path.join(ROOT, 'data', 'knowledge-source'), 'paper_index.json', profile.key);
+  const idxPath = path.join(manifestDir, 'paper_index.json');
   let old = [];
   if (!only.length && fs.existsSync(idxPath)) old = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
   const merged = only.length || forceAll ? (only.length ? [...old.filter((x) => !only.includes(x.paperId)), ...index] : index)
@@ -111,7 +111,7 @@ function pickQuestion(q) {
   merged.sort((a, b) => String(a.chapter || '').localeCompare(String(b.chapter || ''), 'zh') || a.paperId - b.paperId);
   fs.writeFileSync(idxPath, JSON.stringify(merged, null, 1));
   console.log(`\n===== 线B原料补采完成 =====`);
-  console.log(`新采 ${ok}，已存在跳过 ${skip}，失败 ${failed.length}，索引累计 ${merged.length} 卷 -> data/knowledge-source/`);
+  console.log(`新采 ${ok}，已存在跳过 ${skip}，失败 ${failed.length}，索引累计 ${merged.length} 卷 -> data/_workspace/${profile.key}/papers/`);
   if (failed.length) console.log('失败清单:', JSON.stringify(failed));
   process.exit(failed.length && ok === 0 ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

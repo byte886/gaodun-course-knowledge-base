@@ -13,7 +13,7 @@
 >
 > ：AI 代理
 
-本 SOP 管 " 知识详解生成并自检通过后，怎么备份网盘、统一同步飞书知识库、并按序清理 `_workspace` 与旧件 "。
+本 SOP 管 " 知识详解生成并自检通过后，怎么备份网盘、统一同步飞书知识库、并按序清理工作区（`data/_workspace`）与旧件 "。
 
 
 
@@ -41,9 +41,9 @@
 
 1. 上传课程目录的 `原始资源/` 与 `知识详解/`，路径与本地同构：`/apps/CPA课程归档/高顿/CPA/课程库/{课程名}/`；
 
-2. **不传** `_workspace/`、`transcript.json`、tmp、logs；
+2. **不传** `data/_workspace/<profile>/`、`transcript.json`、tmp、logs；
 
-3. **知识来源原料先归位再备份（重要）**：`papers/`（接口采集的试卷题答 JSON，含题目/标准答案/解析/知识点标签）与 `user-notes-raw/`（用户笔记与留言原件）虽位于 `_workspace/`，但本质是**知识来源原料、不是可丢弃过程件**。清 `_workspace` 前必须先把它们复制归位到 `原始资源/papers/`、`原始资源/user-notes/`（Desktop 与 data 两份都归位），随本步骤一并传网盘；归位并核对一致后，`_workspace` 内的原件才允许在步骤 3 清。最终 `原始资源/` 为四类：`notes/`（讲义 PDF+OCR）、`videos/`（video.mp4+transcript.md）、`papers/`（题答 JSON）、`user-notes/`（笔记留言原件）；
+3. **知识来源原料先归位再备份（重要）**：`papers/`（接口采集的试卷题答 JSON，含题目/标准答案/解析/知识点标签）与 `notes-raw/`（用户笔记与留言原件）虽位于 `data/_workspace/<profile>/`，但本质是**知识来源原料、不是可丢弃过程件**。清 `_workspace` 前必须先把它们复制归位到 `原始资源/papers/`、`原始资源/user-notes/`（Desktop 与 data 两份都归位），随本步骤一并传网盘；归位并核对一致后，`_workspace` 内的原件才允许在步骤 3 清。最终 `原始资源/` 为四类：`notes/`（讲义 PDF+OCR）、`videos/`（video.mp4+transcript.md）、`papers/`（题答 JSON）、`user-notes/`（笔记留言原件）；
 
 4. 命令：`BAIDU_ENC_PASS=*** python3 scripts/baidu_upload.py`（凭证 `.secrets/baidu_credentials.enc`，国内直连）；分片上传 + MD5 秒传、断点续传；同名覆盖 precreate/create 都传 `rtype=3`（见 netdisk-setup.md）；
 
@@ -77,10 +77,10 @@
 
 | 顺序 | 对象                                     | 清理条件                                        |
 | -- | -------------------------------------- | ------------------------------------------- |
-| 1  | `_workspace/tmp/{download,transcribe}` | 单任务成功即清                                     |
-| 2  | `_workspace/sniff`                     | 抓包结论已沉淀进文档 / 接口档案即删                         |
-| 3  | `_workspace/papers`、`_workspace/user-notes-raw` | **先按步骤1归位到 `原始资源/` 并传网盘、核对一致**；笔记还需已提炼进"学员补充"，才可删（原料门槛最高） |
-| 4  | `_workspace` 整体                        | **双门禁**：92 篇校验通过 + 原始资源（含 papers/user-notes、videos 逐讲 transcript）已传完网盘，**且**飞书同步回读一致后 |
+| 1  | `data/_workspace/<profile>/tmp/{download,transcribe}` | 单任务成功即清                                     |
+| 2  | `data/_workspace/<profile>/sniff`                     | 抓包结论已沉淀进文档 / 接口档案即删                         |
+| 3  | `data/_workspace/<profile>/papers`、`data/_workspace/<profile>/notes-raw` | **先按步骤1归位到 `原始资源/` 并传网盘、核对一致**；笔记还需已提炼进"学员补充"，才可删（原料门槛最高） |
+| 4  | 课程级工作区 `<profile>/{manifest,pipeline,logs}` 整体 | **双门禁**：92 篇校验通过 + 原始资源（含 papers/user-notes、videos 逐讲 transcript）已传完网盘，**且**飞书同步回读一致后；账号级 `_account` 不随单课清退 |
 
 > 清理一律 `mv` 到废纸篓（带时间戳后缀，Desktop 与 data 两份分别处理），不 `rm -rf` 硬删；清理后确认课程根只留 `原始资源/`、`知识详解/`（及待步骤 4 清退的旧目录）。
 
@@ -112,11 +112,11 @@
 
 
 
-* [ ] 网盘 "原始资源 + 知识详解" 与本地文件数 / 大小一致、无 `_workspace`；
+* [ ] 网盘 "原始资源 + 知识详解" 与本地文件数 / 大小一致、无工作区过程件；
 
 * [ ] 飞书课程→14 组→92 篇 + 全局篇齐全、回读一致、父节点子链接完整；
 
-* [ ] `_workspace` 按时序清理、双门禁满足后整体清；旧范式件清退无残留；
+* [ ] 工作区按分层时序清理、双门禁满足后清课程级残留（`_account` 保留）；旧范式件清退无残留；
 
 * [ ] 四地分工正确：Git 只留工程、本地全量、网盘备份原料 + 成品、飞书为成品知识系统；
 
@@ -129,8 +129,8 @@
 | 坑                                     | 正确做法                    |
 | ------------------------------------- | ----------------------- |
 | 边生成边分讲同步飞书                            | 本地全量校验后统一同步，冲刺后最终一次     |
-| 把 \_workspace/transcript.json/tmp 传网盘 | 只传原始资源 + 知识详解两层         |
-| 留言还没吸收就删 user-notes-raw               | 100% 吸收后才删，门槛最高         |
+| 把 \data/_workspace/<profile>/transcript.json/tmp 传网盘 | 只传原始资源 + 知识详解两层         |
+| 留言还没吸收就删 notes-raw               | 100% 吸收后才删，门槛最高         |
 | 双门禁没满足就整体清工作区                         | 92 篇过 + 网盘传完 + 飞书回读一致才清 |
 | 在飞书直接改正文                              | 本地是源头，改本地再同步            |
 | 过程报告也塞进飞书                             | 只同步课程知识系统，报告在任务里给用户看    |

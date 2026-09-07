@@ -54,7 +54,7 @@
 |----------|----------|------|
 | 通用规范/流程 | `docs/` 对应子目录 | 如 QUALITY_ASSURANCE.md、PROJECT_MAINTENANCE.md |
 | 通用模板 | `project-management/task-reports/` 或 `docs/` | 如 REPORT_TEMPLATE.md、VERIFICATION_TEMPLATE.md |
-| 具体课程产出物 | 对应课程目录三层下 | 如 原始资源/ 的 video.mp4、transcript.md、讲义，知识详解/ 的 {知识点}.md |
+| 具体课程产出物 | 对应课程目录两层下 | 如 原始资源/ 的 video.mp4、transcript.md、讲义，知识详解/ 的 {知识点}.md |
 | 具体课程专项质检（按需） | 对应课程目录下 | 仅视频/转写等非标准对象用 VERIFICATION.md，非每次必出；做题/同步验证默认并入任务报告 |
 | 具体课程测试计划 | `docs/project-management/` | 测试计划是项目管理文档，不是课程产出物 |
 | 具体任务报告 | `project-management/task-reports/` 或对应课程目录 | 根据报告性质决定 |
@@ -68,7 +68,7 @@
 | 产物类别 | 落点 | 入库？ | 例子 |
 |---|---|---|---|
 | 依赖 / 虚拟环境 | 任意位置 `venv/`、`.venv/`、`env/`、`node_modules/`、`__pycache__/` | ❌ | `transcription/venv`（靠 requirements.txt 重建） |
-| 数据 / 抓包 / 题源 | `data/`（外部数据目录软链） | ❌ | papers JSON、cdp-sniff |
+| 数据 / 抓包 / 题源 | `data/`（高顿软链 + `_workspace` 工作区） | ❌ | papers JSON、鉴权/侦查等过程件 |
 | 运行日志 / 完成哨兵 | `logs/`、`*.log`、`*.done` | ❌（进度以 active 正式台账为准） | `netdisk_*.log`、`netdisk_done/*.done` |
 | 临时中转 | 系统 `/tmp` 或模块内 `.tmp_*/`，脚本退出自清 | ❌ | `transcription/.tmp_transcribe` |
 | 成品 | 课程目录 知识详解/（课程成品不入库）；docs/ 只放工程 | 规范/模板/脚本 ✅，课程成品 ❌入库 | {知识点}.md（一篇4节）、脚本源码、规范、模板 |
@@ -87,7 +87,7 @@
 #### 2.2.1 两根三线版图
 
 - **两根物理存储**：
-  1. **项目工作区 `data/`**：外部数据目录的软链，**整体不入库**。承载 B 做题线原料（`knowledge-source/papers`）、抓包侦查（`cdp-sniff`）、浏览器运行环境（L0）。
+  1. **项目工作区 `data/`**：「高顿」软链外部数据盘 +「_workspace」唯一运行时工作区，**整体不入库**。做题线原料/台账落 `data/_workspace/<profile>/{papers,manifest}`，鉴权落 `_account/auth`，抓包侦查落 `<profile>/sniff`（验证即删），浏览器运行环境（L0）另置。
   2. **桌面课程库**（物理 `~/Desktop/高顿/CPA/课程库/【26考季】…/讲NN_讲名/`，项目内经 `data/` 软链访问）：**按讲组织、承载成品并同步网盘**。A 视频线（video / transcript）与 C 讲义线（`docs/` PDF、`docs_text/` OCR）落这里。
 - **三线汇入 S2**：A 视频线 + B 做题线（papers）+ C 讲义线，再叠加**初始知识库 + 用户笔记**，在 S2 按讲汇聚生成知识成品（知识拆解 / 考试指导），最终进飞书知识库。冲刺模考是做题线的末期分支，不另立存储根。
 
@@ -96,9 +96,9 @@
 | 层 | 定义 | 典型内容 | 本地 | 入库 | 网盘 | 终态 |
 |---|---|---|---|---|---|---|
 | **L0 工具运行环境** | 可由依赖清单/脚本重建，不含独有成果 | `venv/`、`node_modules/`、`__pycache__/`、独立 `browser-profile/` | 留 | ❌ | ❌ | 随时可删可重建；换环境靠 `requirements.txt`/`package.json` 自补 |
-| **L1 原始原料（底片）** | 重跑/溯源必需，**无法由成品逆推** | `_workspace/papers/<paperId>.json`、`原始资源/notes/*.pdf`、`transcript.json` | 留 | ❌（大体量） | ✅ 备份 | 定稿前保留并重传备份；长期留存作重跑保险 |
+| **L1 原始原料（底片）** | 重跑/溯源必需，**无法由成品逆推** | `data/_workspace/<profile>/papers/<paperId>.json`、`原始资源/notes/*.pdf`、`transcript.json` | 留 | ❌（大体量） | ✅ 备份 | 定稿前保留并重传备份；长期留存作重跑保险 |
 | **L2 成品** | 面向学习者的最终交付物 | `video.mp4`、`transcript.md`、`*_OCR.md`、知识详解 `{知识点}.md`（一篇4节）+ 课程全局篇、飞书知识库 | 留 | 规范/模板入库，课程成品在外部课程库 | ✅ | 永久保留（本地 + 网盘 + 飞书） |
-| **L3 过程状态/凭证** | 可由脚本或接口重建，服务断点续跑/路由 | `papers_inventory/audit`、`.vfetch/`、`.uploaded` 哨兵、`course-manifest.json`（替代旧 lecture-resource-map） | 阶段中留（`_workspace/`） | 仅"轻量派生元数据"入库（见 2.2.3） | ❌ | 整条线完成后清；轻量派生元数据随仓库版本化保留 |
+| **L3 过程状态/凭证** | 可由脚本或接口重建，服务断点续跑/路由 | `papers_inventory/audit`、`.vfetch/`、`.uploaded` 哨兵、`course-manifest.json`（替代旧 lecture-resource-map） | 阶段中留（`data/_workspace/<profile>/`） | 仅"轻量派生元数据"入库（见 2.2.3） | ❌ | 整条线完成后清；轻量派生元数据随仓库版本化保留 |
 | **L4 一次性取证** | 结论沉淀进文档后即无独立价值 | knowmap/quiz_load 侦查、截图 shots、PoC 输出、一次性抓包 | 暂留 | ❌ | ❌ | **结论入 docs 即清** |
 
 #### 2.2.3 轻量派生元数据的入库判据（L3 的唯一例外）
@@ -110,12 +110,12 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 3. 是否为**多个脚本共享的路由 / 索引 / 校验基线**。
 
 - 满足三问且**跨课程复用、属工程规则/基线**：入库（如脚本内的别名归一规则、模板、SOP、校验基线）。
-- **ADR-012 修订口径**：与**具体课程强绑定、可由 syllabus+papers 完全 rebuild** 的课程级路由（`course-manifest.json`，以及已退役的 `lecture-resource-map.json`/`verify_lecture_map.py`）即便体量轻也**不入库**，放课程 `_workspace/manifest/`；入库的是"如何生成它的规则与脚本"，而非某门课的实例。
+- **ADR-012 修订口径**：与**具体课程强绑定、可由 syllabus+papers 完全 rebuild** 的课程级路由（`course-manifest.json`，以及已退役的 `lecture-resource-map.json`/`verify_lecture_map.py`）即便体量轻也**不入库**，放课程 `data/_workspace/<profile>/manifest/`；入库的是"如何生成它的规则与脚本"，而非某门课的实例。
 - 不满足：不入库，如 papers 正文 JSON、视频、PDF（大体量 L1，只本地 + 网盘）。
 
 #### 2.2.4 papers：物理集中存，逻辑按讲视图（存储与视图分离）
 
-- **物理集中**：做题线原料统一放 `data/knowledge-source/papers/<paperId>.json` + `paper_index.json`。理由：接口主键是 `paperId`（record/redo/submit 全按 paperId）；一讲对多套卷；章节归属（chapter）可能调整而 paperId 稳定。**不得按讲复制进课程库目录**。
+- **物理集中**：做题线原料统一放 `data/_workspace/<profile>/papers/<paperId>.json` + `paper_index.json`。理由：接口主键是 `paperId`（record/redo/submit 全按 paperId）；一讲对多套卷；章节归属（chapter）可能调整而 paperId 稳定。**不得按讲复制进课程库目录**。
 - **逻辑按讲视图**：需要"某讲有哪些卷"时，由 `paper_index.json` 的 `chapter` 字段 `group by` 现场派生只读视图，**不复制文件、不产生第二份物理副本**。
 - papers 是 **L1 底片**：网盘备份到与课程库平级的独立"知识原料区"，不混入按讲成品区；知识成品生成后题库的直接用途下降，但定稿前保留作重跑保险。
 
@@ -123,7 +123,7 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 
 - **阶段中**：L3/L4 允许存在以支撑续跑与取证，不追求时刻干净。
 - **每讲定稿**：清该讲 L4；L3 续跑凭证（如 `.vfetch/merged.ts`）保留至整条线完成。
-- **整门课定稿**（作业 + 冲刺模考 + 飞书知识库全部完成）：清 L4 全部、`cdp-sniff` 一次性侦查包、`.vfetch/`、L0 独立 browser-profile 类；L1 已网盘备份后保留；L2 为最终交付。
+- **整门课定稿**（作业 + 冲刺模考 + 飞书知识库全部完成）：清 L4 全部、`data/_workspace/<profile>/sniff` 一次性侦查包、`.vfetch/`、L0 独立 browser-profile 类；L1 已网盘备份后保留；L2 为最终交付。
 - **清理方式（硬规矩）**：本地一律移 `~/.Trash/<批次目录>/` 不硬删；网盘删除走 `baidu_upload.py delete`（进回收站），删前先 list 取证、先补传标准件再删旧件，保证任何时刻不缺内容。
 - **续跑凭证保护**：禁止给 download/encode 类脚本加删除型 `trap` 误删 `.vfetch/merged.ts` 等断点续跑凭证（与 2.1"脚本自清例外"一致）。
 

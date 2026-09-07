@@ -7,7 +7,7 @@
 
 本文档是课程知识库项目的**主工作流索引**，只保留总体流程、全局规则和每个阶段的摘要+参考文档链接。详细操作步骤、参数、常见问题查阅对应专项文档与阶段 SOP。
 
-> **范式基线（2026-09-04 起）**：课程数据按 **原始资源 / 知识详解 / _workspace 三层解耦**组织，知识加工单元是**官方知识点（跨讲聚合）**而非"讲"，主流程为**四阶段**。决策依据见 [ADR-012](project-management/decisions/ADR-012-三层解耦与按知识点聚合.md)，目录落点见 [DIRECTORY_STRUCTURE.md](DIRECTORY_STRUCTURE.md)。
+> **范式基线（2026-09-04 起）**：课程数据按 **原始资源 / 知识详解 / 运行时工作区 三类解耦**组织（过程件统一在 `data/_workspace/`，ADR-016），知识加工单元是**官方知识点（跨讲聚合）**而非"讲"，主流程为**四阶段**。决策依据见 [ADR-012](project-management/decisions/ADR-012-三层解耦与按知识点聚合.md)（工作区位置经 [ADR-016](project-management/decisions/ADR-016-统一运行时工作区与按profile分区.md) 修订），目录落点见 [DIRECTORY_STRUCTURE.md](DIRECTORY_STRUCTURE.md)。
 
 ---
 
@@ -22,7 +22,7 @@
 | **不包含** | AI执行规则、命令、Things to Avoid | → [AGENTS.md](../AGENTS.md) |
 | **不包含** | 需求定义、功能清单、验收标准 | → [REQUIREMENTS.md](REQUIREMENTS.md) |
 | **不包含** | 文档索引、所有文档清单 | → [DOCUMENTATION_MAP.md](DOCUMENTATION_MAP.md) |
-| **不包含** | 三层目录的完整定义、命名细则 | → DIRECTORY_STRUCTURE.md、[NAMING_CONVENTION.md](project-management/standards/NAMING_CONVENTION.md) |
+| **不包含** | 数据分层与目录结构的完整定义、命名细则 | → DIRECTORY_STRUCTURE.md、[NAMING_CONVENTION.md](project-management/standards/NAMING_CONVENTION.md) |
 | **不包含** | 各阶段详细操作步骤、参数、常见问题 | → 对应阶段 SOP 与 development/ 下专项文档 |
 
 ---
@@ -35,15 +35,17 @@
 |----|------|------|------|
 | **原始资源** | `data/课程库/<课程>/原始资源/{videos,notes}/` | 视频+转写、讲义+OCR（按资源类型分桶，不按讲混放） | 永久保留，传网盘 |
 | **知识详解** | `data/课程库/<课程>/知识详解/14组/92知识点.md` | 成品：一个知识点一篇、篇内 4 节；加 2 篇课程全局篇 | 可迭代，传网盘并同步飞书 |
-| **_workspace** | `data/课程库/<课程>/_workspace/` | manifest/papers/sniff/user-notes-raw/logs/tmp | 临时，Git忽略+网盘排除，收尾清理 |
+| **运行时工作区** | `data/_workspace/_account/`（账号级）、`data/_workspace/<profile>/`（课程级 manifest/papers/notes-raw/sniff/tmp/pipeline/logs） | 运行时过程件，统一工作区不绑定具体课程、按 profile 分区（ADR-016） | Git忽略+网盘排除，分层清退 |
+
+> 逻辑上分三类（原料/成品/过程件）即"三层解耦"；**物理上课程目录只看到「原始资源 + 知识详解」两层，过程件统一在独立的 `data/_workspace/`**。
 
 ### 四阶段流水线
 
 ```
-①资源采集(视频下载/压缩/转写 + 讲义下载/OCR → 原始资源；过程件→_workspace/tmp)
+①资源采集(视频下载/压缩/转写 + 讲义下载/OCR → 原始资源；过程件→data/_workspace/<profile>/tmp)
    → ②做题/交卷与试卷采集(帮用户100%完成作业 + 采 papers + 生成 course-manifest)
    → ③知识详解生成(按官方知识点跨讲聚合，14组→92篇×4节 + 2篇课程全局篇)
-   → ④收尾(阶段校验门 → 备份百度网盘 → 统一同步飞书知识库 → 分级清理 _workspace)
+   → ④收尾(阶段校验门 → 备份百度网盘 → 统一同步飞书知识库 → 分层清理工作区)
 ```
 
 **特殊分支：冲刺模考**（做题/交卷的一种特殊模式，所有基础作业完成后才触发）：
@@ -53,11 +55,11 @@
 
 ### 核心原则
 
-1. **采集与生成解耦**：资源按类型采集、知识按知识点聚合，不再要求"一讲端到端走完再下一讲"；层间靠 `_workspace/manifest/course-manifest.json`（讲↔资源↔知识点）维系。
+1. **采集与生成解耦**：资源按类型采集、知识按知识点聚合，不再要求"一讲端到端走完再下一讲"；层间靠 `data/_workspace/<profile>/manifest/course-manifest.json`（讲↔资源↔知识点）维系。
 2. **知识详解一次性聚合生成**：集齐来源（讲义OCR + 视频转写 + 题/标准答案/官方解析 + 用户笔记）后，按知识点一次性生成，不做两阶段。
 3. **做题/交卷首要目的是帮用户把作业 100% 正确完成**，题/答/解析同时作为知识来源反哺；它包含知识点测试/课后练习、分章真题、强化专题等模式，**冲刺模考必须在所有基础作业完成后才进行**。
 4. **分类骨架只用官方知识点**（14 模块组、92 知识点，脚本现算校验），不 AI 自造分类；知识与应试在一篇内分节而非分文档。
-5. **先本地后飞书、先校验后同步**；任何永久产物落地前不清理 `_workspace`。
+5. **先本地后飞书、先校验后同步**；任何永久产物落地前不清理 工作区。
 
 ---
 
@@ -79,9 +81,9 @@
 | 阶段 | 应产出 | 通过判据（要点） |
 |------|--------|------------------|
 | **①资源采集** | `原始资源/videos/NN_讲题/{video.mp4,transcript.md,transcript.json}`；`原始资源/notes/NN_模块/{讲义.pdf,OCR.md}` | 视频数与 syllabus 一致、压缩 H.265 CRF30 且时长误差<1s、转写完整；讲义数与 syllabus 的 lecture_note 清单一致（17 份，混合讲以实际清单为准，空讲不复制）；`tmp/download`、`tmp/transcribe` 已即时清 |
-| **②做题/交卷 + 采集** | 作业 100% 完成；`_workspace/papers/` 全量试卷 JSON；`_workspace/manifest/` 台账与 course-manifest | exam-report 全对；papers 份数与 syllabus 枚举一致；客观题取顶层、主观题下钻 `subQuestionList`；manifest 讲↔资源↔知识点映射可校验、知识点合计 92 |
+| **②做题/交卷 + 采集** | 作业 100% 完成；`data/_workspace/<profile>/papers/` 全量试卷 JSON；`data/_workspace/<profile>/manifest/` 台账与 course-manifest | exam-report 全对；papers 份数与 syllabus 枚举一致；客观题取顶层、主观题下钻 `subQuestionList`；manifest 讲↔资源↔知识点映射可校验、知识点合计 92 |
 | **③知识详解生成** | `知识详解/01..14_组/` 共 92 篇知识点 md（每篇 4 节）+ 课程两全局篇 | 92 篇齐全无遗漏/无未归类；题量与 papers 对账一致；来源标注完整、无 AI 错题；旧骨架已复用核对；用户留言已归入"学员补充" |
-| **④收尾** | 网盘备份、飞书知识库、干净的工作区 | 原始资源+知识详解已传网盘且大小校验；飞书 14 组→知识点结构校验通过；`_workspace` 按清理时序清空（详见阶段④） |
+| **④收尾** | 网盘备份、飞书知识库、干净的工作区 | 原始资源+知识详解已传网盘且大小校验；飞书 14 组→知识点结构校验通过；工作区 按清理时序清空（详见阶段④） |
 
 ### 批量任务规则
 
@@ -148,21 +150,22 @@
 - 必须用 API 同步，禁止直接在飞书编辑（紧急修复除外）；连续失败 3 次以上暂停并报告。
 - 飞书写操作前先读 lark-wiki / lark-doc 相关 Skill。
 
-### 数据分层与 _workspace 管理（必须遵守）
+### 数据分层与统一工作区管理（必须遵守）
 
-**核心原则：永久层与成品层保留并备份；一切运行再生成的过程件集中在 `_workspace`，达到门禁才清。**
+**核心原则：永久层与成品层保留并备份；一切运行再生成的过程件集中在唯一工作区 `data/_workspace/`（账号级 `_account` + 课程级 `<profile>` 正交分区），达到门禁才分层清退。**
 
 | 类别 | 位置 | 处置 |
 |------|------|------|
 | 原始资源（视频/转写、讲义/OCR） | `原始资源/` | 永久保留、传网盘 |
 | 知识详解成品（92 篇 + 全局篇） | `知识详解/` | 保留、传网盘、同步飞书 |
-| 试卷原始 JSON、台账、course-manifest | `_workspace/{papers,manifest}/` | 可重采/rebuild，收尾清 |
-| 抓包侦查报文 | `_workspace/sniff/` | 验证完即删 |
-| 用户留言原件 | `_workspace/user-notes-raw/` | **100% 吸收进"学员补充"后才删（门槛最高）** |
-| 下载/转写临时（分片、merged、切片） | `_workspace/tmp/{download,transcribe}/` | **单任务成功即清**（避免与成品双占空间） |
-| 运行日志 | `_workspace/logs/` | 随工作区收尾清 |
+| 账号鉴权 JWT、账号课程清单 | `data/_workspace/_account/{auth,user-space}/` | 跨课共享、长期留、滚动留最新 |
+| 试卷原始 JSON、台账、course-manifest | `data/_workspace/<profile>/{papers,manifest}/` | 可重采/rebuild，封板归位后清 |
+| 抓包侦查报文 | `data/_workspace/<profile>/sniff/` | 验证完即删 |
+| 用户留言原件 | `data/_workspace/<profile>/notes-raw/` | **100% 吸收进"学员补充"、封板归位后才删（门槛最高）** |
+| 下载/转写临时（分片、merged、切片） | `data/_workspace/<profile>/tmp/{download,transcribe}/` | **单任务成功即清**（避免与成品双占空间） |
+| 阶段断点、运行日志 | `data/_workspace/<profile>/{pipeline,logs}/` | 断点可 rebuild、日志随收尾清 |
 
-**清理时序**：`tmp/*` 单任务成功即清 → `sniff/` 验证完即删 → `user-notes-raw/` 确认全吸收后删 → 阶段④双门禁（92 篇成品校验通过 且 原始资源传完网盘）且飞书同步完成后，`papers/manifest/logs` 随 `_workspace` 整体清空。**不属课程数据的件不进 `_workspace`**：`.secrets/*.enc` 留仓库根（加密、跨课复用）；`node_modules`、`transcription/venv` 是工具链环境，留标准位置并 gitignore，靠 package.json/requirements.txt 重建。
+**清理时序**：`tmp/*` 单任务成功即清 → `sniff/` 验证完即删 → `notes-raw/` 确认全吸收、与 `papers/` 一并**归位到课程「原始资源」**后清工作区副本 → 阶段④双门禁（成品校验通过 且 原始资源传完网盘）且飞书同步完成后，`manifest/pipeline/logs` 可清（可 rebuild）；`_account` 不随单课清退。**不属运行时过程件不进工作区**：`.secrets/*.enc` 留仓库根（加密、跨课复用）；`node_modules`、`transcription/venv` 是工具链环境，留标准位置并 gitignore，靠 package.json/requirements.txt 重建。
 
 ### 多任务并发调度（必须遵守）
 
@@ -191,7 +194,7 @@
 
 ### 摘要
 
-按 syllabus 官方清单采集视频与讲义：视频捕获 HLS（m3u8+key）→ 下载分片解密合并 → H.265 CRF30 压缩并验证 → FunASR 转写；讲义取 CDN 直链 curl 下载 → 图片型 PDF 走 macOS Vision OCR。成品落 `原始资源/{videos,notes}/`，下载/转写临时落 `_workspace/tmp/` 且单任务成功即清。
+按 syllabus 官方清单采集视频与讲义：视频捕获 HLS（m3u8+key）→ 下载分片解密合并 → H.265 CRF30 压缩并验证 → FunASR 转写；讲义取 CDN 直链 curl 下载 → 图片型 PDF 走 macOS Vision OCR。成品落 `原始资源/{videos,notes}/`，下载/转写临时落 `data/_workspace/<profile>/tmp/` 且单任务成功即清。
 
 ### 关键要点
 
@@ -213,7 +216,7 @@
 
 ### 摘要
 
-**双重目的**：①帮用户把作业 100% 正确完成（首要）；②采集题/标准答案/官方解析落 `_workspace/papers/`，并生成/刷新 `_workspace/manifest/` 台账与 course-manifest。做题链路已接口化：redo-paper 进卷即返回题面/标准答案/解析，submit 一次性交卷，exam-report 回查；UI 仅用于登录与未覆盖异常兜底。
+**双重目的**：①帮用户把作业 100% 正确完成（首要）；②采集题/标准答案/官方解析落 `data/_workspace/<profile>/papers/`，并生成/刷新 `data/_workspace/<profile>/manifest/` 台账与 course-manifest。做题链路已接口化：redo-paper 进卷即返回题面/标准答案/解析，submit 一次性交卷，exam-report 回查；UI 仅用于登录与未覆盖异常兜底。
 
 ### 关键要点
 
@@ -266,14 +269,14 @@
 
 ### 摘要
 
-按固定顺序收尾：过阶段③校验门 → 备份百度网盘 → 统一同步飞书 → 确认永久产物都落地后分级清理 `_workspace`。
+按固定顺序收尾：过阶段③校验门 → 备份百度网盘 → 统一同步飞书 → 确认永久产物都落地后分级清理 工作区。
 
 ### 关键要点
 
 1. **校验先行**：92 篇成品齐全且自检通过、原始资源齐全（过阶段①③门）。
-2. **备份百度网盘**（在同步飞书前）：上传原始资源（压缩视频、讲义、转写、OCR）与知识详解成品、课程全局篇；**不传原始未压缩视频、不传 `_workspace`**；分片上传后 list 校验大小一致。应用 `CPA课程归档`(AppID 124199604)，凭证 `.secrets/baidu_credentials.enc`，国内直连不走代理，路径含 `高顿/` 层且与本地一致。
+2. **备份百度网盘**（在同步飞书前）：上传原始资源（压缩视频、讲义、转写、OCR）与知识详解成品、课程全局篇；**不传原始未压缩视频、不传 工作区**；分片上传后 list 校验大小一致。应用 `CPA课程归档`(AppID 124199604)，凭证 `.secrets/baidu_credentials.enc`，国内直连不走代理，路径含 `高顿/` 层且与本地一致。
 3. **统一同步飞书**：按"飞书同步策略"整体同步 14 组→知识点，同步后做结构校验。
-4. **分级清理 `_workspace`**：按"数据分层与 _workspace 管理"的清理时序执行；`user-notes-raw` 必须确认全吸收才删。
+4. **分层清理工作区**：按"数据分层与统一工作区管理"的清理时序执行；`notes-raw` 必须确认全吸收、归位后才删。
 5. 清理前确认：永久层已传网盘、成品已同步飞书、待删件确实不在使用。
 
 ### 参考文档
@@ -285,7 +288,7 @@
 
 ## 任务总结
 
-每阶段或批量任务完成后，在对话中总结（不单独生成飞书报告）：本阶段产出物与数量、关键校验结果（题量/知识点数/文件大小对账）、遇到的问题与处理、网盘与飞书结果、`_workspace` 清理情况、下一阶段入口。批量任务完成后做整体总结并附四阶段校验门结果。
+每阶段或批量任务完成后，在对话中总结（不单独生成飞书报告）：本阶段产出物与数量、关键校验结果（题量/知识点数/文件大小对账）、遇到的问题与处理、网盘与飞书结果、工作区 清理情况、下一阶段入口。批量任务完成后做整体总结并附四阶段校验门结果。
 
 ---
 
@@ -301,7 +304,7 @@
 - 课程表 TAB 可能因 ffmpeg 占内存崩溃，需重新加载。
 - 不要在浏览器点"下载"按钮（触发 Chrome 下载弹窗），讲义用 CDN 直链 curl。
 - 代理：GitHub/Homebrew/npm 走 ClashX（127.0.0.1:7890）；高顿课程页、百度 API/网盘直连。
-- 密钥管理见 `scripts/secrets.sh`，加密凭证在 `.secrets/`（留仓库根、不进 `_workspace`）。
+- 密钥管理见 `scripts/secrets.sh`，加密凭证在 `.secrets/`（留仓库根、不进 工作区）。
 - 业务数据在 `data/`（软链到本地课程库），不入 Git；Git 只版本化规范/模板/SOP/脚本等文本。
 
 ---

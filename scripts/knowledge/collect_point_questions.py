@@ -4,20 +4,16 @@
 阶段③步骤1：按官方知识点聚合 papers 题/答/解析（质量门：篇内题数以此为准）。
 用法:
   python3 scripts/knowledge/collect_point_questions.py --group 1            # 只聚合某组
-  python3 scripts/knowledge/collect_point_questions.py --all --out _workspace/tmp/point-questions
+  python3 scripts/knowledge/collect_point_questions.py --all --out data/_workspace/<profile>/tmp/point-questions
 客观题(type1/2/3)按顶层 knowledgePointList 归点；主观大题(type5)下钻 subQuestionList，
 按小问标签归点、保留大题题干上下文。
 """
 import json, re, html, glob, os, argparse, collections
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# 课程路径：env COURSE_LOCAL_ROOT 最高优先，否则读 profile（缺省税法）
+# 运行时工作区统一在 data/_workspace/<profile>（过程件不进课程成品目录，见 ADR-016）；课程切换走 GAODUN_COURSE_PROFILE
 from course_profile import load_profile  # noqa: E402
-DEFAULT_COURSE = os.path.join(ROOT, load_profile()["paths"]["localRoot"])
-COURSE = os.environ.get("COURSE_LOCAL_ROOT", DEFAULT_COURSE)
-if not os.path.isabs(COURSE):
-    COURSE = os.path.join(ROOT, COURSE)
-WS = os.path.join(COURSE, "_workspace")
+WS = os.path.join(ROOT, "data", "_workspace", load_profile()["key"])
 QT = {1: "单选", 2: "多选", 3: "判断", 5: "大题", 6: "小问"}
 
 

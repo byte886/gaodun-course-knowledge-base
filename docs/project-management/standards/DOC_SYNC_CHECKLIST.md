@@ -61,14 +61,14 @@
 
 | 文档 | 位置 | 更新内容 |
 |------|------|---------|
-| papers/&lt;paperId&gt;.json | `_workspace/papers/`（只读采集，gitignore 不入库） | 每套卷的题面/选项/标准答案/官方解析/知识点标签（主观题下钻小问） |
-| paper_index / papers_inventory / course-manifest | `_workspace/manifest/`（gitignore 不入库） | 本地索引、官网台账、讲↔资源↔知识点路由与 14 组归组 |
+| papers/&lt;paperId&gt;.json | `data/_workspace/<profile>/papers/`（只读采集，gitignore 不入库） | 每套卷的题面/选项/标准答案/官方解析/知识点标签（主观题下钻小问） |
+| paper_index / papers_inventory / course-manifest | `data/_workspace/<profile>/manifest/`（gitignore 不入库） | 本地索引、官网台账、讲↔资源↔知识点路由与 14 组归组 |
 
 ### 3.2 用户笔记精华
 
 | 文档 | 位置 | 更新内容 |
 |------|------|---------|
-| 用户留言/笔记原件 | `_workspace/user-notes-raw/`（gitignore，100% 吸收后清） | 高赞留言/口诀/易错，提炼后入知识点篇「四、学员补充」节 |
+| 用户留言/笔记原件 | `data/_workspace/<profile>/notes-raw/`（gitignore，100% 吸收后清） | 高赞留言/口诀/易错，提炼后入知识点篇「四、学员补充」节 |
 
 ### 3.3 验证留痕（默认不单独成文）
 

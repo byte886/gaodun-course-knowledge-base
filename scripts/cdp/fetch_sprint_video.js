@@ -13,16 +13,18 @@
  * 用法：
  *   node scripts/cdp/fetch_sprint_video.js 1|2|3   # 下载某一卷的视频解析
  *   node scripts/cdp/fetch_sprint_video.js all     # 依次下载三卷
- * 产物：data/sprint-videos/<标题>/.vfetch/{manifest.json, merged.ts}（merged.ts 供压缩步骤）
+ * 产物：data/_workspace/<profile>/tmp/download/sprint-videos/<标题>/.vfetch/{manifest.json, merged.ts}（merged.ts 供压缩步骤）
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { findJwt, makeHeaders } = require('./gaodun_paper_core');
+const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const OUT_ROOT = path.join(ROOT, 'data', 'sprint-videos');
+// 冲刺视频下载工作目录（税法专属，缺省 profile），merged.ts 供压缩步骤，完成后清
+const OUT_ROOT = workspaceDir('tmp', 'download', 'sprint-videos');
 const GW = 'https://apigateway.gaodun.com';
 const CONCURRENCY = 12;
 
@@ -95,7 +97,7 @@ async function runOne(seq) {
   const merged = path.join(dir, 'merged.ts');
   const mfPath = path.join(dir, 'manifest.json');
   if (fs.existsSync(merged) && fs.statSync(merged).size > 1000000) { log(meta.title, '已存在 merged.ts，跳过'); return; }
-  const jwt = findJwt(path.join(ROOT, 'data', 'cdp-sniff'));
+  const jwt = findJwt();
   const { m3u8, duration } = await fetchM3u8Url(meta.videoId, jwt);
   log(`${meta.title}（约${meta.minutes}分钟/${duration}s）m3u8=${m3u8.slice(0, 90)}...`);
   const t0 = Date.now();

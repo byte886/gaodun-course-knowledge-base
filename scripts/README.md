@@ -60,7 +60,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ### 总编排器与并发标准件
 
-- **`run_course_pipeline.sh <profile> [--dry-run|--from n|--only n|--list]`**：按 `docs/development/project-dag.md` 的 13 节点顺序做单课总调度，阶段 marker 落在 `$COURSE_LOCAL_ROOT/_workspace/pipeline/<n>.done`（重跑跳过），进入「9 知识库生成」前做 Fan-In 校验。auto 阶段直接调用下列专用脚本，manual/todo 阶段只给指引，**只调度、不含业务逻辑**。首次先 `--dry-run` 走查。
+- **`run_course_pipeline.sh <profile> [--dry-run|--from n|--only n|--list]`**：按 `docs/development/project-dag.md` 的 13 节点顺序做单课总调度，阶段 marker 落在 `data/_workspace/$PROFILE/pipeline/<n>.done`（重跑跳过），进入「9 知识库生成」前做 Fan-In 校验。auto 阶段直接调用下列专用脚本，manual/todo 阶段只给指引，**只调度、不含业务逻辑**。首次先 `--dry-run` 走查。
 - **`lib/parallel.sh` 的 `parallel_map`**：shell 侧唯一并发标准件，`<NUL任务流> | parallel_map <并发N> <worker命令...>`，底层 `xargs -0 -P`，替代有竞态的自建 mkdir/flock 锁队列。CPU 任务（FunASR/x265）并发度必须实测、默认串行；IO 任务可高并发受限流约束，选型见 `docs/development/performance/parallel-processing-guide.md`。
 
 ---
@@ -165,7 +165,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | JWT 调取流接口拿 FHD m3u8 → 并发 12 下载相对分片 → 顺序合并 `.vfetch/merged.ts`（无需 CDP/解密）；幂等，已合并则跳过 |
-| **用法** | `node scripts/cdp/fetch_sprint_video.js 1|2|3|all`，产物在 `data/sprint-videos/<标题>/.vfetch/` |
+| **用法** | `node scripts/cdp/fetch_sprint_video.js 1|2|3|all`，产物在 `data/_workspace/<profile>/tmp/download/sprint-videos/<标题>/.vfetch/` |
 | **实测** | 单卷约 480 片 / 300MB / 约 24 秒（FHD 126 分钟） |
 | **可靠性** | ✅ 高（分片 3 次重试、断点续下） |
 
@@ -186,7 +186,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 题目级视频 encrypt=1、key 不下发（authorize 被鉴权拦，wasm 解密后只在 Worker 内存）；CDP 打开逐题解析页→点封面加载播放器→hook Worker `postMessage`，从 `to_worker.response` 取前 16B ASCII key，落 `data/cdp-sniff/qvideo_keys.json` |
+| **用途** | 题目级视频 encrypt=1、key 不下发（authorize 被鉴权拦，wasm 解密后只在 Worker 内存）；CDP 打开逐题解析页→点封面加载播放器→hook Worker `postMessage`，从 `to_worker.response` 取前 16B ASCII key，落 `data/_workspace/<profile>/papers/qvideo_keys.json` |
 | **用法** | `node scripts/cdp/fetch_question_video_keys.js`（卷/大题入口/vid 已在脚本内配置，来自 syllabus_full.json 与 redo） |
 | **关键事实** | key 为视频级固定值、跨会话不变，故只需抓一次；hook 必须 evaluateOnNewDocument 注入 |
 | **可靠性** | ✅ 高（7/7 一次成功；缺哪个补哪个，已抓自动跳过） |
@@ -197,7 +197,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 读 qvideo_keys.json 固定 key，JWT 取 SD m3u8→解析 IV→并发 10 下载→逐片 AES-128-CBC 解密（校验 0x47）→合并 merged.ts；产物 `data/sprint-videos/题目级讲解/qvideo_<pid>_<entry>_<vid8>/.vfetch/` |
+| **用途** | 读 qvideo_keys.json 固定 key，JWT 取 SD m3u8→解析 IV→并发 10 下载→逐片 AES-128-CBC 解密（校验 0x47）→合并 merged.ts；产物 `data/_workspace/<profile>/tmp/download/sprint-videos/题目级讲解/qvideo_<pid>_<entry>_<vid8>/.vfetch/` |
 | **用法** | `node scripts/cdp/download_question_videos.js all` 或 `<vid8>`；分片落盘缓存、断点续跑 |
 | **实测** | 7 个共 175 分钟 / 约 458MB(SD)，全量下载解密约 40 秒；ffprobe 时长逐一==接口 duration |
 | **可靠性** | ✅ 高（分片 3 次重试、解密非 TS 立即报错） |
@@ -282,7 +282,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 机制同 transcribe_parallel（`parallel_map` + `--worker` 自递归、默认并发 1）；对象是 `data/sprint-videos/题目级讲解/qvideo_*/video.mp4`（税法冲刺专属数据），临时目录用 vid 目录名唯一化（避免首段前缀都叫 qvideo 撞车），输出 transcript.md/json 到各目录 |
+| **用途** | 机制同 transcribe_parallel（`parallel_map` + `--worker` 自递归、默认并发 1）；对象是 `data/_workspace/<profile>/tmp/download/sprint-videos/题目级讲解/qvideo_*/video.mp4`（税法冲刺专属数据），临时目录用 vid 目录名唯一化（避免首段前缀都叫 qvideo 撞车），输出 transcript.md/json 到各目录 |
 | **用法** | `bash scripts/transcribe_qvideos.sh [并发数N]`（默认 1，已有 >1000 字 transcript 自动跳过） |
 | **实测** | FunASR 约 20x 实时；并发度总吞吐以性能指南为准（串行最优，旧默认 6 已收敛） |
 | **可靠性** | ✅ 高 |
@@ -576,7 +576,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ## 十、高顿做题接口链路（6个，位于 `scripts/cdp/`）
 
-> 「接口为主、UI 兜底」的纯接口做题脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)。报文落 `data/cdp-sniff/`（不入库）。
+> 「接口为主、UI 兜底」的纯接口做题脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)。报文落 `data/_workspace/<profile>/sniff/`（不入库）。
 
 
 ---
@@ -620,7 +620,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ### `cdp/batch_redo_papers.js` — 批量纯接口补做到 100%
 
-- 只读枚举 `papers_inventory.json`+`papers_audit.json` 中「非满分且非冲刺」的卷，逐张交 gaodun_paper_core：record→(首次 create-paper)→redo(取标准答案，平铺 type5 子题与顶层 type6，按 cpaBotType 分流)→按实际题量停留→submit 全量→交卷后并发=3 AI 批改（cs=6 三级补全→best-of-N→aiCeiling）→exam-report 回查；硬排除冲刺模考；`10462203 时间太短` 自动延长 20s；单张失败不中断，结果落 `data/cdp-sniff/batch_result_<日期>.json`；卷间停 4s。
+- 只读枚举 `papers_inventory.json`+`papers_audit.json` 中「非满分且非冲刺」的卷，逐张交 gaodun_paper_core：record→(首次 create-paper)→redo(取标准答案，平铺 type5 子题与顶层 type6，按 cpaBotType 分流)→按实际题量停留→submit 全量→交卷后并发=3 AI 批改（cs=6 三级补全→best-of-N→aiCeiling）→exam-report 回查；硬排除冲刺模考；`10462203 时间太短` 自动延长 20s；单张失败不中断，结果落 `data/_workspace/<profile>/papers/batch_result_<日期>.json`；卷间停 4s。
 - 用法：`node scripts/cdp/batch_redo_papers.js`（dry-run 预览）｜加 `--go` 实跑｜`--go 82174 82175 ...` 指定 paperId｜加 `--no-ai` 只交卷不做主观 AI 批改。
 - 支持客观题（type 1/2）与主观题（type5 套 type6、顶层独立 type6，交卷后 AI 批改冲满分）；三态结果：✅严格满分 / 🟡平台最优（题库未配 AI 或 AI 判分上限，答案均已正确提交）/ ⏺已交卷未满分；交卷成功即 progress=1，未达平台最优单独标记可补批，不中断批量。
 
@@ -642,7 +642,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | JWT 直连 `ep-course/.../space/vcourse/pc`，一次返回账号在各 project 下购买/开通的全部课程，提取 vcourseId/saasCourseId/subjectId/开课状态/到期等稳定字段。新开科目（如会计）开工前先跑它拿 saasCourseId（=做题链路 courseId），替代手工找 URL |
-| **用法** | `node scripts/cdp/fetch_user_space_courses.js [--print]`；台账 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），原始响应留 `data/cdp-sniff/user_space_vcourse_<ts>.json` |
+| **用法** | `node scripts/cdp/fetch_user_space_courses.js [--print]`；台账 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），原始响应留 `data/_workspace/_account/user-space/user_space_vcourse_<ts>.json` |
 | **可靠性** | ✅ 已实测（2026-09-07 拉到 CPA 8 门，会计 saasCourseId=42656）；JWT 过期需先在登录态抓一次带 authentication 的请求刷新 jsonl |
 | **相关文档** | gaodun-exam-api.md §1.3、§2.11 |
 
@@ -665,7 +665,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 |------|------|
 | **用途** | 线 B 原料补采：把已交卷的 116 张基础卷的题面/选项/标准答案/官方解析/知识点标签/全站正确率，经只读接口 record→paper/analysis 逐张拉出并精简落盘，供末期知识库生成。**纯只读**：不 redo、不建实例、不交卷、不耗 AI 权益、无副作用 |
 | **用法** | `node scripts/cdp/collect_paper_sources.js [--all] [paperId...]`（默认只补本地缺失卷，`--all` 强制重拉） |
-| **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 课程 `_workspace/papers/<id>.json` + `_workspace/manifest/paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
+| **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 课程 `data/_workspace/<profile>/papers/<id>.json` + `data/_workspace/<profile>/manifest/paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
 | **相关文档** | gaodun-exam-api.md、standards 2.2.4、SOP 步骤1 |
 
 ---
@@ -675,7 +675,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 冲刺模考专用：record→create/redo→submit→AI 批改（correct-ai/cpa）→exam-report 全接口闭环；客观题用 questionAnswer.answer、主观用 core 的 `cleanSubjectiveAnswer`（算式为主体+点拨精简为「依据：」+多小问分点，交卷与首次 AI 批改同版），按真实记分判定满分（aiPoints），cs=2 不再虚报满分 |
-| **用法** | `node scripts/cdp/do_sprint_paper.js s1|s2|s3|m1|m2|m3`（兼容旧参数 1/2/3）；机考自动带 `origin=https://mock-cpa.gaodun.com`；结果落 `data/cdp-sniff/exam_result_<paperId>_<ts>.json` |
+| **用法** | `node scripts/cdp/do_sprint_paper.js s1|s2|s3|m1|m2|m3`（兼容旧参数 1/2/3）；机考自动带 `origin=https://mock-cpa.gaodun.com`；结果落 `data/_workspace/<profile>/papers/exam_result_<paperId>_<ts>.json` |
 | **6 卷映射** | s1/s2/s3=86722/86723/86724（glivepro 试卷）；m1/m2/m3=86726/86727/86728（mock-cpa 机考，与试卷同题） |
 | **可靠性** | ✅ 高；免费可达最优=客观全对+AI 题尽量满，未配 AI 题（cpaBotType=0）须人工批改、本流程不购买 |
 | **相关文档** | gaodun-exam-api.md、任务报告_冲刺模考* |
@@ -758,7 +758,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 把原始用户笔记（含学员名/点赞数/日期）按四分类（记忆口诀/易错点辨析/解题技巧/知识补充）整理，每类按赞 Top5 筛选，输出纯知识内容（**不输出学员名/点赞数/用户ID/日期**，元数据仅保留在原始资料中用于溯源） |
-| **用法** | `python3 scripts/knowledge/organize_user_notes.py`（课程目录/笔记目录默认读 profile，缺省税法，笔记取 `data/user-notes-raw/<key>/`；可用 `GAODUN_COURSE_PROFILE` 或 `COURSE_LOCAL_ROOT`/`USER_NOTES_RAW_DIR` 覆盖） |
+| **用法** | `python3 scripts/knowledge/organize_user_notes.py`（课程目录/笔记目录默认读 profile，缺省税法，笔记取 `data/_workspace/<profile>/notes-raw/`；可用 `GAODUN_COURSE_PROFILE` 或 `COURSE_LOCAL_ROOT`/`USER_NOTES_RAW_DIR` 覆盖） |
 | **可靠性** | ✅ 高（744 条覆盖 92 篇；已彻底移除元数据输出） |
 | **相关文档** | ADR-013、collect_user_notes.js |
 
@@ -796,7 +796,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 |------|------|
 | **用途** | 从 syllabus 接口报文 + papers 生成 course-manifest.json（讲↔资源↔知识点完整映射），可 rebuild、可校验 |
 | **用法** | `python3 scripts/migrate/build_course_manifest.py` |
-| **可靠性** | ⚠️ 为税法课定制（硬编码课程路径、读 data/cdp-sniff 旧输入），非通用生成器 |
+| **可靠性** | ⚠️ 一次性工具、为税法课定制（硬编码课程路径、读当时 `data/cdp-sniff` 报文，该目录后经 ADR-016 上移为 `data/_workspace`），非通用生成器，新课程不直接套用 |
 | **相关文档** | scripts/migrate/README.md、ADR-012 |
 
 ---

@@ -17,7 +17,7 @@
 
 ## 一、输入与输出
 
-**输入**：官网课程表（syllabus，经日常 Chrome CDP 取得，落 `_workspace/manifest/course_catalog.json`）；可能已有部分历史下载。
+**输入**：官网课程表（syllabus，经日常 Chrome CDP 取得，落 `data/_workspace/<profile>/manifest/course_catalog.json`）；可能已有部分历史下载。
 
 **输出（全部在课程目录 `原始资源/`）**：
 
@@ -40,12 +40,12 @@
 
 ### 步骤1　视频下载与压缩
 - HLS 流：捕获 AES key → 下分片 → 解密合并 → ffmpeg 压缩 H.265（CRF30）；
-- 下载临时落 `_workspace/tmp/download/NN_讲题/`，成功产物移到 `原始资源/videos/NN_讲题/video.mp4`；
+- 下载临时落 `data/_workspace/<profile>/tmp/download/NN_讲题/`，成功产物移到 `原始资源/videos/NN_讲题/video.mp4`；
 - 详见 [video-processing.md](../tools/video-processing.md)、[document-download.md](../tools/document-download.md)。
 
 ### 步骤2　音频转写
 - FunASR + VAD 转写，产出面向人的 `transcript.md` 与带时间戳的 `transcript.json`；
-- 临时落 `_workspace/tmp/transcribe/NN_讲题/`，成功后 `transcript.md/.json` 入 `videos/NN_讲题/`、tmp 即清；
+- 临时落 `data/_workspace/<profile>/tmp/transcribe/NN_讲题/`，成功后 `transcript.md/.json` 入 `videos/NN_讲题/`、tmp 即清；
 - 环境用 `transcription/`（requirements 入库、venv 不入库），详见 [transcription.md](../tools/transcription.md)。
 
 ### 步骤3　讲义下载与 OCR
@@ -61,7 +61,7 @@
 - [ ] 视频数 = syllabus 视频条目数；每个 video.mp4 可被 ffprobe 正常读取、非 0 字节；
 - [ ] 每个视频都有非空 transcript.md；
 - [ ] 讲义 PDF 数 = syllabus 讲义条目数，每份有非空 OCR.md；
-- [ ] 目录/命名符合 NAMING 第一~四章；`_workspace/tmp` 已清；
+- [ ] 目录/命名符合 NAMING 第一~四章；`data/_workspace/<profile>/tmp` 已清；
 - [ ] 输出资源清单（各类型数量、缺失项、失败项与原因）。
 
 ---
@@ -72,7 +72,7 @@
 |----|----------|
 | 把试卷也当本阶段资源下载 | paper 条目归阶段②，本阶段只采视频/讲义 |
 | 某讲没讲义就造空目录/标记缺失 | 纯视频/试卷讲无讲义是正常，按 syllabus 实际资源建 |
-| 转写/下载临时件散在仓库根或讲目录 | 统一进 `_workspace/tmp/{download,transcribe}`，成功即清 |
+| 转写/下载临时件散在仓库根或讲目录 | 统一进 `data/_workspace/<profile>/tmp/{download,transcribe}`，成功即清 |
 | 重跑时全部重来 | 以校验通过的存量为准，只补缺的（断点续跑） |
 | 转写慢就盲目加并发卡死机器 | 先小样本测安全并发度，动态调度（见并行指南） |
 | 用内置浏览器取流（无登录态） | 走日常 Chrome 的 CDP 通道，见 [browser-cdp-connect-guide.md](../tools/browser-cdp-connect-guide.md) |

@@ -4,7 +4,7 @@
 > **更新频率**：抓包验证到新接口/字段时
 > **维护者**：AI自动维护
 > **读者**：开发工程师（实现「接口为主、UI 兜底」做题链路）
-> **证据基线**：2026-09-02 课程 42660 客观卷（消费税 6/9 题等）纯接口闭环 + 主观计算大题卷 82749（type5 套 type6、AI 批改）从带答案交卷到 11/11 的完整实测；原始报文在 `data/cdp-sniff/`（不入库），验证脚本在 `scripts/cdp/`
+> **证据基线**：2026-09-02 课程 42660 客观卷（消费税 6/9 题等）纯接口闭环 + 主观计算大题卷 82749（type5 套 type6、AI 批改）从带答案交卷到 11/11 的完整实测；原始报文在 `data/_workspace/<profile>/sniff/`（不入库），验证脚本在 `scripts/cdp/`
 
 本文档只记录**已抓包/已实测**的接口契约，每条结论标注【实测】或【待验证】，推测不写成事实。连接/抓包手段见 [浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)，共享实现见 `scripts/cdp/gaodun_paper_core.js`。
 
@@ -48,7 +48,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 - 所有业务请求带头 `authentication: Basic <JWT>`（字面量就是 `Basic`，不是 HTTP Basic Auth）。
 - JWT HS256 三段式，**实测 `exp-iat = 604800s = 7 天`**，载荷无用户敏感体。
 - 请求体均为**明文 JSON**，`content-type: application/json;charset=UTF-8`；**全链路未见 sign / nonce / 时间戳 / 加密 body**（无需逆向前端加密）。
-- 导出：连接日常 Chrome 后从任意业务请求头读取（脚本从 `data/cdp-sniff/*.jsonl` 倒序提取）；约 7 天过期，过期回浏览器会话重新取。**刷新接口本身【待验证】**，当前靠“日常 Chrome 保持登录”自然续期。JWT/Cookie 禁止入库。
+- 导出：连接日常 Chrome 后从任意业务请求头读取（脚本从 `data/_workspace/_account/auth/*.jsonl` 倒序提取）；约 7 天过期，过期回浏览器会话重新取。**刷新接口本身【待验证】**，当前靠“日常 Chrome 保持登录”自然续期。JWT/Cookie 禁止入库。
 - 建议带全：`accept`、`accept-language: zh`、与浏览器一致的 `user-agent`、来源域 `origin/referer`（见 1.4）。跨子域 POST 会先发一次 `OPTIONS` 预检（正常现象）。
 
 ### 1.3 关键 ID 与固定常量【实测】
@@ -264,7 +264,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
   | `currentStudyUrl` | 进入课程 URL，模式 `//glivepro.gaodun.com/course/{saasCourseId}/guide-course` |
 
 - **本账号 2026-09-07 实测 8 门**（CPA 项目）：26 考季 VIPCPA 系列 税法(96834/42660)、会计(96760/42656)；名师专业课全科六科 税法50122/17247、会计50126/17244、战略50128/17249、审计50130/17245、财管50132/17246、经济法50124/17248（括号内 vcourseId/saasCourseId）。
-- **采集脚本**：`node scripts/cdp/fetch_user_space_courses.js [--print]`（JWT 直连、可重复跑）；结构化台账落 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），当次原始响应留 `data/cdp-sniff/user_space_vcourse_<ts>.json`。
+- **采集脚本**：`node scripts/cdp/fetch_user_space_courses.js [--print]`（JWT 直连、可重复跑）；结构化台账落 `data/高顿/CPA/账号课程清单.json`（覆盖式、带 fetchedAt，不入库、随网盘备份），当次原始响应留 `data/_workspace/_account/user-space/user_space_vcourse_<ts>.json`。
 - 同页伴随的只读接口：`ep-course/.../space/student/info`（student_id、item_done）、`space/student/exam-date?subjectIds=...`（考试日期）。
 
 ## 3. 纯接口做卷时序（实现蓝本 = gaodun_paper_core.doPaperViaApi）
@@ -321,7 +321,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 
 ## 6. 证据与相关物
 
-- 原始报文（不入库）：`data/cdp-sniff/quiz_load_*.jsonl`、`submit_*.jsonl`、`schedule_*.jsonl`、`*sniff*.jsonl`（含 UI「帮我批改」真实 cpa 请求，证实 openEnergyToEquity）。
+- 原始报文（不入库）：`data/_workspace/<profile>/sniff/quiz_load_*.jsonl`、`submit_*.jsonl`、`schedule_*.jsonl`、`*sniff*.jsonl`（含 UI「帮我批改」真实 cpa 请求，证实 openEnergyToEquity）。
 - 共享实现：`scripts/cdp/gaodun_paper_core.js`（buildUserAnswers / canon/qual/full 答案提炼 / doPaperViaApi）；入口 `api_do_paper.js`、`batch_redo_papers.js`；连接见 `connectBrowser.js`（脚本索引见 [scripts/README.md](../../../scripts/README.md)）。
 - 课程发现：`scripts/cdp/fetch_user_space_courses.js`（拉 vcourse/pc 全课程清单，台账 `data/高顿/CPA/账号课程清单.json`，见 2.11）。
 - 2026-09-02 主观闭环侦查蓝本与响应快照留存于本机 `/tmp`（hw_empty_sub/hw_cpa_clean/hw_rest_clean/retry6/decisive/finish6 等，临时可弃）。

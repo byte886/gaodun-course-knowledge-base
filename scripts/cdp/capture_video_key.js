@@ -12,9 +12,11 @@
 const fs = require('fs');
 const path = require('path');
 const { connectDailyChrome, safeDisconnect } = require('./connectBrowser');
+const { workspaceDir } = require('./load_profile');
 
 const playUrl = process.argv[2];
-const outPath = process.argv[3] || path.join(__dirname, '..', '..', 'data', 'cdp-sniff', 'video_streams.json');
+// 手动侦查产物落课程工作区 sniff（缺省 profile），可用第3参数覆盖
+const outPath = process.argv[3] || workspaceDir('sniff', 'video_streams.json');
 if (!playUrl || !playUrl.startsWith('http')) {
   console.error('用法: node capture_video_key.js "<player?token=URL>" [out.json]');
   process.exit(2);
@@ -134,7 +136,7 @@ const INIT_HOOK = () => {
     console.log('    meta=', JSON.stringify(streams.meta));
     if (!streams.out.length) {
       console.log('[FAIL] 未捕获 initHls，可能播放器结构变化或未真正播放。meta=', JSON.stringify(streams.meta));
-      await page.screenshot({ path: path.join(__dirname, '..', '..', 'data', 'cdp-sniff', 'capture_fail.png') });
+      await page.screenshot({ path: workspaceDir('sniff', 'capture_fail.png') });
       process.exitCode = 3;
     } else {
       fs.mkdirSync(path.dirname(outPath), { recursive: true });

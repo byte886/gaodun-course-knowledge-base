@@ -28,7 +28,7 @@ const MINERVA_BASE = 'https://apigateway.gaodun.com/minerva/api/v1/front';
 const AITUTOR_BASE = 'https://apigateway.gaodun.com/aitutor/api/v1/front';
 // 课程 ID：env GAODUN_COURSE_ID 最高优先；否则取课程 profile 主源 saasCourseId（缺省税法 42660）
 // 换课设 GAODUN_COURSE_PROFILE=<key> 即可，无需再手抄 ID
-const { loadProfile, primaryIds } = require('./load_profile');
+const { loadProfile, primaryIds, accountAuthDir } = require('./load_profile');
 const COURSE_ID = parseInt(process.env.GAODUN_COURSE_ID || String(primaryIds(loadProfile()).courseId), 10);
 const SOURCE_FROM_TYPE = parseInt(process.env.GAODUN_SOURCE_FROM_TYPE || '100533962', 10); // 作业卷固定 sourceFromType，可环境变量覆盖
 const CPA = { aiTutorConfigId: 55, sourceType: 100536073, cpaAiBotType: 3, botId: '171109285178801048' }; // 兜底默认值；实际以每题 redo 的 aiCorrect 为准
@@ -56,11 +56,12 @@ async function mapLimit(items, limit, worker) {
   return ret;
 }
 
-/** 从 data/cdp-sniff 最新 jsonl 倒序提取 authentication 头 */
+/** 从账号鉴权抓包目录（默认 data/_workspace/_account/auth）最新 jsonl 倒序提取 authentication 头 */
 function findJwt(dir) {
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.jsonl')).sort();
+  const authDir = dir || accountAuthDir();
+  const files = fs.readdirSync(authDir).filter((f) => f.endsWith('.jsonl')).sort();
   for (let i = files.length - 1; i >= 0; i -= 1) {
-    const lines = fs.readFileSync(path.join(dir, files[i]), 'utf8').split('\n').filter(Boolean);
+    const lines = fs.readFileSync(path.join(authDir, files[i]), 'utf8').split('\n').filter(Boolean);
     for (let j = lines.length - 1; j >= 0; j -= 1) {
       try {
         const o = JSON.parse(lines[j]);

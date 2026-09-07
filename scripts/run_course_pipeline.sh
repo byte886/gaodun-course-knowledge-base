@@ -3,7 +3,7 @@
 #
 # 严格按 docs/development/project-dag.md 的依赖顺序推进；阶段内部并发由各专用脚本自负其责
 # （下载/转写内部已用标准件，见 parallel-toolkit-design.md 层2），本脚本只做：
-#   - 阶段级断点：$COURSE_LOCAL_ROOT/_workspace/pipeline/<n>.done，重跑自动跳过；
+#   - 阶段级断点：data/_workspace/<profile>/pipeline/<n>.done，重跑自动跳过；
 #   - Fan-In 守护：进入「9 知识库生成」前校验 5/6/7 的 .done 与 8 的 profile.structure.groups，
 #     缺哪项明确报哪项，绝不硬跑；
 #   - 半自动/未实现阶段（manual/todo）只给指引与就绪检查，不伪造自动命令。
@@ -43,7 +43,8 @@ export GAODUN_COURSE_PROFILE="$PROFILE"
 # shellcheck source=course_config.sh
 source "$ROOT/scripts/course_config.sh" || { echo "无法加载课程 profile: $PROFILE" >&2; exit 2; }
 
-MARKER_DIR="$ROOT/$COURSE_LOCAL_ROOT/_workspace/pipeline"
+# 阶段断点统一放 data/_workspace/<profile>/pipeline（过程件不进课程成品目录，见 ADR-016）
+MARKER_DIR="$ROOT/data/_workspace/$PROFILE/pipeline"
 mkdir -p "$MARKER_DIR"
 [ -n "$ONLY" ] && FROM="$ONLY"
 

@@ -4,6 +4,7 @@
 > **创建**：2026-09-05　**状态**：✅ 已执行完成（M0–M6，verify_migration 18/18 通过；旧成品按 M5 保留待阶段③消化、阶段④清退）
 > **上游范式**：[ADR-012](decisions/ADR-012-三层解耦与按知识点聚合.md)、[WORKFLOW 四阶段](../WORKFLOW.md)、[DIRECTORY_STRUCTURE](../DIRECTORY_STRUCTURE.md)
 > **执行 SOP**：迁移本身是"把旧按讲存量搬进三层 + 生成 manifest"，为阶段①②③铺好原料；不替代四阶段 SOP。
+> **历史注记（2026-09-07，ADR-016）**：本文记录的是 M0–M6 当时迁入"课程内 `_workspace/`"的一次性动作；该工作区物理位置后经 [ADR-016](decisions/ADR-016-统一运行时工作区与按profile分区.md) 上移为统一的 `data/_workspace/`（账号级 `_account` + 课程级 `<profile>`），课程目录回归两层。下文出现的课程内 `_workspace`、`knowledge-source`、`cdp-sniff` 均为当时路径，仅作历史留痕，现以 ADR-016 与 DIRECTORY_STRUCTURE 为准。
 
 ---
 

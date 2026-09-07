@@ -14,15 +14,17 @@
  *  - key 为「视频级固定值」，跨会话不变（同 vid 两次抓取一致），故只需抓一次，
  *    之后下载/解密/转写全部离线可重跑，不再依赖浏览器。
  *
- * 产物：data/cdp-sniff/qvideo_keys.json  { [vid]: {key, paperId, entry, m3u8} }
+ * 产物：data/_workspace/<profile>/papers/qvideo_keys.json  { [vid]: {key, paperId, entry, m3u8} }
  * ------------------------------------------------------------------
  */
 const path = require('path');
 const fs = require('fs');
 const { connectDailyChrome, safeDisconnect } = require('./connectBrowser.js');
+const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const OUT = path.join(ROOT, 'data', 'cdp-sniff', 'qvideo_keys.json');
+// 题目视频 key 台账（税法专属，缺省 profile），落课程工作区 papers
+const OUT = workspaceDir('papers', 'qvideo_keys.json');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // 注入主世界：hook Worker 双向 postMessage（Uint8Array 转普通数组）

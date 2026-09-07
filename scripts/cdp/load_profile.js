@@ -95,7 +95,42 @@ function argvProfileKey(argv) {
   return eq ? eq.slice('--profile='.length) : undefined;
 }
 
-module.exports = { loadProfile, primaryIds, listProfiles, scopedName, scopedPath, argvProfileKey, PROFILE_DIR };
+// ── 统一运行时工作区 data/_workspace（过程件唯一归宿，见 ADR-016）─────────────
+// 账号/跨课级共享：data/_workspace/_account/<sub>（JWT、账号课程清单，不随单课清退）
+// 课程级过程件：  data/_workspace/<profile-key>/<sub>（manifest/papers/notes-raw/sniff/logs/pipeline）
+// “是否过程件（进不进工作区）”与“属于哪门课（哪个 profile 子目录）”是两件正交的事。
+const WORKSPACE_ROOT = path.join(PROJECT_ROOT, 'data', '_workspace');
+const ACCOUNT_KEY = '_account';
+
+function currentKey(explicit) {
+  return explicit || process.env.GAODUN_COURSE_PROFILE || DEFAULT_KEY;
+}
+
+/** 账号/跨课级工作目录：data/_workspace/_account/...sub */
+function accountDir(...sub) {
+  return path.join(WORKSPACE_ROOT, ACCOUNT_KEY, ...sub);
+}
+
+/** 账号鉴权抓包目录（findJwt 的唯一来源）：data/_workspace/_account/auth */
+function accountAuthDir() {
+  return accountDir('auth');
+}
+
+/** 当前 profile 的课程级工作目录：data/_workspace/<当前key>/...sub（key 取 env/默认） */
+function workspaceDir(...sub) {
+  return workspaceDirFor(undefined, ...sub);
+}
+
+/** 指定 profile 的课程级工作目录：data/_workspace/<key>/...sub */
+function workspaceDirFor(key, ...sub) {
+  return path.join(WORKSPACE_ROOT, currentKey(key), ...sub);
+}
+
+module.exports = {
+  loadProfile, primaryIds, listProfiles, scopedName, scopedPath, argvProfileKey,
+  workspaceDir, workspaceDirFor, accountDir, accountAuthDir, currentKey,
+  WORKSPACE_ROOT, PROFILE_DIR,
+};
 
 // 命令行自检
 if (require.main === module) {

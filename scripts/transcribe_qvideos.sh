@@ -1,6 +1,6 @@
 #!/bin/bash
 # transcribe_qvideos.sh — 题目级讲解视频批量转写（FunASR，xargs -P 内核调度，无锁竞态）。
-# 与 transcribe_parallel.sh 的区别：对象是 data/sprint-videos/题目级讲解/qvideo_*/video.mp4，
+# 与 transcribe_parallel.sh 的区别：对象是 data/_workspace/<profile>/tmp/download/sprint-videos/题目级讲解/qvideo_*/video.mp4，
 # 临时目录用 vid 目录名唯一化（transcribe_one.sh 取首段前缀会都变成 qvideo 而撞车）。
 # 题目级视频属税法冲刺专属数据（路径固定）；但 FunASR 转写机制与课程无关，实测串行总吞吐最优
 # （18.5x > 6 并发 14.3x，见 parallel-processing-guide.md），默认并发 1，可传参覆盖。
@@ -16,7 +16,7 @@ PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
 # shellcheck source=lib/parallel.sh
 source "$ROOT/scripts/lib/parallel.sh"
-SRC="$ROOT/data/sprint-videos/题目级讲解"
+SRC="$ROOT/data/_workspace/${GAODUN_COURSE_PROFILE:-cpa-tax-2026}/tmp/download/sprint-videos/题目级讲解"
 WORK="$ROOT/transcription/.qv_work"
 LOGDIR="$WORK/logs"
 mkdir -p "$LOGDIR"

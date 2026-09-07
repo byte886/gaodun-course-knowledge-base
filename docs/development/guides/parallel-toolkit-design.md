@@ -55,12 +55,12 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 
 ### 3.1 与 ADR-012 `course-manifest.json` 的区别（避免概念混淆）
 
-| | `course-profile.json`（本方案新增，**入库**） | `_workspace/manifest/course-manifest.json`（ADR-012，**不入库**） |
+| | `course-profile.json`（本方案新增，**入库**） | `data/_workspace/<profile>/manifest/course-manifest.json`（ADR-012，**不入库**） |
 |---|---|---|
 | 性质 | 课程**静态生产配置**（输入） | 课程**运行产物/映射快照**（输出，可 rebuild） |
 | 内容 | 课程名、各类 ID、科目、官方章组、老师、路径模板 | 讲↔资源↔知识点映射、资源清单 |
 | 谁维护 | 人手 + `fetch_user_space_courses.js` 半自动 | 脚本生成 |
-| 位置 | `config/courses/<key>.json`（git 跟踪） | 课程目录 `_workspace/manifest/`（gitignore，随网盘） |
+| 位置 | `config/courses/<key>.json`（git 跟踪） | 统一工作区 `data/_workspace/<profile>/manifest/`（gitignore、不随网盘、可 rebuild） |
 
 ### 3.2 profile schema（字段契约，已按 2026-09-07 实测落地）
 
@@ -171,7 +171,7 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 新增 `scripts/run_course_pipeline.sh <profile-key> [--from 阶段] [--only 阶段]`：
 
 - 严格按 [project-dag.md](../project-dag.md) 的依赖顺序，阶段内部用层 2 标准件并发，阶段之间用 `watch_stage_done.sh` 事件驱动（完成标记计数），不空等。
-- **阶段级断点**：每阶段完成写 `_workspace/pipeline/<stage>.done`，重跑自动跳过；`--from/--only` 支持从任意阶段恢复。
+- **阶段级断点**：每阶段完成写 `data/_workspace/<profile>/pipeline/<stage>.done`，重跑自动跳过；`--from/--only` 支持从任意阶段恢复。
 - **Fan-In 守护**：知识生成阶段启动前校验上游（OCR/采题/转写/章组映射）全部 `.done`，缺一则明确报缺哪项，不硬跑。
 - 只做调度，不含业务逻辑（业务仍在各专用脚本），符合"精简、不堆重复实现"。
 
@@ -181,7 +181,7 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 2. **读取器** ✅ 已完成（2026-09-07）：`scripts/cdp/load_profile.js`、`scripts/knowledge/course_profile.py`、改造 `course_config.sh`（认 `COURSE_PROFILE`/`GAODUN_COURSE_PROFILE`，向后兼容默认税法）；三者均支持命令行打印关键 ID 自检，已验证。
 3. **去硬编码 ✅ 已完成（2026-09-07）**：按 3.4 清单逐脚本改，每个用**税法 profile 回归**（产物与改前一致才过）、分步提交；另把运维/知识 shell·python 统一收口到 course_config/profile，刻意保留的例外见 3.4 末表。
 4. **并发收敛 ✅ 已完成（2026-09-07）**：新增 shell 标准件 `scripts/lib/parallel.sh`（`parallel_map`：NUL 任务流经 `xargs -0 -P` 内核调度，含并发度校验，根除自建 mkdir/flock 锁队列竞态）；`transcribe_parallel.sh`、`transcribe_qvideos.sh` 改为「主脚本生成 NUL 队列 + `--worker` 自递归」，FunASR 默认并发 **1（串行最优，可传参覆盖）**，并加 UTF-8 locale 兜底。回归：bash -n 通过、税法 TOTAL=0 零副作用退出、/tmp 假课程验证并发调度与失败隔离、C locale 不 unbound。网盘上传（sync_*_netdisk/raw_resources）本就 `xargs -P`（IO 类）保持不动；Node 侧 IO 并发（笔记 worker=5、分片 20、mapLimit=3）是单进程异步、无多进程锁竞态、默认值符合 4.3，按精简原则存量不重写。
-5. **编排器 ✅ 已完成（2026-09-07）**：`scripts/run_course_pipeline.sh <profile> [--dry-run/--from n/--only n/--list]`。按 project-dag 13 节点线性检查点推进，阶段级 marker 落在 `$COURSE_LOCAL_ROOT/_workspace/pipeline/<n>.done`，阶段9 前 Fan-In 校验 5/6/7 marker + 8 的 `structure.groups`；auto 阶段登记真实脚本命令，manual（0/2/8/9）给人工/AI 指引，todo（10/11）标注未实现，不伪造自动命令（兼容 macOS bash 3.2，case 函数而非关联数组）。已用税法 `--dry-run` 走查核对 DAG 一致，并验证 --only/--from 范围、坏 profile 拒绝(exit2)、会计切换、`--only 7` 正式跑的 marker 写入与二次跳过。
+5. **编排器 ✅ 已完成（2026-09-07）**：`scripts/run_course_pipeline.sh <profile> [--dry-run/--from n/--only n/--list]`。按 project-dag 13 节点线性检查点推进，阶段级 marker 落在 `data/_workspace/$PROFILE/pipeline/<n>.done`，阶段9 前 Fan-In 校验 5/6/7 marker + 8 的 `structure.groups`；auto 阶段登记真实脚本命令，manual（0/2/8/9）给人工/AI 指引，todo（10/11）标注未实现，不伪造自动命令（兼容 macOS bash 3.2，case 函数而非关联数组）。已用税法 `--dry-run` 走查核对 DAG 一致，并验证 --only/--from 范围、坏 profile 拒绝(exit2)、会计切换、`--only 7` 正式跑的 marker 写入与二次跳过。
 6. **会计试跑 ✅ 首跑完成（2026-09-07）**：课程发现确认账号 8 门课，会计正课（glivepro saasCourseId=42656 / vcourse=96760）learnStatus=**已完结**（旧记 wareStatus=0 不为准，统一以 learnStatus 为口径），**取数源定为 26 考季正课**，不用名师专业课（epiphany 17244）。`refresh_inventory --profile cpa-accounting-2026` 纯只读跑通：paper 共 177（基础 174 / 冲刺 3 排除），满分 4、未做 170。为此补齐**过程件按 profile 隔离**：`load_profile` 增 `scopedName/scopedPath/argvProfileKey`，`papers_inventory/papers_audit/paper_index/batch_result` 均按 profile 分文件（默认税法保持历史原名、md5 校验零变化），`collect_paper_sources`、`batch_redo_papers` 同步改读隔离文件并支持 `--profile`。会计编排器 `--dry-run` 全流程路径正确、Fan-In 精准报出缺 5/6/7 与 groups 为空。**groups 暂留空属预期**：按 ADR-012 官方组↔知识点须从 papers 的 `knowledgePointList` 现算，而会计 174 卷中 170 卷未做、无交卷 record 即无 paper/analysis，须等节点10做题、节点6采题后才能现算填充（现阶段不臆造）。
 
 ## 七、验收清单
@@ -189,7 +189,7 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 - [x] 切换课程只改 `--profile`/一个环境变量，**全仓库 grep 不到税法课程 ID/课程名硬编码**（冲刺卷等明确专属的除外，已在 §3.4 末表列明并说明保留理由）。
 - [x] 税法 profile 回归：资源采集/知识生成/总览构建产物与改造前字节级或结构化一致（步骤3/4/6 分别零差异回归；步骤6会计试跑前后税法 inventory md5 不变）。
 - [x] 并发任务全部满足 4.2 六条契约；`transcribe_parallel` 默认值与方法论结论一致（默认并发 1 串行最优，parallel_map 单测与假课程失败隔离通过）。
-- [x] `run_course_pipeline.sh cpa-tax-2026 --dry-run` 打印的阶段/依赖与 project-dag 一致；阶段 kill 后重跑靠 `_workspace/pipeline/<n>.done` 从断点继续（--only 7 实测 marker 写入与二次跳过）。
+- [x] `run_course_pipeline.sh cpa-tax-2026 --dry-run` 打印的阶段/依赖与 project-dag 一致；阶段 kill 后重跑靠 `data/_workspace/<profile>/pipeline/<n>.done` 从断点继续（--only 7 实测 marker 写入与二次跳过）。
 - [x] 会计 profile 能正确解析出 saasCourseId=42656、subjectId=37（已实测）；课程发现已确认会计正课 learnStatus=已完结、取数源为正课（旧"未开课"前提作废，坏 profile 会 exit2 并列出可用 profile）。
 
 ## 八、相关文档

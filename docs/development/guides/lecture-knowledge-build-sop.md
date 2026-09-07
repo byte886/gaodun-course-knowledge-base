@@ -29,7 +29,7 @@
 | 官方讲义 | 讲目录下 `docs/`（PDF/PPT） | 最权威来源 |
 | 讲义OCR | 讲目录下 `docs_text/*_OCR.md` | 图片型课件的文字稿 |
 | 旧知识产物（若有） | 讲目录下旧 `知识拆解.md`、`考试指导.md` | 34章重建时的**复用骨架**（见第三节） |
-| 本讲作业题/答/解析 | `data/knowledge-source/papers/<paperId>.json` | 用 1.2 的索引按讲次取 |
+| 本讲作业题/答/解析 | `data/_workspace/<profile>/papers/<paperId>.json` | 用 1.2 的索引按讲次取 |
 | 用户笔记 / 高赞考生留言（若有） | `knowledge-base/source-materials/<课程>/用户笔记精华_*.md`、`解析与用户留言_*.md` | **只取用户留言 / 口诀 / 易错补充**；其中官方解析与 papers 重复、以 papers 为准，采集过程残留忽略（见步骤2第4点） |
 | 原料逻辑清单 | `knowledge-base/lecture-resource-map.json` | 键=讲次号"01"…，值=该讲课件/OCR/转写清单与跨讲归属 |
 
@@ -39,12 +39,12 @@
 
 ### 1.2 取本讲全部 paperId（权威入口：paper_index）
 
-`data/knowledge-source/paper_index.json` 是 list，每条 `{paperId, title, chapter, cls, qCount, file}`，其中 **`chapter` 字段就是官方讲次标题**。按 chapter 过滤即得一讲全部卷子：
+`data/_workspace/<profile>/manifest/paper_index.json` 是 list，每条 `{paperId, title, chapter, cls, qCount, file}`，其中 **`chapter` 字段就是官方讲次标题**。按 chapter 过滤即得一讲全部卷子：
 
 ```bash
 python3 - <<'PY'
 import json
-idx=json.load(open('data/knowledge-source/paper_index.json'))
+idx=json.load(open('data/_workspace/<profile>/manifest/paper_index.json'))
 CH='税法全面精讲01-税法总论'          # 换成当前讲次官方标题
 rows=[r for r in idx if r['chapter'].strip()==CH]
 for r in rows: print(r['paperId'], r['cls'], r['qCount'], r['title'])
@@ -98,7 +98,7 @@ def clean(s):
     s=re.sub(r'<[^>]+>',' ',str(s or '')); return re.sub(r'\s+',' ',html.unescape(s)).strip()
 kp=collections.Counter()
 for pid in ids:
-    d=json.load(open(f'data/knowledge-source/papers/{pid}.json'))
+    d=json.load(open(f'data/_workspace/<profile>/papers/{pid}.json'))
     for m in d['moduleList']:
         for q in m.get('questionList',[]):
             kp.update(k['title'] for k in q.get('knowledgePointList',[]))

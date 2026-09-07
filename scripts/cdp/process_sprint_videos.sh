@@ -1,6 +1,6 @@
 #!/bin/bash
 # process_sprint_videos.sh — 冲刺模考视频解析「转写 + 压缩」后处理
-# 输入：data/sprint-videos/<标题>/.vfetch/merged.ts（fetch_sprint_video.js 产物，未加密已合并）
+# 输入：data/_workspace/<profile>/tmp/download/sprint-videos/<标题>/.vfetch/merged.ts（fetch_sprint_video.js 产物，未加密已合并）
 # 阶段1：3 个视频并行 FunASR 转写（每进程限 5 线程，3×5≈15 核，本机 20 线程留余量）
 # 阶段2：串行 H.265 压缩为 video.mp4（x265 吃满核，全局唯一 ffmpeg，复用 compress.sh 校验）
 # 成品（落在每个视频目录）：transcript.md / transcript.json（知识来源）、video.mp4（网盘归档）
@@ -9,7 +9,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-SV="$ROOT/data/sprint-videos"
+SV="$ROOT/data/_workspace/${GAODUN_COURSE_PROFILE:-cpa-tax-2026}/tmp/download/sprint-videos"
 LOG="$ROOT/logs/sprint_video_process.log"
 mkdir -p "$ROOT/logs"
 THREADS_PER=5

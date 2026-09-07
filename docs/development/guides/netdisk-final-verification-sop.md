@@ -58,19 +58,20 @@ finalize 后必须检查并清理本地临时文件，**清理前必须先列清
 |------|------|
 | `data/高顿/` | 符号链接指向 Desktop 课程原料（16G+），保留 |
 | `data/高顿/CPA/待整理/` | 下一门课在途原料，用户明确"待整理的先不处理" |
-| `data/user-notes-raw/<key>/` | 用户笔记原始数据源（按课程 profile key 隔离），保留 |
-| `data/cdp-sniff/` | 抓包文件（含 JWT），见 3.3 保留策略 |
+| `data/_workspace/<profile>/notes-raw/` | 用户笔记原始数据源（按课程 profile key 隔离），保留 |
+| `data/_workspace/_account/auth/` | 账号级 JWT 鉴权抓包（跨课共享、滚动留最新），见 3.3 保留策略 |
+| `data/_workspace/<profile>/sniff/` | 课程抓包/侦查件（可能含 token），见 3.3 保留策略 |
 | `logs/wiki_done/` | 飞书同步断点，保留 |
 | `logs/wiki_node_map.tsv` | 飞书节点映射，保留 |
 
-### 3.3 敏感信息保留策略（cdp-sniff）
+### 3.3 敏感信息保留策略（工作区鉴权与抓包）
 
-`data/cdp-sniff/` 包含高顿 API 抓包和 JWT token（7天有效期）：
+鉴权 JWT 在 `data/_workspace/_account/auth/`（账号级、跨课共享），课程抓包侦查件在 `data/_workspace/<profile>/sniff/`（可能含高顿 API 报文与 token，约 7 天有效期）：
 
-- **JWT 过期后**：可删除含过期 token 的旧抓包文件
+- **JWT 过期后**：可删除 `_account/auth/` 含过期 token 的旧抓包文件（滚动留最新）
 - **课程相关抓包**：每门课 finalize 后，保留该课关键 ID 抓包（courseId/syllabusId/gradationId 等），删除中间探索性抓包
-- **禁止入库**：cdp-sniff 目录已被 gitignore，永远不 commit
-- **清理前必须列清单**，确认哪些是关键抓包、哪些是探索性文件
+- **禁止入库/入网盘**：整个 `data/_workspace/` 已被 gitignore 且网盘排除，鉴权与抓包永远不 commit、不上传
+- **清理前必须列清单**，确认哪些是关键抓包、哪些是探索性文件；删除一律 `mv` 带时间戳回收站，不硬删
 
 ## 四、飞书终态检查
 

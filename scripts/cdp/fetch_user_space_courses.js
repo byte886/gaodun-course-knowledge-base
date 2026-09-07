@@ -19,7 +19,7 @@
  *
  * 输出（data 不入 Git，随网盘备份）：
  *   data/高顿/CPA/账号课程清单.json                 精简结构化台账（覆盖式，带 fetchedAt）
- *   data/cdp-sniff/user_space_vcourse_<ts>.json     当次原始响应（保真留痕）
+ *   data/_workspace/_account/user-space/user_space_vcourse_<ts>.json  当次原始响应（保真留痕）
  */
 'use strict';
 
@@ -27,9 +27,10 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { findJwt, makeHeaders } = require('./gaodun_paper_core');
+const { accountDir } = require('./load_profile');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const SNIFF_DIR = path.join(PROJECT_ROOT, 'data', 'cdp-sniff');
+const USER_SPACE_DIR = accountDir('user-space');
 const LEDGER = path.join(PROJECT_ROOT, 'data', '高顿', 'CPA', '账号课程清单.json');
 const API = 'https://apigateway.gaodun.com/ep-course/api/v2/front/space/vcourse/pc';
 
@@ -84,7 +85,7 @@ function simplify(c) {
 }
 
 async function main() {
-  const jwt = findJwt(SNIFF_DIR);
+  const jwt = findJwt();
   // ep-course 与听课端同源上下文；若未来网关收紧来源校验，可在此调整 origin/referer
   const headers = makeHeaders(jwt, {
     origin: 'https://glivepro.gaodun.com',
@@ -119,7 +120,8 @@ async function main() {
   fs.writeFileSync(LEDGER, JSON.stringify(ledger, null, 2), 'utf8');
 
   const ts = Date.now();
-  const rawPath = path.join(SNIFF_DIR, `user_space_vcourse_${ts}.json`);
+  fs.mkdirSync(USER_SPACE_DIR, { recursive: true });
+  const rawPath = path.join(USER_SPACE_DIR, `user_space_vcourse_${ts}.json`);
   fs.writeFileSync(rawPath, raw, 'utf8');
 
   console.log(`[OK] 共 ${total} 门课，项目: ${projects.map((p) => `${p.name}(${p.id})`).join(', ') || '(无)'}`);

@@ -18,7 +18,6 @@ const { spawnSync, execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..', '..');
 const { findJwt, makeHeaders } = require(path.join(ROOT, 'scripts/cdp/gaodun_paper_core.js'));
 const { loadProfile, primaryIds } = require(path.join(ROOT, 'scripts/cdp/load_profile.js'));
-const SNIFF = path.join(ROOT, 'data', 'cdp-sniff');
 // 命名参数：--profile <key> / --profile=<key>
 function namedArg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -41,7 +40,7 @@ function must(bin, args, opts = {}) {
 }
 
 async function getLive(idx) {
-  const H = makeHeaders(findJwt(SNIFF));
+  const H = makeHeaders(findJwt());
   const j = await (await fetch(
     `https://apigateway.gaodun.com/g-study/api/v1/front/course/${COURSE_ID}/syllabus/glive/${SYLLABUS_ID}`, { headers: H })).json();
   const node = j.result.children[idx];

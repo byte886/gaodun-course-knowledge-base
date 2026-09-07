@@ -27,7 +27,7 @@
 
 ## 三、命名规范
 
-- 课程目录：三层 `原始资源/`、`知识详解/`、`_workspace/`（详见 DIRECTORY_STRUCTURE）
+- 课程目录：两层 `原始资源/`、`知识详解/`；运行时过程件统一在独立的 `data/_workspace/`（账号级 `_account` + 课程级 `<profile>`，详见 DIRECTORY_STRUCTURE）
 - 视频：`原始资源/videos/NN_讲题/{video.mp4,transcript.md}`（统一命名，不留原始长文件名）
 - 讲义：`原始资源/notes/NN_模块/{讲义_*.pdf,讲义_*_OCR.md}`
 - 知识库成品：`知识详解/NN_模块组/{官方知识点}.md`（一篇 4 节）+ 课程全局篇

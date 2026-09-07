@@ -41,9 +41,9 @@
 | ------------- | ------------------------------------------------------------- | ---------------- |
 | 视频转写          | `原始资源/videos/*/transcript.md`                                 | 知识主干、口诀          |
 | 讲义 OCR        | `原始资源/notes/*/*_OCR.md`（+PDF）                                 | 最权威客观知识          |
-| 题 / 标准答案 / 解析 | `_workspace/papers/*.json`                                    | 补遗漏、题答解析、题量定高频   |
-| 归组与路由         | `_workspace/manifest/course-manifest.json`、`paper_index.json` | 知识点→组、讲↔资源       |
-| 用户留言 / 笔记原件   | `_workspace/user-notes-raw/`                                  | 仅高价值增量（学员补充节）    |
+| 题 / 标准答案 / 解析 | `data/_workspace/<profile>/papers/*.json`                                    | 补遗漏、题答解析、题量定高频   |
+| 归组与路由         | `data/_workspace/<profile>/manifest/course-manifest.json`、`paper_index.json` | 知识点→组、讲↔资源       |
+| 用户留言 / 笔记原件   | `data/_workspace/<profile>/notes-raw/`                                  | 仅高价值增量（学员补充节）    |
 | 旧成品（迁移期）      | 旧 `knowledge-base/organized-content/`                         | **复用骨架**，消化校验后清退 |
 
 **输出**：`知识详解/NN_组/{官方知识点}.md`（92 篇，每篇 4 节）+ 两个课程全局篇 + 各组父节点（飞书目录页）。
@@ -75,7 +75,7 @@ def clean(s):
 
 kp=collections.Counter()
 
-for fp in glob.glob('\_workspace/papers/\*.json'):
+for fp in glob.glob('\data/_workspace/<profile>/papers/\*.json'):
 
 &#x20;   d=json.load(open(fp,encoding='utf-8'))
 
@@ -118,7 +118,7 @@ print(kp.most\_common())
 
 3. **三、题答解析（脚本渲染、不手抄）**：收本知识点**全部**题，但不由 AI 转抄——`render_point_qa.py <步骤1聚合JSON>` 机械生成第三节（客观题逐题；主观题按大题 bigStem 分组、下钻小问 (1)(n)，答案/算式取小问 analysisText，每题标来源卷与 paperId）；AI 只校核、不改题面/答案/算式，**剔除自动化 AI 错题**。**计算大题以"大题"为不可拆单位全收、不折叠**，靠 `#### 大题N` 导航。公式/规则放第一节、具体算式放第三节，不重复堆叠。
 
-4. **四、学员补充**：从 user-notes-raw 提炼高价值讨论 / 助记 / 易错补充（去掉点赞数、采集过程残留）；**无内容则整节省略**。冲突不覆盖正文，按 sources 权威度处理。
+4. **四、学员补充**：从 notes-raw 提炼高价值讨论 / 助记 / 易错补充（去掉点赞数、采集过程残留）；**无内容则整节省略**。冲突不覆盖正文，按 sources 权威度处理。
 
 5. **拼接成篇**：AI 写"头部"（Context Block ＋ 一、知识拆解 ＋ 二、考试指导 ＋ `## 三、题答解析` 标题），再与 render 产物、`## 关联知识点`（位于三、题答解析之后、四、学员补充之前；同组兄弟篇相对链接，未生成可先挂前向链接）、`## 四、学员补充` 拼接为最终 .md；头部与题答分离，避免 AI 转抄算式出错。
 

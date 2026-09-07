@@ -98,7 +98,7 @@
 - `知识详解/{知识点}.md`、课程全局篇
 
 未上传（技术过程文件）：
-- `_workspace/`、`transcript.json`、tmp、logs
+- `data/_workspace/<profile>/`、`transcript.json`、tmp、logs
 
 ### 3.9 飞书知识库同步 ✅
 

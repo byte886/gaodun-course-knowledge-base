@@ -30,11 +30,11 @@ syllabus（枚举作业入口/paperId）
 
 ### 步骤0　枚举全部作业入口
 1. 从 syllabus 列出**所有模式**作业的 paper 条目（课后练习、分章真题、知识点测试、强化专题、主观题卷、冲刺模考）；
-2. 记录 paperId / resourceId / csItemId / 所属讲次 / 题型构成，形成官网台账 `_workspace/manifest/papers_inventory.json`。
+2. 记录 paperId / resourceId / csItemId / 所属讲次 / 题型构成，形成官网台账 `data/_workspace/<profile>/manifest/papers_inventory.json`。
 > 用户要求：能拿到作业列表就尽量拿全——UI 能看到所有做题入口，说明接口里就有全部入口 ID。
 
 ### 步骤1　进卷取题（采全原料）
-- 对每个 paperId 调 redo-paper，原始响应落 `_workspace/papers/{paperId}.json`；
+- 对每个 paperId 调 redo-paper，原始响应落 `data/_workspace/<profile>/papers/{paperId}.json`；
 - 字段：`moduleList[].questionList[]`，题面 `title`(HTML)、选项 `selectList`、标准答案 `answer`、解析 `analysis/analysisText`、标签 `knowledgePointList[{id,title}]`、题型 `questionType`。
 
 ### 步骤2　题型处理（重点：主观题下钻）
@@ -50,7 +50,7 @@ syllabus（枚举作业入口/paperId）
 ### 步骤4　生成本地索引与 manifest
 - `paper_index.json`：list，每条 `{paperId,title,chapter,cls,qCount,file}`，按讲/组聚合用；
 - `course-manifest.json`：
-  - 讲 ↔ 视频/讲义/试卷 的路由（替代旧 lecture-resource-map，**可 rebuild、随课即变、放 _workspace 不入库**）；
+  - 讲 ↔ 视频/讲义/试卷 的路由（替代旧 lecture-resource-map，**可 rebuild、随课即变、放 `data/_workspace/<profile>/manifest` 不入库**）；
   - **知识点 → 14 模块组的显式映射**（见步骤5）。
 
 ### 步骤5　知识点归组（显式映射 + 脚本 assert）
@@ -71,7 +71,7 @@ syllabus（枚举作业入口/paperId）
 - [ ] 每份正式卷 exam-report 为满分/平台最优，异常有记录与兜底；
 - [ ] 主观题已全部下钻小问，小问 answer/analysisText 非空；
 - [ ] paper_index、course-manifest 生成，归组脚本 assert 通过（92/各组点数）；
-- [ ] 全程留存请求/响应快照与日志到 `_workspace/logs`、`sniff`（验证完即清）。
+- [ ] 全程留存请求/响应快照与日志到 `data/_workspace/<profile>/logs`、`sniff`（验证完即清）。
 
 ## 四、常见坑
 

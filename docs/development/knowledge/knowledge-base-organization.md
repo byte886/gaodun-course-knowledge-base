@@ -19,8 +19,8 @@
 | 来源清单 | [knowledge-base-sources.md](./knowledge-base-sources.md) | 4 类来源 + 冲刺特例、来源选择与冲突处理 |
 | 主流程 | [WORKFLOW.md 阶段③](../../WORKFLOW.md) | 知识详解生成在四阶段中的位置与校验门 |
 | 文档模板 | [KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md) | 组父节点 / 知识点单篇 / 课程全局篇三套模板 |
-| 命名规范 | [NAMING_CONVENTION.md](../../project-management/standards/NAMING_CONVENTION.md) | 三层目录、组、知识点文件命名 |
-| 目录结构 | [DIRECTORY_STRUCTURE.md](../../DIRECTORY_STRUCTURE.md) | 三层物理落点与 GitHub/本地/网盘/飞书分工 |
+| 命名规范 | [NAMING_CONVENTION.md](../../project-management/standards/NAMING_CONVENTION.md) | 课程两层/工作区桶、组、知识点文件命名 |
+| 目录结构 | [DIRECTORY_STRUCTURE.md](../../DIRECTORY_STRUCTURE.md) | 分层物理落点（课程两层 + 统一工作区）与 GitHub/本地/网盘/飞书分工 |
 | 飞书 API | [feishu-api.md](../api/feishu-api.md) | 飞书同步调用与权限 |
 
 > **铁律**：所有知识内容先在本地 `知识详解/` 生成并校验，再同步飞书；禁止直接在飞书编辑（紧急修复除外）。知识来源口径以 [knowledge-base-sources.md](./knowledge-base-sources.md) 为准（初始知识库 + 题/标准答案 + 官方解析 + 用户笔记 + 末期冲刺；自动化作业产生的 AI 错题不作来源；考点图谱已否决）。
@@ -35,7 +35,9 @@
 |----|------|------|
 | 原始资源 | 视频+转写、讲义+OCR（按资源类型分桶） | 永久、传网盘 |
 | **知识详解** | **14 组 → 92 知识点篇 + 课程全局篇（本规范对象）** | 成品、可迭代、传网盘并同步飞书 |
-| _workspace | papers/manifest/留言原件/临时/日志 | 临时、收尾清 |
+| 运行时工作区 `data/_workspace` | 账号级 `_account` + 课程级 `<profile>`（papers/manifest/notes-raw/sniff/tmp/pipeline/logs） | 临时、分层清退，独立于课程目录（ADR-016） |
+
+> 逻辑上三类解耦（原料/成品/过程件）；物理上课程目录只含「原始资源 + 知识详解」两层，过程件统一在 `data/_workspace/`。
 
 ### 1.2 知识详解的三级结构（= 飞书三级节点）
 
@@ -77,7 +79,7 @@
 
 - 以知识点为索引，把分散在多讲视频、多份试卷中的同一主题内容合并去重；
 - 不按视频播放顺序堆内容；老师在不同时间重复讲同一点要合并；
-- 层间"讲↔资源↔知识点"的对应关系由 `_workspace/manifest/course-manifest.json` 承载，规范本身不写具体课程映射。
+- 层间"讲↔资源↔知识点"的对应关系由 `data/_workspace/<profile>/manifest/course-manifest.json` 承载，规范本身不写具体课程映射。
 
 ### 2.4 Answer-First（答案优先）
 
@@ -187,7 +189,7 @@
 
 ## 附录 A：当前课程（26 考季·CPA 税法）分组实例
 
-> 以下为**当前课程实例**，由本地 papers 的官方标签现算、经显式归组与脚本校验；换课程/考季时按官方模块重新生成，不照搬本表。完整 92 知识点清单属课程派生数据，落在该课程 `_workspace/manifest/course-manifest.json`，不写入本通用规范。
+> 以下为**当前课程实例**，由本地 papers 的官方标签现算、经显式归组与脚本校验；换课程/考季时按官方模块重新生成，不照搬本表。完整 92 知识点清单属课程派生数据，落在该课程 `data/_workspace/<profile>/manifest/course-manifest.json`，不写入本通用规范。
 
 | 组 | 知识点数 |
 |----|---------|

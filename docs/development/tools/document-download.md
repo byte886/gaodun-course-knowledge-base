@@ -114,7 +114,7 @@ ls -lh docs/
 
 ### 4.1 对照课程清单
 
-- 对照课程清单（`_workspace/manifest/course_catalog.json` 或课程表页面）核对每个讲次应有的讲义数量
+- 对照课程清单（`data/_workspace/<profile>/manifest/course_catalog.json` 或课程表页面）核对每个讲次应有的讲义数量
 - 检查是否有遗漏的讲义或课件
 
 ### 4.2 文件大小检查

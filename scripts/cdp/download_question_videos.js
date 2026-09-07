@@ -5,14 +5,14 @@
  * 与 fetch_sprint_video.js（整卷视频解析，encrypt=0 不加密）的区别：
  *  题目级视频 encrypt=1，HLS AES-128 加密。key 不直接下发（authorize 被鉴权拦），
  *  已由 fetch_question_video_keys.js 通过 CDP hook Worker 一次性抓到、为视频级固定值，
- *  存于 data/cdp-sniff/qvideo_keys.json。本脚本读取固定 key，纯 Node 完成：
+ *  存于 data/_workspace/<profile>/papers/qvideo_keys.json。本脚本读取固定 key，纯 Node 完成：
  *    JWT 取 SD m3u8 -> 解析全局 IV 与分片 -> 并发下载 -> 逐片 AES-128-CBC 解密 -> 顺序合并。
  *  不再依赖浏览器，可并行、可断点重跑（分片落盘缓存）。
  *
  * 用法：
  *   node scripts/cdp/download_question_videos.js all      # 下载全部 7 个
  *   node scripts/cdp/download_question_videos.js <vid8>   # 下载指定一个
- * 产物：data/sprint-videos/题目级讲解/qvideo_<paperId>_<entry>_<vid8>/.vfetch/{seg,merged.ts,manifest.json}
+ * 产物：data/_workspace/<profile>/tmp/download/sprint-videos/题目级讲解/qvideo_<paperId>_<entry>_<vid8>/.vfetch/{seg,merged.ts,manifest.json}
  */
 'use strict';
 const fs = require('fs');
@@ -20,10 +20,12 @@ const path = require('path');
 const crypto = require('crypto');
 const https = require('https');
 const { findJwt, makeHeaders } = require('./gaodun_paper_core');
+const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const KEYS_PATH = path.join(ROOT, 'data', 'cdp-sniff', 'qvideo_keys.json');
-const OUT_ROOT = path.join(ROOT, 'data', 'sprint-videos', '题目级讲解');
+// 题目讲解为税法专属（缺省 profile）：key 台账在 papers，下载缓存在 tmp/download
+const KEYS_PATH = workspaceDir('papers', 'qvideo_keys.json');
+const OUT_ROOT = workspaceDir('tmp', 'download', 'sprint-videos', '题目级讲解');
 const GW = 'https://apigateway.gaodun.com';
 const CONCURRENCY = 10;
 
@@ -126,7 +128,7 @@ async function runOne(vid, meta, jwt) {
   const arg = process.argv[2] || 'all';
   const targets = arg === 'all' ? vids : vids.filter((v) => v.startsWith(arg));
   if (!targets.length) throw new Error(`无匹配 vid：${arg}`);
-  const jwt = findJwt(path.join(ROOT, 'data', 'cdp-sniff'));
+  const jwt = findJwt();
   for (const vid of targets) { try { await runOne(vid, keys[vid], jwt); } catch (e) { console.error(`✘ ${vid.slice(0, 8)} ${e.message}`); } }
   log('全部结束'); process.exit(0);
 })().catch((e) => { console.error('[qv FAIL]', e.stack || e.message); process.exit(1); });

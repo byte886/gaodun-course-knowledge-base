@@ -11,22 +11,21 @@
  *        未提交   = paperSubmitStatus===0（做过没交，progress=2）
  *        未做     = record.result===null（progress=null，首次需 create-paper）
  *   3) 章节自然顺序（全面精讲→强化冲刺，段内按序号）写出：
- *        data/cdp-sniff/papers_inventory.json  全量基础卷（含入口ID/进度/最新分）
- *        data/cdp-sniff/papers_audit.json       待做卷（cls 非“满分/平台最优”），供 batch_redo_papers.js 消费
+ *        data/_workspace/<profile>/manifest/papers_inventory.json  全量基础卷（含入口ID/进度/最新分）
+ *        data/_workspace/<profile>/manifest/papers_audit.json       待做卷（cls 非“满分/平台最优”），供 batch_redo_papers.js 消费
  *
  * 用法：node scripts/cdp/refresh_inventory.js [--profile <key>]
  *   课程 ID/syllabus 从 config/courses/<key>.json 读取（缺省 cpa-tax-2026，或环境变量 GAODUN_COURSE_PROFILE）。
- * 只读、低频（每张 record 间隔 250ms）；JWT 从 data/cdp-sniff 最新抓包提取。
+ * 只读、低频（每张 record 间隔 250ms）；JWT 从 data/_workspace/_account/auth 最新抓包提取。
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { findJwt, makeHeaders, MINERVA_BASE, canonAnswer } = require('./gaodun_paper_core');
-const { loadProfile, primaryIds, scopedPath, argvProfileKey } = require('./load_profile');
+const { loadProfile, primaryIds, workspaceDirFor, argvProfileKey } = require('./load_profile');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const OUT = path.join(ROOT, 'data', 'cdp-sniff');
 // sourceFromType：glivepro 作业来源类型枚举（平台常量、非课程 ID，跨正课通用；换 epiphany 名师课需另查）
 const SFT = 100533962;
 const isSprint = (p) => /冲刺模考/.test(p.title) || p.num === 48;
@@ -105,13 +104,15 @@ async function inspectSubmitted(H, logId) {
 (async () => {
   const profile = loadProfile(argvProfileKey());
   const ids = primaryIds(profile);
+  const manifestDir = workspaceDirFor(profile.key, 'manifest');
+  fs.mkdirSync(manifestDir, { recursive: true });
   const COURSE_ID = ids.courseId;
   const COURSE_SYLLABUS_ID = ids.syllabusId;
   if (!COURSE_ID || !COURSE_SYLLABUS_ID) {
     throw new Error(`profile ${profile.key} 缺 primaryCourse.saasCourseId/syllabusId，无法刷新作业基线`);
   }
   console.log(`[profile] ${profile.key}｜${profile.subject.name}｜courseId=${COURSE_ID} syllabus=${COURSE_SYLLABUS_ID} platform=${ids.platform}`);
-  const H = makeHeaders(findJwt(OUT));
+  const H = makeHeaders(findJwt());
   // 1) syllabus
   const sj = await (await fetch(
     `https://apigateway.gaodun.com/g-study/api/v1/front/course/${COURSE_ID}/syllabus/glive/${COURSE_SYLLABUS_ID}`,
@@ -154,11 +155,11 @@ async function inspectSubmitted(H, logId) {
     await sleep(250);
   }
 
-  const invPath = scopedPath(OUT, 'papers_inventory.json', profile.key);
-  const auditPath = scopedPath(OUT, 'papers_audit.json', profile.key);
+  const invPath = path.join(manifestDir, 'papers_inventory.json');
+  const auditPath = path.join(manifestDir, 'papers_audit.json');
   fs.writeFileSync(invPath, JSON.stringify(inv, null, 1));
   fs.writeFileSync(auditPath, JSON.stringify(audit, null, 1));
-  console.log(`写出 ${path.relative(ROOT, invPath)} / ${path.relative(ROOT, auditPath)}（按 profile 隔离）`);
+  console.log(`写出 ${path.relative(ROOT, invPath)} / ${path.relative(ROOT, auditPath)}（按 profile 子目录隔离）`);
   console.log('\n===== 基线刷新完成 =====');
   console.log('分类:', JSON.stringify(stat));
   console.log('已完成（满分+平台最优）:', stat.满分 + stat.平台最优, '张；待做（audit）:', audit.length,

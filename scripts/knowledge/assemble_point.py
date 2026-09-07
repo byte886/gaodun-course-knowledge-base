@@ -12,13 +12,16 @@ assemble_point.py — 单知识点成篇组装器（阶段③批量流水线最�
 
 用法：
   python3 assemble_point.py --src <G02_112470_xxx.json> --head <head.md> [--course-root <课程目录>]
-默认从 --src 路径推断课程根（.../<课程>/_workspace/tmp/point-questions/xxx.json）。
+聚合 JSON 位于 data/_workspace/<profile>/tmp/point-questions/；课程成品根默认从 profile 定位，可用 --course-root 覆盖。
 """
 import argparse, json, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import render_point_qa as R  # noqa: E402
+from course_profile import load_profile  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main():
@@ -29,7 +32,10 @@ def main():
     a = ap.parse_args()
 
     src = Path(a.src)
-    course = Path(a.course_root) if a.course_root else src.parents[3]
+    # 新架构（ADR-016）：聚合 JSON 与 manifest 都在 data/_workspace/<profile>/；成品课程根从 profile 定位
+    _prof = load_profile()
+    workspace = ROOT / "data" / "_workspace" / _prof["key"]
+    course = Path(a.course_root) if a.course_root else (ROOT / _prof["paths"]["localRoot"])
     d = json.load(open(src, encoding="utf-8"))
     pid, title, gc, gname = d["pointId"], d["title"], d["groupCode"], d["groupName"]
     qs = d["questions"]
@@ -54,7 +60,7 @@ def main():
     rendered = "\n".join(lines).rstrip()
 
     # 同组关联（来自 manifest，排除自己）
-    mani = json.load(open(course / "_workspace/manifest/course-manifest.json", encoding="utf-8"))
+    mani = json.load(open(workspace / "manifest/course-manifest.json", encoding="utf-8"))
     k = mani["knowledge"]
     grp = next(g for g in k["groups"] if g["code"] == gc)
     pi = {int(x): y for x, y in k["pointIndex"].items()}
