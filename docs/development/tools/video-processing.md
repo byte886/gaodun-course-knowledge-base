@@ -290,7 +290,7 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 ### 知识库操作（扩展）
 
 10. **知识库操作必须使用API**：所有知识库操作（创建、更新、删除、移动节点）必须使用lark-cli，不使用Playwright手动操作
-11. **父节点链接必须使用完整URL**：不能使用相对路径（如`./知识拆解`），必须使用完整飞书URL（`https://zcnjheoajxng.feishu.cn/wiki/[node_token]`）
+11. **站内导航链接用 `<cite>` 内部引用，不用完整 URL**：同步飞书的文档内，指向其他知识库节点的链接一律由 `wiki_link_resolve.py` 转成 `<cite type="doc" doc-id="obj_token"/>`（飞书内当前窗口打开）；完整飞书 URL（`https://.../wiki/[node_token]`）会被渲染成 `target="_blank"` 新标签页，逐层点击会不断开窗、容易迷失，仅外链才用完整 URL。本地源文件仍保留 `./标题.md` 相对链接。
 12. **同步后必须执行结构检查**：避免出现重复节点、空节点、错误位置等问题，使用`scripts/check_kb_structure.sh`
 13. **具体产出物放对应课程目录**：专项质检（VERIFICATION.md，按需）等放在对应课程目录下，不放在通用目录；做题/同步验证默认并入任务报告、不单独成文
 14. **删除节点是异步操作**：`lark-cli wiki +node-delete`是异步的，需要轮询任务状态确认完成

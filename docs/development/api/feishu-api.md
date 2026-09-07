@@ -161,16 +161,17 @@ EOF
 - 短内容可直接 stdin；**多行/长内容、一次写多篇时，优先把内容落成 cwd 内文件，用 `@./file.md` 传参**，最稳。
 - **任何写操作后必须 `docs +fetch` 回读验证**（长度、链接数、关键字），不能只看返回 `success`。
 
-### 2.4 链接写完整 URL，不要用变量/占位符
+### 2.4 站内导航用 `<cite>` 内部引用；不要用变量/占位符
 
 带引号的 heredoc（`<<'EOF'`）**不会展开 shell 变量**。若正文里写 `%BASE%/xxx`、`$W/xxx` 这类占位符，会原样写入形成坏链。
 
-- 导入/写入文档时，超链接一律直接写**完整 `https://.../wiki/<token>`**。
-- 写完用正则回查：不应残留 `%`、`$` 类占位符；正文中 Markdown 链接的目标都应以 `http(s)://` 开头，不得是省略号或未展开的变量。
+- **指向知识库内其他文档**：一律写 `<cite type="doc" doc-id="obj_token"/>`（`doc-id` 用 obj_token）。飞书渲染为文档标题、`target="_self"` 当前窗口导航；Markdown 流中可直接内嵌该标签，由 `wiki_link_resolve.py` 从本地相对链接自动转换。
+- **不要用完整 `/wiki/<node>` URL 做站内导航**：它会被渲染成 `target="_blank"` 新标签页；完整 URL 仅用于站外链接，或确实需要新开页的场景。
+- 写完用正则回查：不应残留 `%`、`$` 类占位符；站内导航不应残留 `href="https://.../wiki/..."` 普通链接。
 
 ### 2.5 docs +fetch / +update 可直接吃 wiki node token
 
-`--doc` 既能传 obj_token（docx token）/文档 URL，也能直接传 **wiki node token**，CLI 会自动解析，无需先 `node-get` 换 obj_token。导航链接则统一用 `/wiki/<node_token>` 形式（移动节点后该 token 不变）。
+`--doc` 既能传 obj_token（docx token）/文档 URL，也能直接传 **wiki node token**，CLI 会自动解析，无需先 `node-get` 换 obj_token。注意区分：命令入参传 node/obj token 或 URL 均可；但**正文里的站内导航链接**用 `<cite type="doc" doc-id="obj_token"/>`（当前窗口打开），不用 `/wiki/<node_token>` 完整 URL（会新标签页打开）。
 
 ---
 
