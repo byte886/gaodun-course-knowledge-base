@@ -9,7 +9,7 @@
 
 ---
 
-## 脚本总览（已登记 61 个，与 `scripts/` 磁盘文件一一对应）
+## 脚本总览（按用途分类，与 `scripts/` 磁盘文件对应；新增脚本须按文末维护规则登记）
 
 | 分类 | 脚本数 | 说明 |
 |------|--------|------|
@@ -18,7 +18,7 @@
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 5 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传 |
-| 环境与工具 | 7 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询 |
+| 环境与工具 | 9 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
 | 检查与验证 | 7 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
@@ -26,21 +26,22 @@
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
-> **全量对齐（2026-09-05）**：历史脚本已一次性补登完毕，并补登阶段④新增的 4 个同步/守护脚本（sync_raw_resources、run_supervised、progress、sync_wiki_new），上表 61 个与 `scripts/`（顶层 + `cdp/` + `ocr/` + `knowledge/` + `migrate/` 子目录）磁盘文件一一对应。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/migrate` 核对，避免再次出现"在跑但没上台账"。
+> **全量对齐（2026-09-05；2026-09-07 增补）**：历史脚本已一次性补登；2026-09-07 多课程/并行化改造新增单课总编排器 `run_course_pipeline.sh` 与并发标准件 `lib/parallel.sh`（见「课程配置」末小节），并同步更新各去硬编码脚本条目。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/migrate scripts/lib` 核对，避免再次出现"在跑但没上台账"。
 
 ---
 
 ## 课程配置（多课程支持）
 
-所有课程相关脚本通过 `scripts/course_config.sh` 统一配置，默认指向税法课。切换课程只需设置环境变量：
+所有课程相关脚本通过 `scripts/course_config.sh` 统一配置，默认指向税法课。**推荐用课程 profile 切换**（`config/courses/<key>.json`，含课程 ID/章组/overview，见该目录 README）：
 
 ```bash
-# 切换到会计课
-export COURSE_NAME="【26考季】VIPCPA系列-会计（罗翔老师）"
+# 切换到会计课（shell 用 COURSE_PROFILE，node 用 GAODUN_COURSE_PROFILE，course_config 两者都认）
+export COURSE_PROFILE=cpa-accounting-2026
+export GAODUN_COURSE_PROFILE=cpa-accounting-2026
 
-# 然后运行任意课程脚本（会自动读取配置）
+# 然后运行任意课程脚本（会自动读取配置）；多数脚本也支持 --profile <key>
 bash scripts/sync_raw_resources.sh all
-bash scripts/transcribe_parallel.sh 4
+bash scripts/transcribe_parallel.sh        # FunASR 默认串行最优，不传参即并发1
 bash scripts/ocr/run_ocr_all.sh --dry
 python3 scripts/knowledge/collect_point_questions.py --all
 ```
@@ -49,13 +50,18 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `COURSE_NAME` | 税法课（蔡俊峻） | 课程名称，用于拼接路径 |
+| `COURSE_NAME` | 税法课（蔡俊峻） | 课程名称，用于拼接路径（显式设置优先级高于 profile） |
 | `COURSE_LOCAL_ROOT` | `data/高顿/CPA/课程库/$COURSE_NAME` | 仓库内课程根目录 |
 | `COURSE_REMOTE_ROOT` | `/apps/CPA课程归档/高顿/CPA/课程库/$COURSE_NAME` | 网盘课程根目录 |
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化的脚本**：`sync_raw_resources.sh`、`transcribe_parallel.sh`、`ocr/run_ocr_all.sh`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`sync_course_netdisk.sh`（已参数化）。其他脚本如需支持多课程，按相同模式改造。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+
+### 总编排器与并发标准件
+
+- **`run_course_pipeline.sh <profile> [--dry-run|--from n|--only n|--list]`**：按 `docs/development/project-dag.md` 的 13 节点顺序做单课总调度，阶段 marker 落在 `$COURSE_LOCAL_ROOT/_workspace/pipeline/<n>.done`（重跑跳过），进入「9 知识库生成」前做 Fan-In 校验。auto 阶段直接调用下列专用脚本，manual/todo 阶段只给指引，**只调度、不含业务逻辑**。首次先 `--dry-run` 走查。
+- **`lib/parallel.sh` 的 `parallel_map`**：shell 侧唯一并发标准件，`<NUL任务流> | parallel_map <并发N> <worker命令...>`，底层 `xargs -0 -P`，替代有竞态的自建 mkdir/flock 锁队列。CPU 任务（FunASR/x265）并发度必须实测、默认串行；IO 任务可高并发受限流约束，选型见 `docs/development/performance/parallel-processing-guide.md`。
 
 ---
 
@@ -261,24 +267,24 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-### `transcribe_parallel.sh` — 队列式多进程并发转写
+### `transcribe_parallel.sh` — 批量转写（xargs 内核调度，默认串行）
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 待转讲列表写入队列文件，N 个 worker 用 mkdir 原子锁互斥取第一个空闲任务（macOS 无 flock）、做完再取（哪个 worker 快就多处理，天然负载均衡），失败讲自动写回队尾重试；单进程实测约占 2 核/3.3GB，本机 20 线程默认并发 6（约 12 核，留余量给 IO/系统） |
-| **用法** | `bash scripts/transcribe_parallel.sh [并发数N]`（默认 6，对象=正课课程库） |
-| **可靠性** | ✅ 高（动态调度，优于固定分片） |
-| **相关文档** | WORKFLOW「多任务并发调度」、ADR-003 |
+| **用途** | 扫描正课课程库生成 NUL 待转队列，经 `lib/parallel.sh` 的 `parallel_map`（`xargs -0 -P`）内核级调度 `--worker` 自递归，无自建锁竞态；FunASR 实测**串行总吞吐最优**（1 并发 18.5x > 6 并发 14.3x），默认并发 1，可传参覆盖（换机器/模型须按性能指南重测）；单讲失败隔离、不自动 requeue，重跑幂等续（已有 >1000 字 transcript 跳过） |
+| **用法** | `bash scripts/transcribe_parallel.sh [并发数N]`（默认 1，对象=正课课程库，读 profile/config） |
+| **可靠性** | ✅ 高（内核动态调度 + 幂等断点续跑） |
+| **相关文档** | `docs/development/performance/parallel-processing-guide.md`、ADR-003 |
 
 ---
 
-### `transcribe_qvideos.sh` — 题目级讲解视频并发转写
+### `transcribe_qvideos.sh` — 题目级讲解视频批量转写（默认串行）
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 队列式并发转写 `data/sprint-videos/题目级讲解/qvideo_*/video.mp4`，输出 transcript.md/json 到各目录；结构同 transcribe_parallel，区别是临时目录用 vid8 唯一化（避免首段前缀都叫 qvideo 撞车）、对象是题目级视频 |
-| **用法** | `bash scripts/transcribe_qvideos.sh [并发数N]`（默认 6，已有 >1000 字 transcript 自动跳过） |
-| **实测** | FunASR 约 20x 实时，7 个共 175 分钟音频并发 6 约 8 分钟出齐（约 5.7 万字） |
+| **用途** | 机制同 transcribe_parallel（`parallel_map` + `--worker` 自递归、默认并发 1）；对象是 `data/sprint-videos/题目级讲解/qvideo_*/video.mp4`（税法冲刺专属数据），临时目录用 vid 目录名唯一化（避免首段前缀都叫 qvideo 撞车），输出 transcript.md/json 到各目录 |
+| **用法** | `bash scripts/transcribe_qvideos.sh [并发数N]`（默认 1，已有 >1000 字 transcript 自动跳过） |
+| **实测** | FunASR 约 20x 实时；并发度总吞吐以性能指南为准（串行最优，旧默认 6 已收敛） |
 | **可靠性** | ✅ 高 |
 
 ---

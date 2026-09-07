@@ -170,7 +170,7 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 2. **读取器** ✅ 已完成（2026-09-07）：`scripts/cdp/load_profile.js`、`scripts/knowledge/course_profile.py`、改造 `course_config.sh`（认 `COURSE_PROFILE`/`GAODUN_COURSE_PROFILE`，向后兼容默认税法）；三者均支持命令行打印关键 ID 自检，已验证。
 3. **去硬编码 ✅ 已完成（2026-09-07）**：按 3.4 清单逐脚本改，每个用**税法 profile 回归**（产物与改前一致才过）、分步提交；另把运维/知识 shell·python 统一收口到 course_config/profile，刻意保留的例外见 3.4 末表。
 4. **并发收敛 ✅ 已完成（2026-09-07）**：新增 shell 标准件 `scripts/lib/parallel.sh`（`parallel_map`：NUL 任务流经 `xargs -0 -P` 内核调度，含并发度校验，根除自建 mkdir/flock 锁队列竞态）；`transcribe_parallel.sh`、`transcribe_qvideos.sh` 改为「主脚本生成 NUL 队列 + `--worker` 自递归」，FunASR 默认并发 **1（串行最优，可传参覆盖）**，并加 UTF-8 locale 兜底。回归：bash -n 通过、税法 TOTAL=0 零副作用退出、/tmp 假课程验证并发调度与失败隔离、C locale 不 unbound。网盘上传（sync_*_netdisk/raw_resources）本就 `xargs -P`（IO 类）保持不动；Node 侧 IO 并发（笔记 worker=5、分片 20、mapLimit=3）是单进程异步、无多进程锁竞态、默认值符合 4.3，按精简原则存量不重写。
-5. **编排器**：写 `run_course_pipeline.sh`，先用税法 profile 做 **dry-run 走查**（只打印将执行的阶段与命令，不真跑），核对 DAG。
+5. **编排器 ✅ 已完成（2026-09-07）**：`scripts/run_course_pipeline.sh <profile> [--dry-run/--from n/--only n/--list]`。按 project-dag 13 节点线性检查点推进，阶段级 marker 落在 `$COURSE_LOCAL_ROOT/_workspace/pipeline/<n>.done`，阶段9 前 Fan-In 校验 5/6/7 marker + 8 的 `structure.groups`；auto 阶段登记真实脚本命令，manual（0/2/8/9）给人工/AI 指引，todo（10/11）标注未实现，不伪造自动命令（兼容 macOS bash 3.2，case 函数而非关联数组）。已用税法 `--dry-run` 走查核对 DAG 一致，并验证 --only/--from 范围、坏 profile 拒绝(exit2)、会计切换、`--only 7` 正式跑的 marker 写入与二次跳过。
 6. **会计试跑**：会计正课（saasCourseId=42656）当前 `wareStatus=0` 未开课；正式采集前先确认取数来源（26 考季正课 vs 已开课的"名师专业课-会计" 50126/17244），未开课前可先跑"课程发现 + syllabus 结构"两步。
 
 ## 七、验收清单
