@@ -62,35 +62,36 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 | 谁维护 | 人手 + `fetch_user_space_courses.js` 半自动 | 脚本生成 |
 | 位置 | `config/courses/<key>.json`（git 跟踪） | 课程目录 `_workspace/manifest/`（gitignore，随网盘） |
 
-### 3.2 profile schema（字段契约）
+### 3.2 profile schema（字段契约，已按 2026-09-07 实测落地）
 
 ```json
 {
   "key": "cpa-tax-2026",
-  "subject": { "id": 38, "name": "税法" },
   "project": { "id": 8, "name": "CPA" },
-  "course": {
-    "displayName": "【26考季】VIPCPA系列-税法（蔡俊峻老师）",
-    "vcourseId": 96834,
-    "saasCourseId": 42660,
-    "syllabusId": 75181,
-    "gradationId": null,
-    "wareStatus": "1"
+  "subject": { "id": 38, "name": "税法", "examTime": "..." },
+  "teacher": "蔡俊峻",
+  "primaryCourse": {
+    "name": "【26考季】VIPCPA系列-税法（蔡俊峻老师）",
+    "vcourseId": 96834, "saasCourseId": 42660,
+    "syllabusId": 75181, "gradationId": null,
+    "platform": "glivepro", "saasCourseType": 16,
+    "learnStatus": 3, "learnStatusDesc": "已完结",
+    "studyUrl": "//glivepro.gaodun.com/course/42660/guide-course"
   },
-  "structure": {
-    "officialGroupCount": 14,
-    "pointCount": 92,
-    "groups": [ { "code": "01", "name": "税法总论" } ]
-  },
-  "paths": {
-    "localRoot": "data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）",
-    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
-  }
+  "companionCourses": [
+    { "name": "名师专业课-税法", "saasCourseId": 17247,
+      "platform": "epiphany", "learnStatus": 2, "collect": false }
+  ],
+  "structure": { "officialGroupCount": 14, "pointCount": 92,
+    "groups": [ { "code": "01", "name": "税法总论" } ] },
+  "paths": { "localRoot": "data/...", "remoteRoot": "/apps/..." }
 }
 ```
 
+- **主采集源 vs 配套课**：26 考季正课在 `glivepro`（与现有工具链同构，走 `primaryCourse`）；名师专业课在另一个学习平台 `epiphany`（`saasCourseType=13`，URL 为 `epiphany.gaodun.com/ep3/course/{id}`，前端/接口不通用），列入 `companionCourses` 且默认 `collect:false`，要采需先适配其接口。
+- **学习状态看 `learnStatus`（不是 wareStatus）**：实测 `0=待学习 / 2=已学习 / 3=已完结`；`wareStatus` 语义不等于"是否开课/有无内容"（会计正课 wareStatus=0 但 learnStatus=已完结、有学习记录）。**"待学习"的课不录制、不采集。**
 - ID 口径以 [gaodun-exam-api.md §1.3/§2.11](../api/gaodun-exam-api.md) 为准：`saasCourseId`＝做题/内容接口的 courseId，`vcourseId`＝购课实例（听课/进度），二者不可混用。
-- profile 由 `fetch_user_space_courses.js` 的台账**半自动生成草稿**（ID/课程名/科目直接来自接口），`structure`（官方章组、考点数）由 syllabus 脚本补全，人手确认后入库。
+- profile 由 `fetch_user_space_courses.js` 台账**半自动生成草稿**（ID/课程名/科目/平台/状态直接来自接口），`structure`（官方章组、考点数）由 syllabus 脚本补全，人手确认后入库。样板见 `config/courses/`（税法已填全、会计为草稿）。
 
 ### 3.3 三语言读取约定（不引第三方依赖）
 
@@ -155,9 +156,9 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 
 ## 六、落地步骤（每步独立可验收、不破坏税法现状）
 
-1. **配置层**：建 `config/courses/`，先落 `cpa-tax-2026.json`（用台账+现网数据回填，作为样板）与 `cpa-accounting-2026.json` 草稿（ID 来自账号课程清单，structure 待会计 syllabus）。
-2. **读取器**：`load_profile.js`、`course_profile.py`、改造 `course_config.sh`；各加一个"打印当前 profile 关键 ID"的自检命令。
-3. **去硬编码**：按 3.4 清单逐脚本改，每改一个用**税法 profile 回归**（产物与改前一致即通过），分步提交。
+1. **配置层** ✅ 已完成（2026-09-07）：建 `config/courses/`，落 `cpa-tax-2026.json`（样板，14 组已填）与 `cpa-accounting-2026.json`（草稿，课程级 ID 已填、章组待 syllabus），附目录 README。
+2. **读取器** ✅ 已完成（2026-09-07）：`scripts/cdp/load_profile.js`、`scripts/knowledge/course_profile.py`、改造 `course_config.sh`（认 `COURSE_PROFILE`/`GAODUN_COURSE_PROFILE`，向后兼容默认税法）；三者均支持命令行打印关键 ID 自检，已验证。
+3. **去硬编码（下一步）**：按 3.4 清单逐脚本改，每改一个用**税法 profile 回归**（产物与改前一致即通过），分步提交。
 4. **并发收敛**：把 `transcribe_parallel.sh` 默认并发改为 1 并改用 `xargs -P`（保留队列语义用临时文件+`-n1`）；抽一个 shell 公共函数文件 `scripts/lib/parallel.sh` 供 xargs 模板复用；node 侧以 `mapLimit` 为统一件。
 5. **编排器**：写 `run_course_pipeline.sh`，先用税法 profile 做 **dry-run 走查**（只打印将执行的阶段与命令，不真跑），核对 DAG。
 6. **会计试跑**：会计正课（saasCourseId=42656）当前 `wareStatus=0` 未开课；正式采集前先确认取数来源（26 考季正课 vs 已开课的"名师专业课-会计" 50126/17244），未开课前可先跑"课程发现 + syllabus 结构"两步。

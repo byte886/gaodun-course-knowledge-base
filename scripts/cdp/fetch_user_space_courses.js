@@ -50,6 +50,14 @@ function httpGetJson(url, headers) {
   });
 }
 
+/** 从学习入口 URL 判别学习平台：正课在 glivepro，名师专业课在 epiphany（智能学习平台，前端/接口不同） */
+function platformOf(url) {
+  if (!url) return 'unknown';
+  if (url.includes('glivepro')) return 'glivepro';
+  if (url.includes('epiphany')) return 'epiphany';
+  return 'other';
+}
+
 /** 从一门课原始对象提取稳定字段（去掉 lives/courseNotice 等易变大块） */
 function simplify(c) {
   return {
@@ -61,15 +69,16 @@ function simplify(c) {
     subjectId: c.subjectId,
     subjectName: c.subjectName,
     vcourseType: c.vcourseType,
-    saasCourseType: c.saasCourseType,
-    wareStatus: c.wareStatus,            // 1=已开课 0=未开课
-    learnStatus: c.learnStatus,
+    saasCourseType: c.saasCourseType,       // 实测：16=考季正课(glivepro)，13=名师专业课(epiphany)
+    wareStatus: c.wareStatus,               // 课件状态，语义≠"是否开课/有无内容"，勿据此判断可否采集
+    learnStatus: c.learnStatus,             // 学习状态以此为准：实测 0=待学习 2=已学习 3=已完结
     learnStatusDesc: c.learnStatusDesc,
     leftDays: c.leftDays,
     courseStartTime: c.courseStartTime,
     courseExpireTime: c.courseExpireTime,
     lastLeaningTime: c.lastLeaningTime,
     currentStudyUrl: c.currentStudyUrl,
+    platform: platformOf(c.currentStudyUrl),
     isAuditionCourse: c.isAuditionCourse,
   };
 }
@@ -100,7 +109,7 @@ async function main() {
   const ledger = {
     fetchedAt: new Date().toISOString(),
     sourceApi: API,
-    note: 'vcourseId=购课实例(听课用); saasCourseId=SaaS课程(考点/讲次内容接口用); subjectId=科目',
+    note: 'vcourseId=购课实例(听课用); saasCourseId=SaaS课程(内容接口用); platform: glivepro=考季正课/epiphany=名师专业课(不同学习平台,接口不通用); learnStatus: 0待学习/2已学习/3已完结(以此为准); wareStatus语义≠是否开课',
     projects,
     totalCourses: total,
     courseListByProject: byProject,
@@ -122,8 +131,8 @@ async function main() {
       console.log(`\n== project ${pid} ==`);
       courses.forEach((c, i) => {
         console.log(`  ${i + 1}. ${c.name}`);
-        console.log(`     vcourseId=${c.vcourseId} saasCourseId=${c.saasCourseId} ` +
-          `subject=${c.subjectName}(${c.subjectId}) 开课=${c.wareStatus} 剩${c.leftDays}天`);
+        console.log(`     vcourseId=${c.vcourseId} saasCourseId=${c.saasCourseId} [${c.platform}] ` +
+          `subject=${c.subjectName}(${c.subjectId}) ${c.learnStatusDesc} 剩${c.leftDays}天`);
       });
     }
   }

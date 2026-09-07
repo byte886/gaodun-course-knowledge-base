@@ -1,0 +1,48 @@
+{
+  "_comment": "会计课档案卡(草稿)。课程级 ID/平台来自用户空间接口实测(2026-09-07)；structure 官方章组待 syllabus 接口拉取后补全，不臆造。字段口径见 parallel-toolkit-design.md。",
+  "key": "cpa-accounting-2026",
+  "schemaVersion": 1,
+  "project": { "id": 8, "name": "CPA" },
+  "subject": { "id": 37, "name": "会计", "examTime": null },
+  "season": "2026考季",
+  "teacher": "罗翔",
+  "primaryCourse": {
+    "role": "主采集源（glivepro，与税法工具链同构，优先走这条）",
+    "name": "【26考季】VIPCPA系列-会计（罗翔老师）",
+    "vcourseId": 96760,
+    "saasCourseId": 42656,
+    "syllabusId": 75086,
+    "gradationId": 74570,
+    "platform": "glivepro",
+    "saasCourseType": 16,
+    "learnStatus": 3,
+    "learnStatusDesc": "已完结",
+    "studyUrl": "//glivepro.gaodun.com/course/42656/guide-course",
+    "validUntil": "2026-10-31",
+    "note": "syllabusId/gradationId 为历史记录，正式采集前用 syllabus 接口复核；wareStatus=0 不代表无内容，learnStatus=已完结且有学习记录"
+  },
+  "companionCourses": [
+    {
+      "name": "【VIPCPA专享】名师专业课-全科-会计（含电话私教）",
+      "vcourseId": 50126,
+      "saasCourseId": 17244,
+      "platform": "epiphany",
+      "saasCourseType": 13,
+      "learnStatus": 2,
+      "learnStatusDesc": "已学习",
+      "studyUrl": "https://epiphany.gaodun.com/ep3/course/17244",
+      "collect": false,
+      "note": "epiphany 智能学习平台，接口需单独适配，默认不采集"
+    }
+  ],
+  "structure": {
+    "officialGroupCount": null,
+    "pointCount": null,
+    "historyHint": "历史记录为 36 章 164 考点，仅供参考；官方组结构以 primaryCourse.syllabusId 拉取结果为准后回填",
+    "groups": []
+  },
+  "paths": {
+    "localRoot": "data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）",
+    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）"
+  }
+}

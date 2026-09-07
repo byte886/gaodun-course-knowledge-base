@@ -642,6 +642,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
+### `cdp/load_profile.js` — 课程档案卡读取器（跨课复用基础件）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 读 `config/courses/<key>.json`，为所有 cdp 脚本提供 courseId(saas)/vcourseId/syllabusId/平台/章组/路径，替代脚本内硬编码；导出 `loadProfile()/primaryIds()/listProfiles()`；换课用参数或环境变量 `GAODUN_COURSE_PROFILE`，缺省回退税法 |
+| **用法** | `const {loadProfile,primaryIds}=require('./load_profile')`；命令行自检 `node scripts/cdp/load_profile.js [key]` |
+| **可靠性** | ✅ 已建并自检通过（税法/会计两卡、缺省回退、坏卡报错）；Python 版 `knowledge/course_profile.py`、shell 版 `course_config.sh` 同源 |
+| **相关文档** | parallel-toolkit-design.md §3、config/courses/README.md |
+
+---
+
 ### `cdp/collect_paper_sources.js` — papers 原料只读补采
 
 | 项目 | 说明 |
@@ -699,9 +710,20 @@ python3 scripts/knowledge/collect_point_questions.py --all
 ---
 
 
-## 十二、知识详解生成（4个，位于 `scripts/knowledge/`）
+## 十二、知识详解生成（5个，位于 `scripts/knowledge/`）
 
 > 按官方知识点聚合生成知识详解 md 的核心生产脚本。流程：collect_point_questions（按知识点收题）→ render_point_qa（渲染题答解析）→ organize_user_notes（整理学员补充）→ assemble_point（组装成篇）。
+
+### `knowledge/course_profile.py` — 课程档案卡读取器（跨课复用基础件）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 读 `config/courses/<key>.json`，为 knowledge 脚本提供课程目录/章组名/科目信息，替代 `build_course_overview.py` 等脚本内硬编码；导出 `load_profile()/primary_ids()`；换课用参数或 `GAODUN_COURSE_PROFILE`，缺省回退税法 |
+| **用法** | `from course_profile import load_profile`；命令行自检 `python3 scripts/knowledge/course_profile.py [key]` |
+| **可靠性** | ✅ 已建并自检通过；Node 版 `cdp/load_profile.js`、shell 版 `course_config.sh` 同源 |
+| **相关文档** | parallel-toolkit-design.md §3、config/courses/README.md |
+
+---
 
 ### `knowledge/collect_point_questions.py` — 按知识点收集题目
 

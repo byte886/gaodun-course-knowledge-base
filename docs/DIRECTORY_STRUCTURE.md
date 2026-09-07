@@ -48,6 +48,8 @@ gaodun-course-knowledge-base/
 │       ├── decisions/             # ADR（只增不改）
 │       └── standards/             # 治理规范（NAMING/QUALITY/CODE_STYLE/DOC_* 等）
 ├── project-management/            # 项目管理（动态：active 状态台账 / test-plans / task-reports）
+├── config/
+│   └── courses/                    # 课程档案卡 profile（一门课一个 JSON，脚本统一读取，换课只换卡，见 parallel-toolkit-design）
 ├── scripts/                       # 可执行脚本（下载/压缩/转写/OCR/上传/做题/校验，snake_case）
 ├── transcription/                 # 转写工具链：requirements.txt 入库，venv/ 忽略
 ├── .secrets/                      # 加密凭证（*.enc；*.json/*.txt 忽略）
