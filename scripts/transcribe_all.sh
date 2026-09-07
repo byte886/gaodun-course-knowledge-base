@@ -7,9 +7,11 @@
 # 用法: bash scripts/transcribe_all.sh
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=course_config.sh
+source "$ROOT/scripts/course_config.sh"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+COURSE="$COURSE_DESKTOP_ROOT"   # 由 profile/COURSE_NAME 派生，缺省税法，换课设 COURSE_PROFILE
 TMPROOT="$ROOT/transcription/.tmp_transcribe"
 LOG=/tmp/transcribe_all.log
 mkdir -p "$TMPROOT"

@@ -11,8 +11,9 @@
 import json, re, html, glob, os, argparse, collections
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# 课程路径：优先读环境变量 COURSE_LOCAL_ROOT，默认税法课（保持向后兼容）
-DEFAULT_COURSE = os.path.join(ROOT, "data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）")
+# 课程路径：env COURSE_LOCAL_ROOT 最高优先，否则读 profile（缺省税法）
+from course_profile import load_profile  # noqa: E402
+DEFAULT_COURSE = os.path.join(ROOT, load_profile()["paths"]["localRoot"])
 COURSE = os.environ.get("COURSE_LOCAL_ROOT", DEFAULT_COURSE)
 if not os.path.isabs(COURSE):
     COURSE = os.path.join(ROOT, COURSE)

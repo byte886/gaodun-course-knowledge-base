@@ -111,6 +111,16 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 | `course_config.sh` | 默认税法名 | ✅ 支持 `COURSE_PROFILE` |
 | `cdp/do_sprint_paper.js`、`fetch_sprint_video.js` | 税法冲刺卷/视频 ID | **保持税法专属**（冲刺卷每课不同，改为读 profile 内 sprint 段，不做通用化抽象） |
 
+**刻意保留的例外（不参数化，grep 命中属预期）**——判据是"一次性任务/历史快照/手动默认，换课时本就重新枚举，参数化只会堆砌半通用壳"：
+
+| 类别 | 文件 | 为什么保留 |
+|---|---|---|
+| 历史一次性迁移 | `scripts/migrate/*`（build_course_manifest / align_m0 / verify_migration / migrate_resources） | 税法存量迁移期的定格快照，改了反而失去可复现性，新课不再走此路径 |
+| 一次性枚举清单 | `batch_transcribe.sh`（13 个固定视频）、`cdp/fetch_question_video_keys.js`（题目 vid/PAPERS 全税法，文件头自述"key 抓一次即可离线重跑"） | 能力已被通用扫描脚本覆盖（`transcribe_all.sh`）；其枚举数据换课必须重列，非可复用逻辑 |
+| 概念验证 | `cdp/poc_persistent_browser.js` | PoC，START_URL 仅为验证持久化浏览器 |
+| 手动工具默认值 | `batch_ocr.sh` 的 `DEFAULT_*`（不传参时的上次文件） | 通用工具、实际均传参；默认含具体章节文件名，非可靠课程默认 |
+| 缺省回退/注释示例 | `course_config.sh` 的默认税法名、`upload_course.sh`/`sync_course_netdisk.sh`/`watch_stage_done.sh` 注释、`gaodun_paper_core.js` 注释 | 默认回退是设计本身（向后兼容）；注释仅演示调用形态，非可执行硬编码 |
+
 ## 四、层 2：统一并发执行器与选型契约
 
 ### 4.1 只保留两个标准件（按资源瓶颈二选一）

@@ -7,7 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-TAX="data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+# shellcheck source=course_config.sh
+source "$SCRIPT_DIR/course_config.sh"
+TAX="$COURSE_LOCAL_ROOT"
+# TODO 跨课：下列飞书空间/根节点为税法空间真实值，会计建空间后迁入 profile.feishu，暂不臆造
 PARENT="UM6bwW23tiYkCVk3nXtc3TpBnGe"
 SPACE_ID="7678261729456852192"
 DONE_DIR="$PROJECT_DIR/logs/wiki_done"

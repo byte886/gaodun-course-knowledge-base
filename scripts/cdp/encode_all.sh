@@ -9,7 +9,9 @@
 #   bash scripts/cdp/encode_all.sh --watch    # 守护模式：边下边压；等 download_all 结束且全部压完才退出
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-COURSE="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+# shellcheck source=../course_config.sh
+source "$ROOT/scripts/course_config.sh"
+COURSE="$COURSE_DESKTOP_ROOT"   # 由 profile/COURSE_NAME 派生，缺省税法，换课设 COURSE_PROFILE
 LOG=/tmp/encode_all.log
 WATCH=0; [ "${1:-}" = "--watch" ] && WATCH=1
 read_field() { node -e "try{console.log(require('$1').$2||'')}catch(e){console.log('')}"; }

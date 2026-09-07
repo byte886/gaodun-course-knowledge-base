@@ -22,12 +22,11 @@ import sys
 import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(REPO, "scripts", "knowledge"))
+from course_profile import load_profile  # noqa: E402
 MAP_FILE = os.path.join(REPO, "logs", "wiki_node_map.tsv")
 RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
-COURSE_DIR = os.path.join(
-    REPO, "data", "高顿", "CPA", "课程库",
-    "【26考季】VIPCPA系列-税法（蔡俊峻老师）", "知识详解",
-)
+COURSE_DIR = os.path.join(REPO, load_profile()["paths"]["localRoot"], "知识详解")
 
 
 def load_title2obj():

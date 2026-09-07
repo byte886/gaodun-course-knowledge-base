@@ -4,10 +4,16 @@
 用法: transcription/venv/bin/python scripts/ocr/verify_ocr.py
 输出: 逐份 OK/残缺清单 + 汇总，残缺时退出码 1。
 """
-import re, sys, pathlib
+import re, sys, pathlib, os
 import pymupdf  # PyMuPDF 1.28
 
-COURSE = pathlib.Path.home() / "Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REPO = os.path.dirname(os.path.dirname(_HERE))
+sys.path.insert(0, os.path.join(_REPO, "scripts", "knowledge"))
+from course_profile import load_profile  # noqa: E402
+# 课程目录：env COURSE_LOCAL_ROOT 优先，否则读 profile（data 软链 realpath 等价 Desktop 数据盘）
+_rel = os.environ.get("COURSE_LOCAL_ROOT", load_profile()["paths"]["localRoot"])
+COURSE = pathlib.Path(_rel) if os.path.isabs(_rel) else pathlib.Path(_REPO) / _rel
 SEC = re.compile(r"^## 第\d+页", re.M)
 
 def main():

@@ -4,6 +4,8 @@
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
+# shellcheck source=course_config.sh
+source "$PROJECT_DIR/scripts/course_config.sh"   # 导出 COURSE_LOCAL_ROOT 等，换课设 COURSE_PROFILE
 
 bar() {
   # $1=已完成 $2=总数
@@ -36,10 +38,11 @@ if [ "$v_done" -lt "$v_total" ]; then
   fi
   # ETA：基于最近完成的 done 文件时间戳与剩余视频大小估算
   python3 - <<'PY' 2>/dev/null
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 PARALLEL=2
-base = Path("data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/原始资源/videos")
+base = Path(os.environ["COURSE_LOCAL_ROOT"])/"原始资源/videos"
 ddir = Path("logs/raw_done")
 done = set(f.stem[len("videos_"):] for f in ddir.glob("videos_*.done"))
 def sz(d):

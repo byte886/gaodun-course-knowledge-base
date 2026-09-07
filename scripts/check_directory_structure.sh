@@ -13,13 +13,15 @@ set -euo pipefail
 # 动态获取项目目录（脚本所在目录的上一级）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# shellcheck source=course_config.sh
+source "$SCRIPT_DIR/course_config.sh"
 
 
 set -e
 
-# 配置
-LOCAL_ROOT="/Users/wenjiechen/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
-REMOTE_ROOT="/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+# 配置（本地真实目录走 Desktop 根，网盘走 REMOTE_ROOT；均由 profile/COURSE_NAME 派生）
+LOCAL_ROOT="$COURSE_DESKTOP_ROOT"
+REMOTE_ROOT="$COURSE_REMOTE_ROOT"
 CREDENTIALS_FILE="$PROJECT_DIR/.secrets/baidu_credentials.enc"
 ENCRYPT_PASS="lover123"
 
