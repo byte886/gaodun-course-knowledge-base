@@ -12,7 +12,7 @@
 - 本地 Markdown 源文件用相对链接，供 git/网盘归档，与飞书 XML 同源生成，避免两处不一致。
 
 数据来源：
-- logs/wiki_node_map.tsv（标题 node_token obj_token parent，取 14 章与 2 篇全局资料的 obj_token）
+- data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv（标题 node_token obj_token parent，取 14 章与 2 篇全局资料的 obj_token）
 - 本地知识详解目录（统计每章知识点 .md 篇数）
 """
 import argparse

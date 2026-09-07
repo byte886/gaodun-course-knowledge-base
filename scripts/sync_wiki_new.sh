@@ -14,7 +14,7 @@ TAX="$COURSE_LOCAL_ROOT"
 PARENT="UM6bwW23tiYkCVk3nXtc3TpBnGe"
 SPACE_ID="7678261729456852192"
 DONE_DIR="$PROJECT_DIR/logs/wiki_done"
-MAP_FILE="$PROJECT_DIR/logs/wiki_node_map.tsv"
+MAP_FILE="$PROJECT_DIR/data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv"
 mkdir -p "$DONE_DIR"
 touch "$MAP_FILE"
 

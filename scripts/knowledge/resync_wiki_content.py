@@ -2,7 +2,7 @@
 """把本地知识详解 Markdown 重新覆盖写入对应飞书文档（只更新内容，绝不创建/删除节点）。
 
 适用：链接格式、正文清理等"内容层"批量修订后的重同步（如相对链接改为 <cite> 内部引用）。
-- 标题→obj_token 取自 logs/wiki_node_map.tsv（已去重，108 个标题全局唯一）；
+- 标题→obj_token 取自 data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv（已去重，108 个标题全局唯一）；
 - 本地相对链接经 scripts/wiki_link_resolve.py 转为 <cite> 内部文档引用（渲染为目标文档标题、
   obj_token 强绑定可校验坏链；注意飞书正文跨文档点击统一新开标签，单窗口导航走左侧知识库目录树）；
 - 章 README 以"章目录名"为标题，知识点篇以文件名（去 .md）为标题，全局篇在知识详解根目录；
@@ -24,7 +24,7 @@ import time
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "scripts", "knowledge"))
 from course_profile import load_profile  # noqa: E402
-MAP_FILE = os.path.join(REPO, "logs", "wiki_node_map.tsv")
+MAP_FILE = os.path.join(REPO, "data", "_workspace", "cpa-tax-2026", "logs", "wiki_node_map.tsv")
 RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
 COURSE_DIR = os.path.join(REPO, load_profile()["paths"]["localRoot"], "知识详解")
 

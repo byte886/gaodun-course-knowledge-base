@@ -16,7 +16,7 @@ cite 与完整 URL 一样，点击后都在【新标签页】打开——飞书�
 - 本地源文件保留 ./ 相对链接不动，仅在写入飞书的管道里做转换；
 - cite 渲染文字固定为目标文档标题，故要求链接文字等于目标文件名（已全量核验一致）；
 - 找不到映射的链接保持原样并向 stderr 告警，绝不臆造 token；
-- obj_token 取自 logs/wiki_node_map.tsv 第 3 列（该表已去重，标题唯一）。
+- obj_token 取自 data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv 第 3 列（该表已去重，标题唯一）。
 """
 import os
 import re
