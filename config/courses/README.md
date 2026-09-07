@@ -33,6 +33,9 @@ GAODUN_COURSE_PROFILE=cpa-accounting-2026 node scripts/cdp/refresh_inventory.js
   前端和接口与 glivepro 不通用），`collect:false` 表示默认不采集，需要时先单独适配其接口。
 - `learnStatus`：学习状态，`0=待学习 / 2=已学习 / 3=已完结`。**"待学习"的课不录制、不采集。**
 - `structure.groups`：官方章组清单；`paths`：本地/网盘根路径。
+- `overview`：**可选**的总览页教学内容（课程信息、全局资料、概述、章节重要性层级、学习方法）。
+  属于"一门课一份的成品文案"而非课程参数；税法已填，会计等新课在内容生产前留空即可——
+  `build_course_overview.py` 对空段自动省略，不会串入别课内容。
 - ID 口径：`saasCourseId`＝做题/内容接口用的 courseId；`vcourseId`＝购课听课实例，二者不可混用。
 
 ## 谁在读这张卡
@@ -40,6 +43,8 @@ GAODUN_COURSE_PROFILE=cpa-accounting-2026 node scripts/cdp/refresh_inventory.js
 - Node 脚本：`scripts/cdp/load_profile.js`（`loadProfile()`，可 `node .../load_profile.js <key>` 自检）
 - Python 脚本：`scripts/knowledge/course_profile.py`（`load_profile()`，同样支持命令行自检）
 - Shell 脚本：`scripts/course_config.sh`（认 `COURSE_PROFILE` / `GAODUN_COURSE_PROFILE`）
+- 已接入的生产脚本：`refresh_inventory.js`、`fetch_lecture_video.js`、`collect_user_notes.js`、
+  `organize_user_notes.py`、`build_course_overview.py`（均支持 `--profile <key>` 或环境变量，缺省税法）
 
 课程清单（账号下到底有哪些课、各自 ID）由 `scripts/cdp/fetch_user_space_courses.js` 实时拉取，
 台账在 `data/高顿/CPA/账号课程清单.json`；本目录的档案卡是在台账基础上补全章组/路径后的**生产配置**，

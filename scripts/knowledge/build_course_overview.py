@@ -21,55 +21,35 @@ import os
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MAP_FILE = os.path.join(REPO, "logs", "wiki_node_map.tsv")
-COURSE_DIR = os.path.join(
-    REPO, "data", "高顿", "CPA", "课程库",
-    "【26考季】VIPCPA系列-税法（蔡俊峻老师）", "知识详解",
-)
+sys.path.insert(0, os.path.join(REPO, "scripts", "knowledge"))
+from course_profile import load_profile  # noqa: E402
 
-# 14 章官方显示名（总览面向读者，用完整教材章名，不带 NN_ 前缀）
-CHAPTER_DISPLAY = {
-    "01": "税法总论",
-    "02": "增值税法",
-    "03": "消费税法",
-    "04": "企业所得税法",
-    "05": "个人所得税法",
-    "06": "城市维护建设税法和烟叶税法",
-    "07": "关税法和船舶吨税法",
-    "08": "资源税法和环境保护税法",
-    "09": "城镇土地使用税法和耕地占用税法",
-    "10": "房产税法、契税法和土地增值税法",
-    "11": "车辆购置税法、车船税法和印花税法",
-    "12": "国际税收税务管理实务",
-    "13": "税收征收管理法",
-    "14": "税务行政法制",
-}
-GLOBAL_DOCS = [
-    ("考试指导速查手册", "跨章横向汇总：易混税率、征税范围、优惠政策对比"),
-    ("课程做题思路解析", "通用做题方法与主观题答题框架"),
-]
 
-COURSE_INFO = [
-    ("考季", "2026年"),
-    ("科目", "税法"),
-    ("主讲老师", "蔡俊峻"),
-    ("课程类型", "VIPCPA系列-全面精讲"),
-    ("考试时间", "2026年8月29日 下午13:00-15:00"),
-]
+def _pick_profile_key():
+    if "--profile" in sys.argv:
+        i = sys.argv.index("--profile")
+        if i + 1 < len(sys.argv):
+            return sys.argv[i + 1]
+    for a in sys.argv[1:]:
+        if a.startswith("--profile="):
+            return a.split("=", 1)[1]
+    return None
 
-IMPORTANCE_LEVELS = [
-    ("第一层级（综合题，15-18分/章）", "增值税法、企业所得税法"),
-    ("第二层级（主观题高频，6-10分/章）", "个人所得税法、资源税和环保税、房产税/契税/土地增值税、国际税收"),
-    ("第三层级（会考主观题，2-5分/章）", "车辆购置税/车船税/印花税、消费税、关税、城镇土地使用税/耕地占用税、城建税/烟叶税"),
-    ("第四层级（弯道超车，只考客观题，2-5分/章）", "税法总论、税收征收管理法、税务行政法制"),
-]
-STUDY_METHODS = [
-    "不用背不用记，通过逻辑推导",
-    "基本功扎实，避免“烂苹果”效应",
-    "一定要答完题（答完比没答完过关概率高15-20%）",
-    "配合三套资料：讲义 + 精粹 + 题目",
-    "不要放弃弯道超车章节（国际税收、征管法、行政法制）",
-]
+
+# 结构/章名/标题/总览内容全部来自课程档案卡（缺省税法），换课只换 profile
+PROFILE = load_profile(_pick_profile_key())
+MAP_FILE = os.path.join(REPO, "logs", "wiki_node_map.tsv")  # TODO 跨课时按 key 分（随飞书同步链路一起）
+COURSE_DIR = os.path.join(REPO, PROFILE["paths"]["localRoot"], "知识详解")
+COURSE_TITLE = PROFILE["primaryCourse"]["name"]
+# 官方章组显示名 {序号: 名}（不带 NN_ 前缀），来自 profile.structure.groups
+CHAPTER_DISPLAY = {g["code"]: g["name"] for g in (PROFILE.get("structure", {}).get("groups") or [])}
+# 总览教学内容为可选段：会计等新课未生产前缺省为空，对应小节省略，不串入税法内容
+_OV = PROFILE.get("overview", {}) or {}
+COURSE_INFO = [tuple(x) for x in (_OV.get("courseInfo") or [])]
+GLOBAL_DOCS = [tuple(x) for x in (_OV.get("globalDocs") or [])]
+IMPORTANCE_LEVELS = [tuple(x) for x in (_OV.get("importanceLevels") or [])]
+STUDY_METHODS = list(_OV.get("studyMethods") or [])
+SUMMARY_TEXT = _OV.get("summary", "")
 
 NAV_HINT = (
     "导航说明：本页章节名与全局资料均为飞书内部文档引用，点击会在新标签页打开"
@@ -135,12 +115,13 @@ def build_xml(chapter_obj, global_obj, counts, dirname):
     rows = build_rows(chapter_obj, counts, dirname)
     total = sum(r[2] for r in rows)
     p = []
-    p.append("<title>【26考季】VIPCPA系列-税法（蔡俊峻老师）</title>")
+    p.append(f"<title>{esc(COURSE_TITLE)}</title>")
     # 导航说明（如实告知正文引用新开标签、单窗口走左侧目录树）
     p.append(f"<blockquote><p>{esc(NAV_HINT)}</p></blockquote>")
     # 课程信息
-    p.append("<h2>课程信息</h2>")
-    p.append("<ul>" + "".join(f"<li>{esc(k)}：{esc(v)}</li>" for k, v in COURSE_INFO) + "</ul>")
+    if COURSE_INFO:
+        p.append("<h2>课程信息</h2>")
+        p.append("<ul>" + "".join(f"<li>{esc(k)}：{esc(v)}</li>" for k, v in COURSE_INFO) + "</ul>")
     # 章节列表
     p.append("<h2>章节列表</h2>")
     p.append(f"<blockquote><p>{esc(LIST_NOTE)}</p></blockquote>")
@@ -165,21 +146,26 @@ def build_xml(chapter_obj, global_obj, counts, dirname):
     )
     p.append(f"<p>合计 {len(rows)} 章、{total} 篇知识点详解。</p>")
     # 全局资料
-    p.append("<h3>全局资料</h3>")
-    p.append("<ul>")
-    for title, desc in GLOBAL_DOCS:
-        obj = global_obj.get(title)
-        if not obj:
-            sys.exit(f"[ERROR] wiki_node_map.tsv 缺少全局资料 {title} obj_token")
-        p.append(f"<li><cite type=\"doc\" doc-id=\"{obj}\"/> — {esc(desc)}</li>")
-    p.append("</ul>")
-    # 课程概述
-    p.append("<h2>课程概述</h2>")
-    p.append("<p>本课程为2026年CPA税法全面精讲课程，由蔡俊峻老师主讲。课程强调“不用背、不用记”，通过逻辑和原理理解税法知识，框架先行、骨肉后填。</p>")
-    p.append("<h3>各章节重要性层级</h3>")
-    p.append("<ul>" + "".join(f"<li><b>{esc(lv)}</b>：{esc(txt)}</li>" for lv, txt in IMPORTANCE_LEVELS) + "</ul>")
-    p.append("<h3>学习方法</h3>")
-    p.append("<ol>" + "".join(f"<li>{esc(m)}</li>" for m in STUDY_METHODS) + "</ol>")
+    if GLOBAL_DOCS:
+        p.append("<h3>全局资料</h3>")
+        p.append("<ul>")
+        for title, desc in GLOBAL_DOCS:
+            obj = global_obj.get(title)
+            if not obj:
+                sys.exit(f"[ERROR] wiki_node_map.tsv 缺少全局资料 {title} obj_token")
+            p.append(f"<li><cite type=\"doc\" doc-id=\"{obj}\"/> — {esc(desc)}</li>")
+        p.append("</ul>")
+    # 课程概述（教学内容为可选段，缺省省略）
+    if SUMMARY_TEXT or IMPORTANCE_LEVELS or STUDY_METHODS:
+        p.append("<h2>课程概述</h2>")
+        if SUMMARY_TEXT:
+            p.append(f"<p>{esc(SUMMARY_TEXT)}</p>")
+        if IMPORTANCE_LEVELS:
+            p.append("<h3>各章节重要性层级</h3>")
+            p.append("<ul>" + "".join(f"<li><b>{esc(lv)}</b>：{esc(txt)}</li>" for lv, txt in IMPORTANCE_LEVELS) + "</ul>")
+        if STUDY_METHODS:
+            p.append("<h3>学习方法</h3>")
+            p.append("<ol>" + "".join(f"<li>{esc(m)}</li>" for m in STUDY_METHODS) + "</ol>")
     return "".join(p)
 
 
@@ -189,14 +175,15 @@ def build_markdown(chapter_obj, counts, dirname):
     rows = build_rows(chapter_obj, counts, dirname)
     total = sum(r[2] for r in rows)
     L = []
-    L.append("# 【26考季】VIPCPA系列-税法（蔡俊峻老师）\n")
+    L.append(f"# {COURSE_TITLE}\n")
     L.append("> 本文件为飞书课程根节点（总览页）的本地源文件，与飞书版本同源生成。")
     L.append("> 导航说明：飞书侧章节为内部文档引用，点击在新标签页打开（飞书正文跨文档链接固定行为），"
              "单窗口连续阅读请用飞书左侧知识库目录树；本地源文件用相对路径链接。\n")
-    L.append("## 课程信息\n")
-    for k, v in COURSE_INFO:
-        L.append(f"- {k}：{v}")
-    L.append("")
+    if COURSE_INFO:
+        L.append("## 课程信息\n")
+        for k, v in COURSE_INFO:
+            L.append(f"- {k}：{v}")
+        L.append("")
     L.append("## 章节列表\n")
     L.append(f"> {LIST_NOTE}\n")
     L.append("| 序号 | 章节 | 知识点 | 状态 |")
@@ -204,20 +191,25 @@ def build_markdown(chapter_obj, counts, dirname):
     for num, _obj, n, dn in rows:
         L.append(f"| {num} | [{CHAPTER_DISPLAY[num]}](./知识详解/{dn}/README.md) | {n} 篇 | ✅ 已完成 |")
     L.append(f"\n合计 {len(rows)} 章、{total} 篇知识点详解。\n")
-    L.append("### 全局资料\n")
-    for title, desc in GLOBAL_DOCS:
-        L.append(f"- **[{title}](./知识详解/{title}.md)** — {desc}")
-    L.append("")
-    L.append("## 课程概述\n")
-    L.append("本课程为2026年CPA税法全面精讲课程，由蔡俊峻老师主讲。课程强调“不用背、不用记”，通过逻辑和原理理解税法知识，框架先行、骨肉后填。\n")
-    L.append("### 各章节重要性层级\n")
-    for lv, txt in IMPORTANCE_LEVELS:
-        L.append(f"- **{lv}**：{txt}")
-    L.append("")
-    L.append("### 学习方法\n")
-    for i, m in enumerate(STUDY_METHODS, 1):
-        L.append(f"{i}. {m}")
-    L.append("")
+    if GLOBAL_DOCS:
+        L.append("### 全局资料\n")
+        for title, desc in GLOBAL_DOCS:
+            L.append(f"- **[{title}](./知识详解/{title}.md)** — {desc}")
+        L.append("")
+    if SUMMARY_TEXT or IMPORTANCE_LEVELS or STUDY_METHODS:
+        L.append("## 课程概述\n")
+        if SUMMARY_TEXT:
+            L.append(SUMMARY_TEXT + "\n")
+        if IMPORTANCE_LEVELS:
+            L.append("### 各章节重要性层级\n")
+            for lv, txt in IMPORTANCE_LEVELS:
+                L.append(f"- **{lv}**：{txt}")
+            L.append("")
+        if STUDY_METHODS:
+            L.append("### 学习方法\n")
+            for i, m in enumerate(STUDY_METHODS, 1):
+                L.append(f"{i}. {m}")
+            L.append("")
     return "\n".join(L)
 
 
