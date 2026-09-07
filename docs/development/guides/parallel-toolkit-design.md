@@ -128,7 +128,7 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 | 标准件 | 适用 | 实现 | 并发度来源 |
 |---|---|---|---|
 | **IO 并行** | 下载/上传/API 采集/AI 调用/知识篇生成 | node 统一走 `mapLimit`（有序、保序）；shell 目录级走 `xargs -P` | 受对方限流约束，默认值见 4.3 |
-| **CPU 队列** | 转写/压缩/OCR | 统一 `xargs -P` 任务队列（替代自建 mkdir 锁队列） | **必须实测**，方法见 parallel-processing-guide |
+| **CPU 队列** | 转写/压缩/OCR | 统一 `scripts/lib/parallel.sh` 的 `parallel_map`（NUL 任务流 \| `xargs -0 -P`，替代自建 mkdir/flock 锁队列） | **必须实测**，方法见 parallel-processing-guide |
 
 > 选型铁律沿用方法论：**IO 密集可高并发（受限流约束）；CPU 密集必须实测总吞吐，串行最优就串行。**
 
@@ -168,8 +168,8 @@ DAG 是依赖图、方法论是原则、`watch_stage_done.sh` 是阶段触发器
 
 1. **配置层** ✅ 已完成（2026-09-07）：建 `config/courses/`，落 `cpa-tax-2026.json`（样板，14 组已填）与 `cpa-accounting-2026.json`（草稿，课程级 ID 已填、章组待 syllabus），附目录 README。
 2. **读取器** ✅ 已完成（2026-09-07）：`scripts/cdp/load_profile.js`、`scripts/knowledge/course_profile.py`、改造 `course_config.sh`（认 `COURSE_PROFILE`/`GAODUN_COURSE_PROFILE`，向后兼容默认税法）；三者均支持命令行打印关键 ID 自检，已验证。
-3. **去硬编码（下一步）**：按 3.4 清单逐脚本改，每改一个用**税法 profile 回归**（产物与改前一致即通过），分步提交。
-4. **并发收敛**：把 `transcribe_parallel.sh` 默认并发改为 1 并改用 `xargs -P`（保留队列语义用临时文件+`-n1`）；抽一个 shell 公共函数文件 `scripts/lib/parallel.sh` 供 xargs 模板复用；node 侧以 `mapLimit` 为统一件。
+3. **去硬编码 ✅ 已完成（2026-09-07）**：按 3.4 清单逐脚本改，每个用**税法 profile 回归**（产物与改前一致才过）、分步提交；另把运维/知识 shell·python 统一收口到 course_config/profile，刻意保留的例外见 3.4 末表。
+4. **并发收敛 ✅ 已完成（2026-09-07）**：新增 shell 标准件 `scripts/lib/parallel.sh`（`parallel_map`：NUL 任务流经 `xargs -0 -P` 内核调度，含并发度校验，根除自建 mkdir/flock 锁队列竞态）；`transcribe_parallel.sh`、`transcribe_qvideos.sh` 改为「主脚本生成 NUL 队列 + `--worker` 自递归」，FunASR 默认并发 **1（串行最优，可传参覆盖）**，并加 UTF-8 locale 兜底。回归：bash -n 通过、税法 TOTAL=0 零副作用退出、/tmp 假课程验证并发调度与失败隔离、C locale 不 unbound。网盘上传（sync_*_netdisk/raw_resources）本就 `xargs -P`（IO 类）保持不动；Node 侧 IO 并发（笔记 worker=5、分片 20、mapLimit=3）是单进程异步、无多进程锁竞态、默认值符合 4.3，按精简原则存量不重写。
 5. **编排器**：写 `run_course_pipeline.sh`，先用税法 profile 做 **dry-run 走查**（只打印将执行的阶段与命令，不真跑），核对 DAG。
 6. **会计试跑**：会计正课（saasCourseId=42656）当前 `wareStatus=0` 未开课；正式采集前先确认取数来源（26 考季正课 vs 已开课的"名师专业课-会计" 50126/17244），未开课前可先跑"课程发现 + syllabus 结构"两步。
 
