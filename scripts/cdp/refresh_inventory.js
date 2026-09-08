@@ -21,7 +21,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { findJwt, makeHeaders, MINERVA_BASE, canonAnswer } = require('./gaodun_paper_core');
+const { findJwt, makeHeaders, MINERVA_BASE, canonAnswer, htmlToTextKeepLayout, isPlaceholderAnswerText } = require('./gaodun_paper_core');
 const { loadProfile, primaryIds, workspaceDirFor, argvProfileKey } = require('./load_profile');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -70,7 +70,10 @@ async function inspectSubmitted(H, logId) {
   // 强归一化：去空白/标点/符号，仅留中英文数字，用于判断“我方提交是否就是标准答案原文”
   const norm = (s) => String(s || '').replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
   const answerMatchesCanon = (leaf) => {
-    const canon = norm(canonAnswer((leaf.questionAnswer || {}).analysis));
+    const qa = leaf.questionAnswer || {};
+    // 标准答案与作答侧同口径（BUG-03）：独立 answer 为实质内容则优先（保留排版），否则才从 analysis 提炼
+    const std = !isPlaceholderAnswerText(qa.answer) ? htmlToTextKeepLayout(qa.answer) : canonAnswer(qa.analysis);
+    const canon = norm(std);
     const mine = norm((leaf.userAnswer || {}).userAnswer);
     if (!canon || mine.length < Math.min(20, canon.length * 0.5)) return false;
     return canon.includes(mine) || mine.includes(canon);
@@ -138,13 +141,22 @@ async function inspectSubmitted(H, logId) {
     if (!r) { cls = '未做'; stat.未做 += 1; }
     else {
       times = r.times; score = r.score; total = r.questionTotal; pss = r.paperSubmitStatus;
-      if (r.paperSubmitStatus === 1 && r.score >= r.questionTotal) { cls = '满分'; stat.满分 += 1; }
-      else if (r.paperSubmitStatus === 1) {
-        // 已交卷但分低：paper/analysis 复核是否只是“题库未配 AI”导致的平台最优
+      if (r.paperSubmitStatus === 1) {
+        // BUG-01 修复：score 是得分、questionTotal 是题数，量纲不同且 record 无卷面满分字段，
+        // 旧 `score>=questionTotal` 对百分制卷恒真（如 80>=5）会把错题卷误判满分并冻结。已交卷一律走 paper/analysis 逐题判：
+        // 客观逐题拿满 + 配 AI 主观 cs=2/判分上限 + 未配 AI 忽略；best 即"到顶"，再按有无未配AI/判分上限区分真满分与平台最优。
         detail = await inspectSubmitted(H, r.paperDataLogId);
         await sleep(250);
-        if (detail.best) { cls = '平台最优'; stat.平台最优 += 1; console.log(`  ${p.paperId} 平台最优（可AI判满 ${detail.configuredFull}/${detail.configured}${detail.ceiling ? `，AI判分上限 ${detail.ceiling}` : ''}，未配AI ${detail.unsupported}）`); }
-        else { cls = '非满分'; stat.非满分 += 1; console.log(`  ${p.paperId} 真·非满分`, JSON.stringify(detail.bad || detail.err).slice(0, 200)); }
+        if (detail.best && detail.unsupported === 0 && detail.ceiling === 0) {
+          cls = '满分'; stat.满分 += 1;
+        } else if (detail.best) {
+          // 到顶但含"题库未配 AI"或"AI 判分上限"：平台给不了更多，归平台最优
+          cls = '平台最优'; stat.平台最优 += 1;
+          console.log(`  ${p.paperId} 平台最优（可AI判满 ${detail.configuredFull}/${detail.configured}${detail.ceiling ? `，AI判分上限 ${detail.ceiling}` : ''}，未配AI ${detail.unsupported}）`);
+        } else {
+          cls = '非满分'; stat.非满分 += 1;
+          console.log(`  ${p.paperId} 真·非满分 score=${r.score}/${r.questionTotal}题`, JSON.stringify(detail.bad || detail.err).slice(0, 200));
+        }
       }
       else { cls = '未提交'; stat.未提交 += 1; }
     }

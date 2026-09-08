@@ -100,6 +100,28 @@ const stripHtml = (s) => (s || '')
   .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
+// 保留会计分录排版的 HTML→纯文本：块级标签/<br> 转换行，&nbsp; 转空格，保留制表符与行首缩进（借/贷、金额对齐）。
+// 与 stripHtml 的区别：不折叠换行与行内多空格——分录/综合大题平台 AI 按"借/贷"逐笔识别，挤成一行会逐笔判 0（实测 85418 2-2）。
+const htmlToTextKeepLayout = (s) => (s || '')
+  .replace(/<\s*br\s*\/?>(\s*)/gi, '\n')
+  .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+  .replace(/<[^>]+>/g, '')
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+  .split('\n').map((l) => l.replace(/[ \t]+$/, '')) // 只去行尾空白，保留行首缩进与内部对齐空格/制表
+  .join('\n')
+  .replace(/\n{3,}/g, '\n\n')
+  .split('\n').map((l) => (l.trim() === '' ? '' : l)).join('\n').trim();
+
+// 判断一段答案文本是否为"无实质内容的占位"（无 / 略 / 见答案 / 解析见答案 等）。
+// 仅当整段去掉小问序号、标点空白后只剩占位词才判 true；"（1）略（2）有实质内容…"这类不误判。
+const isPlaceholderAnswerText = (s) => {
+  const t = stripHtml(s);
+  if (!t) return true;
+  const core = t.replace(/[（(]\s*\d+\s*[)）]/g, '').replace(/[\s\p{P}\p{S}]/gu, '');
+  if (!core) return true;
+  return /^(无|暂无|略|省略|见答案|详见答案|答案见解析|解析见答案|参考答案见解析|见解析|同解析|见上述解析?)+$/.test(core);
+};
+
 /** 首版主观答案：取【点拨】之前的计算/结论句，去掉开头 (1) 序号与结尾句读符号 */
 function canonAnswer(analysis) {
   let a = stripHtml(analysis).split(/【点拨】/)[0].trim();
@@ -248,9 +270,33 @@ function cleanSubjectiveAnswer(analysis, askedN) {
     let line = main;
     if (basis) line += ` 依据：${basis}`;
     line = line.replace(/[;；\s]+$/, '').trim();
+    // 官方"（1）、（2）略"合并略写被按序号切开时，空块或只剩顿号/标点的块补"略"，不输出看起来"没作答"的空序号（实测 82344 Q26）
+    if (!line || !line.replace(/[\s\p{P}\p{S}]/gu, '')) line = '略';
     return askedN >= 2 ? `（${i + 1}）${line}` : line;
   });
   return lines.join('\n').trim();
+}
+
+/**
+ * 主观题答案来源选择器（2026-09-08 人工核查修复，BUG-03/06）。
+ * questionAnswer 有两个字段：answer=独立标准答案（权威、常带会计分录原始排版），analysis=解析。实测四种形态：
+ *   B：answer="<p>无</p>"、analysis=完整解 → 从 analysis 提炼；
+ *   C：answer=完整解、analysis="见答案/解析见答案" → 必须取 answer（旧逻辑误交"见答案"三字，82348 Q31）；
+ *   D：answer=完整解、analysis=仅思路点拨 → 必须取 answer（旧逻辑只交了点拨，85418 Q2/Q3）。
+ * 规则：answer 为实质内容则优先（保留排版）；answer 占位才从 analysis 提炼；两者都占位时兜底且由上层标记，绝不把占位词当答案。
+ * @returns {{canon:string, from:'answer'|'analysis'|'answer-fallback'|'analysis-fallback'|'empty'}}
+ */
+function pickSubjectiveCanon(qa, askedN) {
+  const ansRaw = htmlToTextKeepLayout(qa.answer);
+  const ansValid = !!ansRaw && !isPlaceholderAnswerText(qa.answer);
+  let ana = '';
+  try { ana = cleanSubjectiveAnswer(qa.analysis, askedN); } catch { ana = ''; }
+  const anaValid = !!ana && !isPlaceholderAnswerText(ana);
+  if (ansValid) return { canon: ansRaw, from: 'answer' };
+  if (anaValid) return { canon: ana, from: 'analysis' };
+  if (ansRaw) return { canon: ansRaw, from: 'answer-fallback' };
+  if (ana) return { canon: ana, from: 'analysis-fallback' };
+  return { canon: '', from: 'empty' };
 }
 
 /**
@@ -259,15 +305,19 @@ function cleanSubjectiveAnswer(analysis, askedN) {
  */
 function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported, askedN = 1, answerGaps = null) {
   const qa = leaf.questionAnswer || {};
-  // 统一答案：正式答案为主体 + 点拨精简为「依据：」+ 多小问分点（交卷与首次 AI 批改同一版，不再含点拨全文）
-  let canon = cleanSubjectiveAnswer(qa.analysis, askedN) || stripHtml(qa.answer);
-  // 完整性校验门：题干要求的每个小问都必须出现在提交答案里，缺则放大序号范围重切、仍缺用整段解析兜底并显式记录（禁止静默漏答）
+  // 答案来源：独立标准答案 answer 为实质内容则优先（保留会计分录排版），answer 占位才从 analysis 提炼（BUG-03）
+  const picked = pickSubjectiveCanon(qa, askedN);
+  let canon = picked.canon;
+  // 完整性校验门：题干要求的每个小问都必须出现在提交答案里，缺则放大序号范围重切、仍缺用保留排版标准答案/整段解析兜底并显式记录（禁止静默漏答）
   if (askedN >= 2 && answerGaps) {
     const have = coveredSubs(canon, askedN);
     const miss = [];
     for (let i = 1; i <= askedN; i += 1) if (!have.has(i)) miss.push(i);
     if (miss.length) {
-      canon = cleanSubjectiveAnswer(qa.analysis, Math.max(askedN, 12)) || fullAnswer(qa.analysis);
+      const reAna = cleanSubjectiveAnswer(qa.analysis, Math.max(askedN, 12));
+      const ansLayout = htmlToTextKeepLayout(qa.answer);
+      canon = (reAna && !isPlaceholderAnswerText(reAna)) ? reAna
+        : ((ansLayout && !isPlaceholderAnswerText(qa.answer)) ? ansLayout : fullAnswer(qa.analysis));
       answerGaps.push({ questionId: leaf.questionId, askedN, missing: miss, fallbackUsed: true });
     }
   }
@@ -276,14 +326,18 @@ function pushSubjectiveLeaf(leaf, userAnswerList, subjective, unsupported, asked
     userAnswer: canon, userClozeAnswers: [], userAnswerImageList: [],
   });
   const ai = leaf.aiCorrect || {};
+  // qual/full 仅在解析非占位时用于 cs=6 逐级补全；解析为"见答案"占位时回退 canon，避免重发垃圾文本（BUG-06）
+  const qual0 = qualitativeAnswer(qa.analysis);
+  const full0 = fullAnswer(qa.analysis);
   const base = {
     questionId: leaf.questionId,
     canon,
-    qual: qualitativeAnswer(qa.analysis),
-    full: fullAnswer(qa.analysis),
-    judge: canon, // 首次 AI 批改与交卷同版（干净结构化）；cs=6 部分分时再由 correctSubjective 用 qual/full 逐级补全
+    qual: (qual0 && !isPlaceholderAnswerText(qual0)) ? qual0 : canon,
+    full: (full0 && !isPlaceholderAnswerText(full0)) ? full0 : canon,
+    judge: canon, // 首次 AI 批改与交卷同版；cs=6 部分分时再由 correctSubjective 用 qual/full 逐级补全
     askedN,
     score: leaf.score,
+    answerFrom: picked.from,
   };
   if (ai.cpaBotType === 3) {
     subjective.push({ ...base, aiCfg: { aiTutorConfigId: ai.aiTutorConfigId, botId: ai.botId, cpaBotType: ai.cpaBotType } });
@@ -307,8 +361,23 @@ function buildUserAnswers(redo) {
   for (const m of redo.moduleList || []) {
     for (const q of m.questionList || []) {
       if (q.questionType === 5 && Array.isArray(q.subQuestionList) && q.subQuestionList.length) {
-        // 大题容器自身不作答，平铺其 type6 子题（每个子题=1 问，askedN=1，内部(1)(2)是正文列举不拆）
-        for (const sub of q.subQuestionList) pushSubjectiveLeaf(sub, userAnswerList, subjective, unsupported, 1, answerGaps);
+        // 大题容器自身不作答，按【子题题型】分流：
+        //  - t6 主观子题走答案来源选择器；t1/2/3/4 客观子题直接用标准答案 answer（BUG-02：旧逻辑一律当主观、从解析提炼文字，致 82344 Q27/Q29 等客观子题答错）
+        for (const sub of q.subQuestionList) {
+          if (sub.questionType === 6) {
+            pushSubjectiveLeaf(sub, userAnswerList, subjective, unsupported, 1, answerGaps);
+          } else {
+            const objAns = (sub.questionAnswer || {}).answer;
+            // 提交前防呆断言（REQ-03）：客观子题必须拿到非空标准答案，否则宁可不交也不能瞎答
+            if (objAns === null || objAns === undefined || objAns === '') {
+              throw new Error(`客观子题 questionId=${sub.questionId}(t${sub.questionType}) 缺标准答案 answer，已中止交卷`);
+            }
+            userAnswerList.push({
+              questionId: sub.questionId, questionType: sub.questionType,
+              userAnswer: objAns, userClozeAnswers: [], userAnswerImageList: [],
+            });
+          }
+        }
       } else if (q.questionType === 6) {
         // 顶层独立主观题：数题干要求的小问数，多小问必须完整覆盖（修复点拨截断漏答）
         const askedN = countAskedSubs(q.title);
@@ -591,7 +660,8 @@ async function doPaperViaApi(opts) {
 }
 
 module.exports = {
-  findJwt, makeHeaders, dwellSec, stripHtml, canonAnswer, fullAnswer, judgeAnswer, aiPoints,
+  findJwt, makeHeaders, dwellSec, stripHtml, htmlToTextKeepLayout, isPlaceholderAnswerText, pickSubjectiveCanon,
+  canonAnswer, fullAnswer, judgeAnswer, aiPoints,
   qualitativeAnswer, countAskedSubs, coveredSubs, multiSubAnswer, cleanSubjectiveAnswer, buildUserAnswers, doPaperViaApi,
   MINERVA_BASE, AITUTOR_BASE, COURSE_ID, SOURCE_FROM_TYPE,
 };

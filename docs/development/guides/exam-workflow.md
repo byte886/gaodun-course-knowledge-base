@@ -30,7 +30,7 @@
   → refresh_inventory 只读刷新作业基线（syllabus + record 审计，判完成度）
   → batch_redo_papers 先 dry-run 再 --go：
        record（首次卷先 create-paper）→ redo-paper（题面+标准答案+解析）
-       → 平铺 userAnswerList（客观取 answer；主观 type6 从 analysis 提炼）
+       → 平铺 userAnswerList（客观取 answer；主观 type6 按 `pickSubjectiveCanon` 选 answer/analysis，保留分录排版）
        → 满足最小作答时长 → submit-paper 一次性交全卷
        → 仅主观：逐题 correct-ai/cpa，cs=6 三级补全/best-of-N/aiCeiling
        → exam-report 两层回查（fullScore / platformDone）
@@ -45,7 +45,7 @@
 | 做题前 | 逐题查知识库、L1/L2/L3 分级 | 不需要，直接取标准答案 |
 | 稳定性 | 选择器/时序/跳题导致正确率波动 | 接口确定性，客观卷批量满分 |
 | 错题 | 有"AI 选错"、错题加练、错题补知识库 | 无 AI 错题；非满分=需排查的异常，AI 错题不作知识来源 |
-| 主观题 | UI 填答 | analysis 提炼答案交卷 + 逐题 AI 批改 |
+| 主观题 | UI 填答 | 答案来源选择器(answer 优先/analysis 兜底，保留分录排版)交卷 + 逐题 AI 批改 |
 
 ---
 
@@ -119,8 +119,8 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 |------|--------------|----------------|
 | 单选 | 1 | 直接取 `questionAnswer.answer` |
 | 多选 | 2 | 取 answer（形如 "A,B,D"，逗号无空格） |
-| 大题容器 | 5 | **自身不答、不进 userAnswerList**，平铺其 subQuestionList |
-| 主观小问 | 6 | 答案在 `questionAnswer.analysis`（answer 仅"见解析"），canon/qual 提炼后作为 type6 项交，交卷后 AI 批改；可套在 type5 下、也可顶层独立 |
+| 大题容器 | 5 | **自身不答、不进 userAnswerList**，平铺其 subQuestionList；**子题按题型分流**：客观子题(t1/t2/t3)直接取 `answer` 选项字母，主观子题(t6)走下方答案来源选择器（2026-09-08 修复：旧逻辑一律当主观从 analysis 提炼文字，致大题下客观子题答错） |
+| 主观小问 | 6 | **答案来源有 4 种形态**（2026-09-08 人工核查实锤）：①answer=选项/完整解、analysis=解析；②answer="无"、analysis=完整解；③answer=完整解、analysis="见答案/解析见答案"占位；④answer=完整解、analysis=仅思路点拨。**统一由 `pickSubjectiveCanon` 选择：answer 为实质内容则优先（保留会计分录换行/缩进排版），answer 为"无/见答案"占位才从 analysis 提炼；analysis 占位词绝不可当答案提交**。交卷后 AI 批改；可套在 type5 下、也可顶层独立 |
 | 未配 AI 的主观 | `aiCorrect.cpaBotType===0` | UI 无"帮我批改"、cpa 必回 11193401；**答案照交、不批改、不计失败**（unsupported） |
 
 - type5 子题**必须随交卷一起提交、绝不能留空**（留空则 AI 批改也不回写分数）；最终项数=questionTotal。
@@ -158,6 +158,17 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 
 > 旧 `canonAnswer`（仅 refresh_inventory 清单摘要仍用）、`judgeAnswer`/`multiSubAnswer`（主路径已停用，保留避免连锁）不要再用于交卷与 AI 批改。
 
+**2026-09-08 第三次重构（答案来源选择器 + 排版保留 + 判满口徑，人工核查 6 问触发）**：
+
+| 修复项 | 函数/位置 | 规则 |
+|--------|----------|------|
+| 答案来源选择器 | `pickSubjectiveCanon(qa,N)` | answer 为实质内容（非"无/见答案/解析见答案/略"占位）则**优先用 answer**（官方标准答案、常带会计分录原始排版）；answer 占位才 `cleanSubjectiveAnswer(analysis,N)`；两者都占位时兜底并标记，**绝不把"见答案"三字当答案提交**（旧逻辑无脑优先 analysis，致 82348 Q31 交了"见答案"） |
+| 保留排版渲染 | `htmlToTextKeepLayout` | `<br>/<p>/<div>` 转换行、`&nbsp;` 转空格、**保留制表符与行首缩进**（借/贷、金额对齐）；与 `stripHtml`（折叠所有空白）的区别是分录题必须用它，否则平台 AI 无法按"借/贷"逐笔识别（实测 85418 2-2 题 5 笔全 0 分，修复后 3.5/3.5 满分） |
+| 占位判断 | `isPlaceholderAnswerText` | 去小问序号、标点、空白后只剩"无/略/见答案/解析见答案"等词即判占位；`cleanSubjectiveAnswer` 空块或只剩顿号的块补"略"（官方"（1）、（2）略"合并略写被切开时不输出空序号） |
+| t5 子题分流 | `buildUserAnswers` | 大题容器下的子题**按 sub.questionType 分流**：t6 走主观选择器，t1/t2/t3 客观直接用 `answer` 字母并加非空防呆断言（旧逻辑一律当主观，致 82344 Q27/Q29 客观子题交了解析文字） |
+| cs=6 补全回退 | `pushSubjectiveLeaf`→base | `qual`/`full` 取自 analysis，若为占位则回退 `canon`，避免部分得分重发时发"见答案"垃圾文本 |
+| 判满口徑 | `refresh_inventory.inspectSubmitted` | **已交卷一律 `paper/analysis` 逐题判**：客观逐题拿满 + 配AI主观 cs=2/判分上限 + 未配AI忽略；best 即"到顶"，再按有无未配AI/判分上限区分真满分与平台最优。**禁止用 `score>=questionTotal` 判满分**（score 是得分、questionTotal 是题数，量纲不同，百分制卷 80>=5 恒真会把错题卷误判满分并冻结永不再刷——实锤 82337 判"满分"实际只有 16 分） |
+
 **判读口径**：
 - `answerGaps=[]` 是答案完整性的**硬验收线**，非空即有题漏小问、必须排查，不能宣布完成；
 - `cpaBotType===0`：答案完整提交但平台不配 AI（须人工批改权益、本账户不买），分数不涨是平台限制、不是答案问题；
@@ -194,6 +205,7 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 
 - `aiCeiling`：我方提交内容归一化后就是标准答案、三级补全与 best-of-N×4 仍 cs=6，经 paper/analysis 逐字比对确认非我方问题，归 AI 判分上限、视同平台最优（依据见 flaky-ai-judging）。
 - **作业目标 100%**：非满分且不属于 unsupported/aiCeiling 的，视为需排查异常，记录原因，不允许默默放过。
+- **refresh 判满口徑（2026-09-08 修复）**：`refresh_inventory` 对已交卷**一律走 `paper/analysis` 逐题判**（客观逐题拿满 + 配AI主观 cs=2/判分上限 + 未配AI忽略），best 即到顶，再按有无未配AI/判分上限区分真满分与平台最优。**绝对禁止用 `record.score >= record.questionTotal` 判满分**——score 是得分、questionTotal 是题数，量纲不同，百分制卷恒真会把错题卷误判满分并冻结永不再刷（实锤 82337 判"满分"实际 16 分、82339 判"满分"实际 10.25 分）。
 
 ---
 
