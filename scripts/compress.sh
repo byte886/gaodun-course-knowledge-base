@@ -21,8 +21,10 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 set -euo pipefail
 
-# ⚠️ 运行时检测：必须在终端中运行，禁止后台运行
-if [ ! -t 1 ]; then
+# ⚠️ 运行时检测：必须在终端中运行，禁止后台运行。
+# 例外：被动态流水线 video_dynamic_pipeline.sh 后台调度时，它会显式传
+# COMPRESS_NONINTERACTIVE=1（调度器自身有日志/状态机，不需要 iTerm 前台进度）。
+if [ ! -t 1 ] && [ "${COMPRESS_NONINTERACTIVE:-0}" != "1" ]; then
   echo "========================================"
   echo "⚠️  警告：检测到非终端环境运行！"
   echo "========================================"
@@ -58,8 +60,9 @@ if [ ! -f "$INPUT" ]; then
   exit 1
 fi
 
-# Detect CPU core count for x265 threading
-CORES=$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 8)
+# x265 线程池：默认吃满全部逻辑核；动态流水线可通过 X265_POOLS 按实时空闲核注入，
+# 避免与同时运行的 FunASR 转写互相超订（见 video_dynamic_pipeline.sh 的 CPU 联合预算）。
+CORES="${X265_POOLS:-$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 8)}"
 
 echo "=== FFmpeg H.265 Compression ==="
 echo "Input:    $INPUT ($(du -h "$INPUT" | cut -f1))"
