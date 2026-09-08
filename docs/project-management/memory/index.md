@@ -24,6 +24,7 @@ okf_version: "0.2"
 # 治理（Standard）
 
 * [命名规范与变更分级控制](concepts/standard-naming-change-control.md) - L0/L1/L2 先方案后动、ADR 只增不改、类型词与 snake_case、精简原则、质量门
+* [故障排查先验顺序](concepts/standard-debugging-first-principles.md) - 九成失败是自身问题、凭证最后怀疑、token 失效须有只读回包硬证据、交用户登录是最后手段
 
 # 对照索引（Reference）
 
