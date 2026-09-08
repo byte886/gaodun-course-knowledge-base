@@ -29,6 +29,11 @@ function namedArg(name) {
 const profile = loadProfile(namedArg('profile'));
 const _ids = primaryIds(profile);
 const COURSE = path.join(ROOT, profile.paths.localRoot);
+// 下载/压缩工作区基准：默认课程根（向后兼容，旧调用方不传即旧行为）；
+// 动态流水线显式 --work-base 指向 data/_workspace/<profile>/dl-tmp，
+// 让 .vfetch 分片/merged 等过程件落在工作区、不污染课程库（课程库只保留成品）。
+const LEC_BASE = namedArg('work-base') || process.env.GAODUN_VFETCH_BASE || COURSE;
+fs.mkdirSync(LEC_BASE, { recursive: true });
 const COURSE_ID = _ids.courseId, SYLLABUS_ID = _ids.syllabusId;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -59,14 +64,14 @@ async function getLive(idx) {
 
 (async () => {
   const idx = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)));
-  if (!idx) { console.error('用法: node fetch_lecture_video.js <idx> [--profile <key>]'); process.exit(2); }
+  if (!idx) { console.error('用法: node fetch_lecture_video.js <idx> [--profile <key>] [--work-base <工作区目录>]'); process.exit(2); }
   const prefix = String(idx - 1).padStart(2, '0');
   log(`[profile] ${profile.key}｜${profile.subject.name}｜course=${COURSE_ID} syllabus=${SYLLABUS_ID}`);
   const { name, url, durationMinutes } = await getLive(idx);
   // 定位/创建讲目录（前缀匹配，避免讲名特殊字符差异）
-  let dir = fs.readdirSync(COURSE).find((d) => d.startsWith(prefix + '_'));
-  if (!dir) { dir = `${prefix}_${name.trim()}`; fs.mkdirSync(path.join(COURSE, dir), { recursive: true }); }
-  const lecDir = path.join(COURSE, dir);
+  let dir = fs.readdirSync(LEC_BASE).find((d) => d.startsWith(prefix + '_'));
+  if (!dir) { dir = `${prefix}_${name.trim()}`; fs.mkdirSync(path.join(LEC_BASE, dir), { recursive: true }); }
+  const lecDir = path.join(LEC_BASE, dir);
   if (fs.existsSync(path.join(lecDir, 'video.mp4'))) { log('已存在 video.mp4，跳过', dir); process.exit(0); }
   const work = path.join(lecDir, '.vfetch');
   fs.mkdirSync(work, { recursive: true });

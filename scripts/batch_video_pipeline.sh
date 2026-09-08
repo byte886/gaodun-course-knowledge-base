@@ -13,6 +13,9 @@ mkdir -p "$LOG_DIR"
 START_IDX=${1:-2}
 END_IDX=${2:-44}
 COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）"
+# 下载/压缩过程件（.vfetch 分片/merged）统一落工作区，课程库根不留讲目录（成品才进 原始资源/videos）
+TMPBASE="$PROJECT_DIR/data/_workspace/$PROFILE/dl-tmp"
+mkdir -p "$TMPBASE"
 
 echo "=== 会计课全量视频下载+压缩+转写 ==="
 echo "Profile: $PROFILE"
@@ -40,7 +43,7 @@ for idx in $(seq $START_IDX $END_IDX); do
   echo "  [1/4] 下载视频..."
   cd "$PROJECT_DIR"
   set +e
-  node scripts/cdp/fetch_lecture_video.js "$idx" --profile "$PROFILE" > "$LOG_FILE" 2>&1
+  node scripts/cdp/fetch_lecture_video.js "$idx" --profile "$PROFILE" --work-base "$TMPBASE" > "$LOG_FILE" 2>&1
   fetch_rc=$?
   set -e
   if [ "$fetch_rc" -eq 3 ]; then
@@ -53,9 +56,9 @@ for idx in $(seq $START_IDX $END_IDX); do
   echo "  ✅ 视频下载完成"
   
   # 查找下载的merged.ts（取最新的一个）
-  MERGED_TS=$(find "$COURSE_ROOT" -name "merged.ts" -mmin -10 2>/dev/null | head -1)
+  MERGED_TS=$(find "$TMPBASE" -name "merged.ts" -mmin -10 2>/dev/null | head -1)
   if [ -z "$MERGED_TS" ]; then
-    MERGED_TS=$(find "$COURSE_ROOT" -name "merged.ts" 2>/dev/null | head -1)
+    MERGED_TS=$(find "$TMPBASE" -name "merged.ts" 2>/dev/null | head -1)
   fi
   
   if [ -z "$MERGED_TS" ]; then
@@ -66,7 +69,7 @@ for idx in $(seq $START_IDX $END_IDX); do
   VIDEO_DIR=$(dirname "$MERGED_TS")
   OUTPUT_MP4="$VIDEO_DIR/video.mp4"
 
-  LEC_DIR="$(dirname "$VIDEO_DIR")"              # .vfetch 的父目录 = 课程根/NN_讲名
+  LEC_DIR="$(dirname "$VIDEO_DIR")"              # .vfetch 的父目录 = dl-tmp/NN_讲名（工作区）
   LEC_NAME="$(basename "$LEC_DIR")"
   RAW_DIR="$COURSE_ROOT/原始资源/videos/$LEC_NAME"  # 税法同款成品归位
   VENV_PY="$PROJECT_DIR/transcription/venv/bin/python"

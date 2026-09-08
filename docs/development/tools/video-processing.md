@@ -60,7 +60,10 @@
   - 一轮内连续完成：从 syllabus 取该讲最新回放 token → CDP 抓 HLS（SD/FHD）密钥 → 下 m3u8 解析 IV → 下载分片并解密合并为 `merged.ts`（底层复用 `download_decrypt.js`，20 并发、断点续传）
   - `idx` 为 course_catalog / syllabus children 下标；课程目录、courseId、syllabusId 全部读 `config/courses/<key>.json`（缺省税法，或用 `GAODUN_COURSE_PROFILE` / `--profile` 指定）
   - 幂等：目标讲目录已有成品则跳过；m3u8 / authorize token 会过期，故抓流→下载必须同一轮连续完成
-- **整门课批量**：`bash scripts/batch_video_pipeline.sh <start> <end>`（断点续跑，已完成讲自动跳过；下载后串行压缩，并按配置衔接转写）
+- **整门课批量（首选·动态并行）**：`bash scripts/video_dynamic_pipeline.sh <start> <end>`（下载/压缩/转写三阶段反馈式动态并行，按整机空闲核实时调度，`--dry-run` 只扫描预览不启动）
+- **整门课批量（串行后备）**：`bash scripts/batch_video_pipeline.sh <start> <end>`（断点续跑，已完成讲自动跳过；下载后串行压缩并衔接转写）
+- **过程件落位（两条链路一致）**：下载/压缩的 `.vfetch`（ts 分片、merged.ts）统一落 `data/_workspace/<profile>/dl-tmp/NN_讲名/`，压缩后成品归位 `原始资源/videos/NN_讲名/`，转写完成即删工作区，**课程库根全程不出现讲目录**。单独跑 fetch 可用 `--work-base <dir>` 覆盖工作区基准（缺省为课程根，仅供旧链路兼容）
+- **进程观测（避坑）**：`ps | grep video_dynamic_pipeline` 会把主控 fork 的 worker 子 shell 一并列出（子 shell 继承脚本命令行，看起来像又起了一个主控）；辨认唯一主控要看 PPID 链（worker 的父即主控），勿据此误判双开
 
 解密原理（密钥取 hls.js Worker 返回前 16 字节原始 ASCII、IV 取 m3u8 `#EXT-X-KEY` 去 `0x` 前缀、分片解密后首字节应为 `0x47` TS sync byte）见上文「加密方案」与 `encryption.md`，日常下载无需手动操作。
 

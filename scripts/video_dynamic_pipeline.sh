@@ -11,10 +11,12 @@
 #     自动与讲义 OCR 等其它 CPU 任务互相避让，无需手工定死并发/核数。
 #
 # 状态机（编号 NN = idx-1，两位补零）：
-#   TO_DOWNLOAD  课程根/NN_*/.vfetch/merged.ts 不存在
-#   TO_COMPRESS  课程根/NN_*/.vfetch/merged.ts 已在（下载完待压）
+#   TO_DOWNLOAD  工作区 dl-tmp/NN_*/.vfetch/merged.ts 不存在
+#   TO_COMPRESS  工作区 dl-tmp/NN_*/.vfetch/merged.ts 已在（下载完待压）
 #   TO_TRANSCRIBE 原始资源/videos/NN_*/video.mp4 在、transcript.md 不在（压完待转）
 #   DONE         原始资源/videos/NN_*/transcript.md 在（成品级断点，重跑自动跳过）
+#
+# 过程件（.vfetch 分片/merged）一律落 $WS/dl-tmp，课程库根全程不出现讲目录（治理：过程件归 _workspace）。
 #
 # 用法：
 #   bash scripts/video_dynamic_pipeline.sh [起始idx] [结束idx] [--dry-run]
@@ -31,9 +33,9 @@ PROJECT_DIR="/Users/wenjiechen/Doubao/chats/2026-08-26/new-chat/gaodun-course-kn
 WS="$PROJECT_DIR/data/_workspace/$PROFILE"
 COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）"
 VIDEOS="$COURSE_ROOT/原始资源/videos"
-LOGD="$WS/logs"; RUND="$WS/run/dyn"
+LOGD="$WS/logs"; RUND="$WS/run/dyn"; TMPBASE="$WS/dl-tmp"
 VENV_PY="$PROJECT_DIR/transcription/venv/bin/python"
-mkdir -p "$LOGD" "$RUND"
+mkdir -p "$LOGD" "$RUND" "$TMPBASE"
 
 TICK="${TICK:-15}"; K="${K:-2}"; D_MAX="${D_MAX:-2}"; RESERVE="${RESERVE:-4}"
 MIN_COMPRESS="${MIN_COMPRESS:-8}"; MAXFAIL="${MAXFAIL:-2}"
@@ -49,13 +51,13 @@ START="${START:-18}"; END="${END:-46}"
 LOGICAL=$(sysctl -n hw.logicalcpu)
 
 padded(){ printf '%02d' "$1"; }
-tmp_dir(){ find "$COURSE_ROOT" -maxdepth 1 -type d -name "$1_*" 2>/dev/null | head -1; }
+tmp_dir(){ find "$TMPBASE" -maxdepth 1 -type d -name "$1_*" 2>/dev/null | head -1; }
 fin_dir(){ find "$VIDEOS" -maxdepth 1 -type d -name "$1_*" 2>/dev/null | head -1; }
 
 # ---------- 单讲 worker（后台子shell 执行，日志各自独立）----------
 do_dl() { # $1=idx
   cd "$PROJECT_DIR"
-  node scripts/cdp/fetch_lecture_video.js "$1" --profile "$PROFILE"
+  node scripts/cdp/fetch_lecture_video.js "$1" --profile "$PROFILE" --work-base "$TMPBASE"
 }
 do_cmp() { # $1=NN  $2=x265 pools
   local nn="$1" pools="$2" t merged out raw lec
