@@ -120,7 +120,8 @@
 | 音频转写 | `scripts/transcribe_pipeline.py` |
 | 网盘上传 | `scripts/baidu_upload.py` |
 | 做题/交卷（接口主链路） | `scripts/cdp/api_do_paper.js`（syllabus→redo取答案→submit交卷→exam-report回查） |
-| 做题/交卷（纯接口主链路） | `cdp/api_do_paper.js`（单卷）、`cdp/batch_redo_papers.js`（批量）、`cdp/do_sprint_paper.js`（冲刺） |
+| 做题/交卷（纯接口主链路） | `cdp/api_do_paper.js`（单卷）、`cdp/batch_redo_papers.js`（批量，内置 token 失效自愈重试）、`cdp/do_sprint_paper.js`（冲刺） |
+| 鉴权 token 自愈 | `cdp/refresh_auth_token.js`（从已登录日常 Chrome 自动抓新 authentication；findJwt 按文件 mtime 取最新） |
 
 完整索引见 [scripts/README.md](../scripts/README.md)。
 
@@ -222,7 +223,7 @@
 
 - **接口主链路**：syllabus 枚举卷与完成状态 → record → redo-paper（当场拿题+答案+解析）→ 满足最小作答墙钟时长 → submit 一次性交全卷 → exam-report 回查全对。契约见 [gaodun-exam-api.md](development/api/gaodun-exam-api.md)，入口 `scripts/cdp/api_do_paper.js`。
 - **题型两型**：客观题（type1/2）取顶层标准答案；**主观大题（type5 容器）必须下钻 `subQuestionList`（type6 小问），答案在小问 `analysisText`**，按"大题→小问"组织；其他题型遇新先只读侦查再打通。
-- **两条异常出口**：需重新登录/验证码 → 暂停交用户；遇未见过的卷型/题型/报错 → 不硬闯，停下发起针对性测试或迭代。
+- **异常出口分级**：token 失效（业务码 553649434，JWT 未到 exp 也可能发生）但日常 Chrome 仍登录 → `refresh_auth_token.js` 自动刷新重试（批量脚本内置，最多 2 次）；仅当 Chrome 也未登录/需验证码 → 暂停交用户；遇未见过的卷型/题型/报错 → 不硬闯，停下发起针对性测试或迭代。
 - **manifest**：汇总 syllabus + papers 生成讲↔资源↔知识点映射，承载知识点等价/归并（如 id=112376"应纳税额的计算"并入"增值税一般计税方法应纳税额的计算"）；脚本校验知识点合计 92、无未归类。
 - **知识来源口径**：初始知识库 + 题/标准答案 + 官方解析 + 用户笔记 + 末期冲刺模考；**自动化作业产生的 AI 错题不作来源**；考点图谱已否决。详见 [knowledge-base-sources.md](development/knowledge/knowledge-base-sources.md)。
 

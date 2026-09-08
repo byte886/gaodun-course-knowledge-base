@@ -48,7 +48,9 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 - 所有业务请求带头 `authentication: Basic <JWT>`（字面量就是 `Basic`，不是 HTTP Basic Auth）。
 - JWT HS256 三段式，**实测 `exp-iat = 604800s = 7 天`**，载荷无用户敏感体。
 - 请求体均为**明文 JSON**，`content-type: application/json;charset=UTF-8`；**全链路未见 sign / nonce / 时间戳 / 加密 body**（无需逆向前端加密）。
-- 导出：连接日常 Chrome 后从任意业务请求头读取（脚本从 `data/_workspace/_account/auth/*.jsonl` 倒序提取）；约 7 天过期，过期回浏览器会话重新取。**刷新接口本身【待验证】**，当前靠“日常 Chrome 保持登录”自然续期。JWT/Cookie 禁止入库。
+- 导出与选取：连接日常 Chrome 后从任意业务请求头读取，存 `data/_workspace/_account/auth/*.jsonl`；`findJwt()` **按文件 mtime 升序、倒序提取最新文件**（不按文件名排序，否则新抓的 token 可能因文件名靠前后被旧文件遮蔽）。JWT/Cookie 禁止入库。
+- **JWT 的 `exp` 未到 ≠ 服务端仍认**【实测】：高顿服务端可提前使会话失效，此时 HTTP 层仍 200、业务层返回 `status=553649434, info="登录超时,请重新登录", result="Unable to verify token"`（minerva 所有接口统一表现）。不能只解码 exp 判断有效性，必须以一次真实只读请求（如 student/paper/record）验活。
+- **token 自愈**【实测】：`scripts/cdp/refresh_auth_token.js` 连接已登录的日常 Chrome、reload 高顿页监听 `apigateway.gaodun.com` 请求头，自动抓新 token 落 auth 目录；`batch_redo_papers.js` 捕获 553649434 后自动调用它刷新并重试同一试卷（最多 2 次）。前提是日常 Chrome 仍保持登录；Chrome 也未登录时才交用户。
 - 建议带全：`accept`、`accept-language: zh`、与浏览器一致的 `user-agent`、来源域 `origin/referer`（见 1.4）。跨子域 POST 会先发一次 `OPTIONS` 预检（正常现象）。
 
 ### 1.3 关键 ID 与固定常量【实测】
@@ -269,7 +271,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 
 ## 3. 纯接口做卷时序（实现蓝本 = gaodun_paper_core.doPaperViaApi）
 
-1. **会话**：取 `authentication`（缺失/过期 → 提示用户登录，不自行试探）。
+1. **会话**：取 `authentication`（`findJwt` 按 mtime 取最新）；缺失或返回 553649434 时先 `refresh_auth_token.js` 自动从已登录 Chrome 重取，仅当 Chrome 也未登录/需验证码时才交用户，不读取密码。
 2. **发现**：拉 syllabus，递归解析目标卷 `{csItemId,paperId,resourceId,title,num}`，用 `progress` 判完成度，排除冲刺模考。
 3. **建实例**：record 取最近 logId；record 为 null 的首次卷先 create-paper 拿 logId → redo-paper 得题面与标准答案。
 4. **平铺答案（buildUserAnswers）**：客观取 answer；type5 平铺 subQuestionList、以及顶层独立 type6，都作为 type6 项、userAnswer=canon(analysis)，type5 父题不提交；同时按每题 `aiCorrect.cpaBotType` 分流：=3 进 subjective（带该题 aiCfg、备 canon/qual/full 三版），=0 进 unsupported（答案照交、不批改）。

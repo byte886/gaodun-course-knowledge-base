@@ -51,7 +51,7 @@
 
 ## 二、执行前准备
 
-1. **登录态（唯一需要用户的环节）**：日常 Chrome 保持登录高顿。JWT 存于业务请求头 `authentication`，HS256、**7天有效**；缺失/过期 → **暂停交用户登录，不自行试探、不读取密码**。登录后脚本自动从 `data/_workspace/_account/auth/*.jsonl` 倒序提取 JWT，JWT/Cookie 禁止入库。
+1. **登录态（唯一需要用户的环节）**：日常 Chrome 保持登录高顿。JWT 存于业务请求头 `authentication`，HS256、**声明有效期 7 天，但服务端可提前使其失效**（返回业务码 553649434「登录超时」，HTTP 仍 200，不能只看 JWT 的 exp）。token 获取分两级：① 常规由 `findJwt()` 从 `data/_workspace/_account/auth/*.jsonl` **按文件 mtime 取最新**；② 失效时 `node scripts/cdp/refresh_auth_token.js` 连接已登录的日常 Chrome、reload 高顿页自动抓新 token（批量脚本已内置：捕获 553649434 自动刷新并重试同一试卷，最多 2 次）。**只有日常 Chrome 也未登录/需验证码时才暂停交用户**，不读取密码。JWT/Cookie 禁止入库。
 2. **连接自检**：`node scripts/cdp/connect_browser.js`（连接→列标签→断开）。连接通道与"允许远程调试"弹窗处理见 ADR-010 与 [浏览器 CDP 连接手册](../tools/browser-cdp-connect-guide.md)。
 3. **刷新作业基线（只读，必做）**：`node scripts/cdp/refresh_inventory.js`（约1–2分钟，低频只读）。它拉 syllabus 枚举全部 paper、对每张只读 record 审计，产出：
    - `data/_workspace/<profile>/manifest/papers_inventory.json`（全量）
@@ -96,6 +96,7 @@ node scripts/cdp/batch_redo_papers.js --go 82174 82175   # 只跑指定 paperId
 
 - 默认 dry-run 是安全护栏，**先看清单确认无误再 `--go`**。
 - 单张失败不中断其它卷；结果落 `data/_workspace/<profile>/papers/batch_result_<日期>.json`；卷间停 4s 低频拟人。
+- **token 失效自愈**：批量过程中任一接口返回 553649434（登录超时），脚本自动调 `refresh_auth_token.js` 从已登录 Chrome 抓新 token，并用新 token 重试当前试卷（同一卷最多刷新 2 次）；2 次后仍失败才标记该卷异常、继续下一张。因此长跑期间 token 中途过期无需人工介入，前提是日常 Chrome 保持登录。
 
 ### 4.2 单卷
 
@@ -194,7 +195,8 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 
 | 情形 | 处理 |
 |------|------|
-| ① 需要重新登录 / 验证码 | **立即暂停交用户**，不自行试探 |
+| ① token 失效（553649434）但 Chrome 仍登录 | 脚本自动 `refresh_auth_token.js` 刷新并重试（最多 2 次），不交用户 |
+| ①' Chrome 也未登录 / 需验证码 | **立即暂停交用户**，不自行试探、不读取密码 |
 | ② 没见过的卷型/题型/报错 | 不硬闯、不交正式卷；先用只读基线脚本（`refresh_inventory.js` 刷新作业基线、`collect_paper_sources.js` 只读补采题源）定位，发起针对性测试或功能迭代，打通再纳入主链路 |
 | ③ 接口链路失败（连 submit 都没成功） | 降级 **第七章 UI 兜底**，保证"作业最终交得上"，并记录降级原因 |
 
@@ -271,7 +273,7 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 ## 十、做题任务检查清单（接口版）
 
 **执行前**
-- [ ] 日常 Chrome 已登录、connect_browser 自检通过、JWT 有效（无效交用户）
+- [ ] 日常 Chrome 已登录、connect_browser 自检通过、JWT 经一次只读请求验活有效（失效先自动 refresh，仅 Chrome 未登录才交用户）
 - [ ] 已跑 refresh_inventory，audit 清单与实际一致、已排除冲刺模考
 - [ ] 批量先 dry-run 确认待做卷清单
 

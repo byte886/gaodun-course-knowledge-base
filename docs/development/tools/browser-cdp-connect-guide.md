@@ -81,7 +81,7 @@ node scripts/cdp/connect_browser.js  # 环境自检：连接→列标签→断�
 |---|---|
 | `connect_browser.js` | 连接模块：Chrome 没开自动拉起（选上次/首个 Profile）、读端点、串行自动授权、退避重试、找页、安全断开；直接运行=自检 |
 | `press_allow.applescript` | macOS AX 代点「允许」（被连接模块自动调用，一般不用手动跑） |
-| `connect_browser.js` | 连接日常 Chrome（可复用模块 + 自检）：读取 CDP 端点、自动 AXPress 授权、403 退避重试 |
+| `refresh_auth_token.js` | token 自愈：连接日常 Chrome→找高顿 tab→`page.on('request')` 监听 `apigateway.gaodun.com` 请求的 `authentication` 头→reload 触发→存 `_account/auth/refresh_<时间>.jsonl`→findJwt 回读验活。做题脚本捕获 553649434 时自动调用，也可手动 `node scripts/cdp/refresh_auth_token.js` |
 
 在自己的业务脚本里这样用：
 

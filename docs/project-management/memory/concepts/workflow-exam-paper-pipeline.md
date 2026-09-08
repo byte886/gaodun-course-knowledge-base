@@ -32,7 +32,7 @@ vcourse/pc（盘点账号全部课程、拿 saasCourseId）
 
 ## 必须记住的稳定契约
 - **网关**：`apigateway.gaodun.com`，做题 `/minerva`、AI 批改 `/aitutor`、大纲进度 `/g-study`、用户空间 `/ep-course`；统一包裹 `status===0` 为成功。
-- **鉴权**：头 `authentication: Basic <JWT>`（字面 Basic，非 HTTP Basic Auth）；**JWT 有效期 7 天**，从 `_account/auth` 倒序提取，过期回真实 Chrome 重取，**禁止入库**；明文 JSON、全链路无签名/加密 body。
+- **鉴权**：头 `authentication: Basic <JWT>`（字面 Basic，非 HTTP Basic Auth）；**JWT 声明有效期 7 天，但服务端可提前失效**（业务码 553649434「登录超时」，HTTP 仍 200，不能只看 exp）；`findJwt()` 从 `_account/auth` **按文件 mtime 取最新**（曾因按文件名排序、新 token 被旧文件遮蔽导致批量失败）；失效由 `refresh_auth_token.js` 从已登录 Chrome 自动重取、批量脚本捕获 553649434 自动刷新重试（最多 2 次），仅 Chrome 也未登录才交用户；**禁止入库**；明文 JSON、全链路无签名/加密 body。
 - **ID 区分**：做题用 `saasCourseId`（=courseId，税法 42660），听课/进度用 `vcourseId`（96834）；`csItemId` 是**章节** itemId（不是 paper 节点自身 id），解析需维护章节祖先栈。
 - **题型**：1 单选 / 2 多选 / **5 大题容器（不答）/ 6 主观自由文本小问**；type6 既可套在 type5 的 `subQuestionList`，也可**顶层独立**；客观答案在 `questionAnswer.answer`，type6 标准答案在 `questionAnswer.analysis`（answer 仅"见解析"）。
 - **来源域**：作业卷（sourceFromType=100533962）origin/referer 必须 `glivepro.gaodun.com`；题库专区卷（100534177）必须 `tiku.gaodun.com`，错则 AI 批改报 11193060。
@@ -44,7 +44,7 @@ vcourse/pc（盘点账号全部课程、拿 saasCourseId）
 - **纯采集知识来源**：redo-paper / paper-analysis 取题面、标准答案、官方解析即可（注意 redo 有"新建实例、times+1"副作用，redo 后必须 submit 闭环，不可中断）。
 - **交卷/AI 批改是外部写操作**：会改平台成绩、扣 AI 权益，属需用户授权的动作；冲刺模考（48 题/标题含"冲刺模考"）基础阶段硬排除、最后阶段才处理。
 - 采集到的题面/答案/解析是末期知识库的客观来源；**自动化过程产生的错题不作来源**。
-- 脚本：共享实现 `scripts/cdp/gaodun_paper_core.js`；单卷 `api_do_paper.js`、批量 `batch_redo_papers.js`（默认 dry-run）；课程清单 `fetch_user_space_courses.js`。默认**优先用本地已采数据**，不重复联网。
+- 脚本：共享实现 `scripts/cdp/gaodun_paper_core.js`（含 `findJwt` 按 mtime 取最新 token）；单卷 `api_do_paper.js`、批量 `batch_redo_papers.js`（默认 dry-run，内置 553649434 token 自愈重试）；token 刷新 `refresh_auth_token.js`；课程清单 `fetch_user_space_courses.js`。默认**优先用本地已采数据**，不重复联网。
 
 ## 来源与下钻
 - [高顿作业接口档案](../../../development/api/gaodun-exam-api.md)（逐接口字段、错误码字典、已验证/待验证清单——实现前必读）
