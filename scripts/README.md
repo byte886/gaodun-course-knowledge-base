@@ -25,6 +25,7 @@
 | 高顿做题接口链路 | 12 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采、冲刺 6 卷统一入口（scripts/cdp/） |
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
+| 高顿课程/讲义采集 | 3 | 正课 glive 讲义 CDN 批量下载；名师课 ep3(saasType13) 大纲梯度章节树清单、讲义 CDN 下载（scripts/cdp/） |
 
 > **全量对齐（2026-09-05；2026-09-07 增补）**：历史脚本已一次性补登；2026-09-07 多课程/并行化改造新增单课总编排器 `run_course_pipeline.sh` 与并发标准件 `lib/parallel.sh`（见「课程配置」末小节），并同步更新各去硬编码脚本条目。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/lib` 核对，避免再次出现"在跑但没上台账"。
 
@@ -56,7 +57,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
 
 ### 总编排器与并发标准件
 
@@ -649,6 +650,39 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `node scripts/cdp/collect_paper_sources.js [--all] [paperId...]`（默认只补本地缺失卷，`--all` 强制重拉） |
 | **可靠性** | ✅ 高（已采 116 套 / 1296 题）；产物 课程 `data/_workspace/<profile>/papers/<id>.json` + `data/_workspace/<profile>/manifest/paper_index.json`（不入库，物理集中、按讲视图见 papers_view.py） |
 | **相关文档** | gaodun-exam-api.md、standards 2.2.4、SOP 步骤1 |
+
+---
+
+### `cdp/download_lecture_notes.js` — 正课(glive)讲义 PDF 批量下载（免认证 CDN 直链）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 读 profile 的 glive syllabus children，取 lecture_note 资源的免认证 CDN 直链批量下载讲义 PDF 到课程 `原始资源/notes`；断点续下、字节校验，不依赖做题链路 |
+| **用法** | `node scripts/cdp/download_lecture_notes.js [--profile <key>] [--dry]` |
+| **可靠性** | ✅ 会计 44/44 零失败（2026-09-08） |
+| **相关文档** | WORKFLOW §3、tools/video-processing.md |
+
+---
+
+### `cdp/ep3_course_outline.js` — 名师课 ep3(saasType13) 梯度/章节树/讲义清单基线（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 纯 GET 拉 `ep-course/.../gradation/handout` + `student-learning/analysis/chapter`，输出「26 考季 4 梯度→章/节树(csItem/视频/题计数)→扁平化讲义清单」manifest；ep3 比正课多「梯度×多老师」两层 |
+| **用法** | `node scripts/cdp/ep3_course_outline.js <courseId> [--all-season]`；产物 `data/_workspace/_account/ep3/manifest/<cid>.outline.json`（不入库） |
+| **可靠性** | ✅ 名师会计 17244 实测：4 梯度/视频330/题206/讲义34（16 PDF+18 ZIP） |
+| **相关文档** | `data/_workspace/_account/ep3-platform-probe.md`、`ep3/tickets-index.md` |
+
+---
+
+### `cdp/ep3_download_handouts.js` — 名师课 ep3 讲义/课件下载（CDN 直链 + 签名兜底）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 按 outline manifest 下载讲义：`simg01` CDN 直链为主（免认证、字节==fileSize），失败时 g-study batch-download 换 enclosure 签名链兜底；幂等、可按格式/限量试点 |
+| **用法** | `node scripts/cdp/ep3_download_handouts.js <cid> [--format=pdf\|all] [--limit=N] [--dry]`；试点落 `data/_workspace/_account/ep3/downloads/<cid>/梯度/分类/`（正式课程库落位待 L1 方案） |
+| **可靠性** | ✅ 3 份 PDF 逐字节一致、均为真 PDF（姚远172页/陈蓓蓓161页/词典65页） |
+| **相关文档** | 同 ep3_course_outline |
 
 ---
 
