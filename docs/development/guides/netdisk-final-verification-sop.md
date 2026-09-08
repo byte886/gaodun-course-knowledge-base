@@ -57,7 +57,6 @@ finalize 后必须检查并清理本地临时文件，**清理前必须先列清
 | 路径 | 说明 |
 |------|------|
 | `data/高顿/` | 符号链接指向 Desktop 课程原料（16G+），保留 |
-| `data/高顿/CPA/待整理/` | 下一门课在途原料，用户明确"待整理的先不处理" |
 | `data/_workspace/<profile>/notes-raw/` | 用户笔记原始数据源（按课程 profile key 隔离），保留 |
 | `data/_workspace/_account/auth/` | 账号级 JWT 鉴权抓包（跨课共享、滚动留最新），见 3.3 保留策略 |
 | `data/_workspace/<profile>/sniff/` | 课程抓包/侦查件（可能含 token），见 3.3 保留策略 |

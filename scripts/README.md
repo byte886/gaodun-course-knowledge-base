@@ -219,19 +219,6 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-### `batch_transcribe.sh` — 批量视频转写
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 批量转写目录下所有视频，在iTerm中运行可看实时进度 |
-| **用法** | `bash scripts/batch_transcribe.sh <input_dir> <output_dir>` |
-| **可靠性** | ✅ 中（依赖单文件转写的可靠性） |
-| **相关文档** | `docs/development/tools/transcription.md` |
-
-**注意**：必须在iTerm中运行（`bash scripts/batch_transcribe.sh`），不要在后台运行，方便查看进度和异常。
-
----
-
 ### `setup_transcription_env.sh` — 转写环境搭建
 
 | 项目 | 说明 |
@@ -338,17 +325,6 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **相关文档** | `docs/development/api/netdisk-setup.md` |
 
 **注意**：上传时不要通过代理（百度网盘API直连更快）。上传后验证文件大小与本地一致。
-
----
-
-### `batch_upload.sh` — 批量文件上传
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 批量上传目录下所有文件到百度网盘，保持目录结构 |
-| **用法** | `bash scripts/batch_upload.sh <local_dir> <remote_dir>` |
-| **可靠性** | ✅ 高（依赖baidu_upload.py） |
-| **相关文档** | `docs/development/api/netdisk-setup.md` |
 
 ---
 
@@ -876,7 +852,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 1. **先查本文档再用脚本**：执行任务前，先在本文档中找到对应脚本，了解用途、用法、可靠性
 2. **优先用脚本，不手动写命令**：已有脚本的功能，必须用脚本，不要手动写JavaScript或curl
 3. **做题必须用脚本**：`cdp/api_do_paper.js`（单卷）/ `cdp/batch_redo_papers.js`（批量）/ `cdp/do_sprint_paper.js`（冲刺模考），纯接口主链路，禁止手动 UI 点选
-4. **批量任务在iTerm中运行**：`batch_transcribe.sh`、`batch_ocr.sh`、`compress.sh`（批量模式）必须在iTerm中运行，不要后台运行
+4. **批量任务在iTerm中运行**：`transcribe_all.sh`、`batch_ocr.sh`、`compress.sh`（批量模式）必须在iTerm中运行，不要后台运行
 5. **新增脚本必须更新本文档**：新增脚本时，必须在本文档对应分类中添加说明（用途/用法/可靠性/相关文档）
 
 ---
