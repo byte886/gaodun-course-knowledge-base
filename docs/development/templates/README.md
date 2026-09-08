@@ -68,4 +68,4 @@
 
 - 知识库组织规范：`docs/development/knowledge/knowledge-base-organization.md`
 - 质量保证规范：`docs/project-management/standards/QUALITY_ASSURANCE.md`
-- 报告目录：`project-management/task-reports/`（只放实际报告，不放模板）
+- 报告目录：`data/_workspace/<course>/task-reports/`（只放实际报告，不放模板）

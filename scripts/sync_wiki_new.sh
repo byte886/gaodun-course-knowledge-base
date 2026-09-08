@@ -1,6 +1,6 @@
 #!/bin/bash
 # 新知识结构同步到飞书：课程根 → 14组(README) → 92知识点文档 + 课程全局篇
-# 断点续传：logs/wiki_done/<标题>.done 记录 node_token obj_token
+# 断点续传：data/_workspace/<profile>/logs/wiki_done/<标题>.done 记录 node_token obj_token
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,8 +13,10 @@ TAX="$COURSE_LOCAL_ROOT"
 # TODO 跨课：下列飞书空间/根节点为税法空间真实值，会计建空间后迁入 profile.feishu，暂不臆造
 PARENT="UM6bwW23tiYkCVk3nXtc3TpBnGe"
 SPACE_ID="7678261729456852192"
-DONE_DIR="$PROJECT_DIR/logs/wiki_done"
-MAP_FILE="$PROJECT_DIR/data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv"
+_WP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-cpa-tax-2026}}"
+WS="$PROJECT_DIR/data/_workspace/$_WP"
+DONE_DIR="$WS/logs/wiki_done"
+MAP_FILE="$WS/logs/wiki_node_map.tsv"
 mkdir -p "$DONE_DIR"
 touch "$MAP_FILE"
 

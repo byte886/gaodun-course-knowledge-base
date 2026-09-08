@@ -5,8 +5,9 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-WORK="$ROOT/transcription/.parallel_work"
-LOGDIR="$WORK/logs"; MAINLOG="$WORK/parallel.log"
+RP="${GAODUN_COURSE_PROFILE:-_shared}"
+WORK="$ROOT/data/_workspace/$RP/tmp/parallel_work"
+LOGDIR="$ROOT/data/_workspace/$RP/logs"; MAINLOG="$WORK/parallel.log"
 mkdir -p "$WORK" "$LOGDIR"
 
 D="${1:-}"; [ -d "$D" ] || { echo "[$(date '+%H:%M:%S')] ✗ 目录不存在: $D" | tee -a "$MAINLOG"; exit 1; }

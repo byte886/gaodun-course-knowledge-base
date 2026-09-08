@@ -6,7 +6,7 @@
 > **读者**：AI代理（开发工程师）与用户
 
 > 本文沉淀两类可跨项目复用的能力：①AI 排查复杂技术问题的思考逻辑；②人与 AI 高效配合的分工与节奏。
-> 它从「浏览器 CDP 连接通道选型」实战中提炼（案例见 [ADR-010](../../project-management/decisions/ADR-010-浏览器自动化连接通道与技术栈选型.md) 与[选型实测报告](../../../project-management/task-reports/任务报告_浏览器连接通道选型实测_2026-09-01.md)），但不绑定该问题。角色职责分工另见 [multi-role-collaboration.md](./multi-role-collaboration.md)。
+> 它从「浏览器 CDP 连接通道选型」实战中提炼（案例见 [ADR-010](../../project-management/decisions/ADR-010-浏览器自动化连接通道与技术栈选型.md)；完整《选型实测报告》为课程过程件，存 `data/_workspace/cpa-tax-2026/task-reports/`、不入库），但不绑定该问题。角色职责分工另见 [multi-role-collaboration.md](./multi-role-collaboration.md)。
 
 ---
 

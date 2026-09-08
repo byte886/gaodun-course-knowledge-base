@@ -540,19 +540,6 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-### `collect_analysis.js` — 解析与用户留言采集
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 从做题页面采集官方解析和用户留言精华 |
-| **用法** | `node scripts/collect_analysis.js <exam_url>` |
-| **可靠性** | ⚠️ 中（依赖页面结构，可能需要滚动加载） |
-| **相关文档** | `docs/development/guides/exam-workflow.md` |
-
-**注意**：用户留言可能需要向下滚动才能完整加载，脚本在"笔记"关键词处可能截断。
-
----
-
 ## 九、浏览器 CDP 连接（2个，位于 `scripts/cdp/`）
 
 > 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
@@ -686,7 +673,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `node scripts/cdp/do_sprint_paper.js s1|s2|s3|m1|m2|m3`（兼容旧参数 1/2/3）；机考自动带 `origin=https://mock-cpa.gaodun.com`；结果落 `data/_workspace/<profile>/papers/exam_result_<paperId>_<ts>.json` |
 | **6 卷映射** | s1/s2/s3=86722/86723/86724（glivepro 试卷）；m1/m2/m3=86726/86727/86728（mock-cpa 机考，与试卷同题） |
 | **可靠性** | ✅ 高；免费可达最优=客观全对+AI 题尽量满，未配 AI 题（cpaBotType=0）须人工批改、本流程不购买 |
-| **相关文档** | gaodun-exam-api.md、任务报告_冲刺模考* |
+| **相关文档** | gaodun-exam-api.md（冲刺模考侦查过程报告存 `data/_workspace/<course>/task-reports/`，不入库） |
 
 ### `cdp/run_redo_all.sh` — 冲刺 6 卷批量重做入口（顺序跑、独立日志、末尾汇总）
 
@@ -833,18 +820,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ## 十四、侦查 / PoC 网络采集（3个）
 
-> 路线探索期脚本。现役浏览器链路是 `cdp/connect_browser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 PoC 备查与 Playwright 备用采集手段，**非生产链路**。
-
-### `poc_persistent_browser.js` —【PoC】持久化专用 Chrome + 进程外抓包
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 可行性验证：脚本自开浏览器/导航/抓包，无需 Extension 授权，独立 profile 存 `data/browser-profile/`，context.on 增量落 JSONL/HAR。**属未采用路线**：现役改走 cdp/connect_browser 直连用户日常 Chrome 复用登录态，独立 profile 已删，本脚本仅留作路线备查 |
-| **用法** | `node scripts/poc_persistent_browser.js`（POC_DURATION_MS 可改常驻时长） |
-| **可靠性** | ⚠️ PoC 备查，非现役链路 |
-| **相关文档** | ADR-010、browser-cdp-connect-guide.md |
-
----
+> 路线探索期脚本。现役浏览器链路是 `cdp/connect_browser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 Playwright 备用采集手段，**非生产链路**（自开独立 Profile 的持久化浏览器 PoC 路线已否决，脚本于 2026-09-08 清理）。
 
 ### `capture_exam_net.js` — Playwright 网络钩子注入
 

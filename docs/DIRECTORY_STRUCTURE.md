@@ -47,14 +47,14 @@ gaodun-course-knowledge-base/
 │   └── project-management/
 │       ├── decisions/             # ADR（只增不改）
 │       └── standards/             # 治理规范（NAMING/QUALITY/CODE_STYLE/DOC_* 等）
-├── project-management/            # 项目管理（动态：active 状态台账 / test-plans / task-reports）
+├── project-management/            # 项目管理：只放 active/ 两份跨课全局活态台账（TASK_STATUS/ISSUES）；单课过程件在 data/_workspace
 ├── config/
 │   └── courses/                    # 课程档案卡 profile（一门课一个 JSON，脚本统一读取，换课只换卡，见 parallel-toolkit-design）
 ├── scripts/                       # 可执行脚本（下载/压缩/转写/OCR/上传/做题/校验，snake_case）
 ├── transcription/                 # 转写工具链：requirements.txt 入库，venv/ 忽略
 ├── .secrets/                      # 加密凭证（*.enc；*.json/*.txt 忽略）
 ├── data/                          # 本地运行数据，整体 gitignore（见第二章）：「高顿」→外部数据盘软链 +「_workspace」唯一运行时工作区
-├── logs/、node_modules/           # 工程运行日志（编排脚本写入、历史滚动清）/依赖，均 gitignore
+├── node_modules/                  # 依赖，gitignore（注：仓库根不再产生 logs/，所有运行日志/断点统一进 data/_workspace，见 2.3）
 └── README.md / AGENTS.md / CHANGELOG.md / LICENSE / .gitignore
 ```
 
@@ -120,7 +120,9 @@ data/_workspace/
     ├── sniff/                     # CDP/手动侦查抓包与截图（验证完即删）
     ├── tmp/download/              # 视频下载/转写临时（.vfetch 分段、merged.ts，单任务成功即清）
     ├── pipeline/                  # 总编排器阶段断点 <n>.done（重跑跳过）
-    └── logs/                      # 该课运行日志
+    ├── tickets/                   # 工单/spec/需求表 REQUIREMENTS/BUG 表 BUG_BACKLOG（I2T，过程件）
+    ├── task-reports/              # 任务报告、侦查/检查报告（过程件，模板在 docs/development/templates）
+    └── logs/                      # 该课运行日志与断点哨兵（含编排层，仓库根不再建 logs/）
 ```
 
 **分层生命周期**（替代旧"工作区整体一刀切清退"）：
@@ -136,7 +138,7 @@ data/_workspace/
 
 - 课程目录（`data/高顿`）只放成品与永久原料；任何运行时过程件都进 `data/_workspace`，不在课程目录、data 根或仓库根新建过程目录。
 - `.secrets/*.enc`：加密、跨课复用，留仓库根；`node_modules/`、`transcription/venv/`：工具链标准位置，留原位 + gitignore；`package.json`/`requirements.txt` 与 `scripts/` 入 Git。
-- 仓库根 `logs/` 只承接**工程编排层**运行日志（总编排/同步脚本），历史滚动清；课程级运行日志进 `data/_workspace/<profile>/logs/`。
+- **仓库根不产生运行日志或断点目录**（含工程编排 / 同步脚本，2026-09-08 起取代旧"编排层日志可放仓库根 logs/"的约定）：所有 `*.log`、断点 `.done`、转写临时工作区一律进 `data/_workspace/<profile>/`；账号级 / 跨课共享脚本没有明确 profile 时用 `data/_workspace/_shared/`。脚本统一用可覆盖的工作区变量（`GAODUN_COURSE_PROFILE` / `WS_DIR`），**禁止硬编码仓库根 `logs/`、`transcription/.parallel_work`、`transcription/.qv_work`**。
 
 ### 2.4 旧散落件最终去向（2026-09-07 迁移落定）
 

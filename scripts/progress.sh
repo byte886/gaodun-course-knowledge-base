@@ -6,6 +6,9 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 # shellcheck source=course_config.sh
 source "$PROJECT_DIR/scripts/course_config.sh"   # 导出 COURSE_LOCAL_ROOT 等，换课设 COURSE_PROFILE
+RP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-_shared}}"
+RD="data/_workspace/$RP/logs"                      # 运行断点/日志统一进工作区，仓库根不产生 logs/
+export RAW_DONE_DIR="$RD/raw_done" WIKI_DONE_DIR="$RD/wiki_done" SUP_VIDEOS_LOG="$RD/supervisor_videos.log"
 
 bar() {
   # $1=已完成 $2=总数
@@ -25,7 +28,7 @@ echo " 后台任务进度  $(date '+%H:%M:%S')"
 echo "═══════════════════════════════════════════════════"
 
 # ---- videos ----
-v_done=$(find logs/raw_done -name 'videos_*.done' 2>/dev/null | wc -l | tr -d ' ')
+v_done=$(find "$RD/raw_done" -name 'videos_*.done' 2>/dev/null | wc -l | tr -d ' ')
 v_total=39
 echo ""
 echo "📹 视频上传网盘"
@@ -43,7 +46,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 PARALLEL=2
 base = Path(os.environ["COURSE_LOCAL_ROOT"])/"原始资源/videos"
-ddir = Path("logs/raw_done")
+ddir = Path(os.environ["RAW_DONE_DIR"])
 done = set(f.stem[len("videos_"):] for f in ddir.glob("videos_*.done"))
 def sz(d):
     p=d/"video.mp4"; return p.stat().st_size if p.exists() else 0
@@ -73,14 +76,14 @@ else
 fi
 
 # ---- notes ----
-n_done=$(find logs/raw_done -name 'notes_*.done' 2>/dev/null | wc -l | tr -d ' ')
+n_done=$(find "$RD/raw_done" -name 'notes_*.done' 2>/dev/null | wc -l | tr -d ' ')
 n_total=17
 echo ""
 echo "📝 讲义笔记上传网盘"
 echo "   $(bar "$n_done" "$n_total")"
 
 # ---- 飞书 ----
-w_done=$(find logs/wiki_done -name '*.done' 2>/dev/null | wc -l | tr -d ' ')
+w_done=$(find "$RD/wiki_done" -name '*.done' 2>/dev/null | wc -l | tr -d ' ')
 echo ""
 echo "📚 飞书知识库同步"
 echo "   $(bar "$w_done" 107)"
@@ -88,5 +91,5 @@ echo "   $(bar "$w_done" 107)"
 echo ""
 echo "═══════════════════════════════════════════════════"
 echo " 最近日志（videos 守护器）:"
-tail -3 logs/supervisor_videos.log 2>/dev/null | sed 's/^/   /'
+tail -3 "$SUP_VIDEOS_LOG" 2>/dev/null | sed 's/^/   /'
 echo "═══════════════════════════════════════════════════"

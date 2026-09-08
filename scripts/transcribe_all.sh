@@ -13,9 +13,10 @@ PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
 # 遍历根默认课程根（旧布局：课程根/讲次/video.mp4）；成品已归位时用 TRANSCRIBE_ROOT 指向「原始资源/videos」
 COURSE="${TRANSCRIBE_ROOT:-$COURSE_DESKTOP_ROOT}"   # 由 profile/COURSE_NAME 派生，缺省税法，换课设 COURSE_PROFILE
-TMPROOT="$ROOT/transcription/.tmp_transcribe"
-LOG=/tmp/transcribe_all.log
-mkdir -p "$TMPROOT"
+RP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-_shared}}"
+TMPROOT="$ROOT/data/_workspace/$RP/tmp/tmp_transcribe"
+LOG="$ROOT/data/_workspace/$RP/logs/transcribe_all.log"
+mkdir -p "$TMPROOT" "$(dirname "$LOG")"
 # 退出兜底：正常结束/报错/Ctrl-C 都清掉当前讲的中转子目录（TMPROOT 根目录保留供断点续跑）
 cleanup() { local t="${tmp:-}"; [ -n "$t" ] && rm -rf "$t"; }
 trap cleanup EXIT

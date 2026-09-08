@@ -249,7 +249,7 @@
 严重问题 → 立即修复
 一般问题 → 记录到待优化项，后续修复
     ↓
-按需生成检查报告（落 task-reports/；验证默认并入任务报告、不单独成文；对话内体检且结论已落回活文档则不必留过程报告，见 PROJECT_STRUCTURE_MAINTENANCE 1.2）
+按需生成检查报告（过程件落 `data/_workspace/<course>/task-reports/`、不入库；验证默认并入任务报告、不单独成文；对话内体检且结论已落回活文档则不必留过程报告，见 PROJECT_STRUCTURE_MAINTENANCE 1.2）
     ↓
 按 git-workflow 8.3 分场景提交（治理等用户验收，日常及时 commit，push 按约定）
 ```

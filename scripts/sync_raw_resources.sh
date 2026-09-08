@@ -7,9 +7,9 @@
 #
 # 特性:
 #   - 按子目录（讲）为单位并发上传，xargs -P
-#   - 断点续传：成功的讲在 logs/raw_done/ 写标记，重跑自动跳过
+#   - 断点续传：成功的讲在 data/_workspace/<profile>/logs/raw_done/ 写标记，重跑自动跳过（profile 取 COURSE_PROFILE/GAODUN_COURSE_PROFILE，缺省 _shared）
 #   - 百度侧已存在文件走 MD5 秒传（baidu_upload.py precreate）
-#   - 每讲独立日志 logs/raw_<类型>_<讲名>.log
+#   - 每讲独立日志 data/_workspace/<profile>/logs/raw_<类型>_<讲名>.log
 
 set -u
 
@@ -25,8 +25,10 @@ REMOTE="$COURSE_REMOTE_ROOT"
 TYPE="${1:?用法: sync_raw_resources.sh <notes|videos|all> [并发数]}"
 PARALLEL="${2:-2}"
 
-DONE_DIR="$PROJECT_DIR/logs/raw_done"
-mkdir -p "$DONE_DIR" logs
+_RP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-_shared}}"
+WS="$PROJECT_DIR/data/_workspace/$_RP"
+DONE_DIR="$WS/logs/raw_done"
+mkdir -p "$DONE_DIR"
 
 upload_one() {
   local type="$1" name="$2"
@@ -40,7 +42,7 @@ upload_one() {
   fi
   [ -d "$local_dir" ] || { echo "[不存在] $local_dir"; return 1; }
 
-  local logf="$PROJECT_DIR/logs/raw_${type}_$(echo "$name" | tr '/' '_').log"
+  local logf="$WS/logs/raw_${type}_$(echo "$name" | tr '/' '_').log"
   echo "[开始] $type/$name $(date '+%H:%M:%S')"
   if bash "$PROJECT_DIR/scripts/upload_course.sh" "$local_dir" "$remote_dir" > "$logf" 2>&1; then
     echo "OK $type/$name $(date '+%H:%M:%S')" > "$done_flag"
@@ -51,7 +53,7 @@ upload_one() {
   fi
 }
 export -f upload_one
-export DONE_DIR PROJECT_DIR TAX REMOTE
+export DONE_DIR PROJECT_DIR TAX REMOTE WS
 
 run_type() {
   local t="$1"

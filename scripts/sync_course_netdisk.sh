@@ -12,8 +12,8 @@
 #
 # 特性:
 #   - xargs -P 并发（网盘IO建议2-3，禁用flock）；单讲失败不影响其他讲
-#   - 断点续传：成功的讲在 logs/netdisk_done/ 写标记，重跑自动跳过
-#   - 每讲独立日志 logs/netdisk_<讲名>.log；百度侧已存在文件走MD5秒传
+#   - 断点续传：成功的讲在 data/_workspace/<profile>/logs/netdisk_done/ 写标记，重跑自动跳过（profile 由 GAODUN_COURSE_PROFILE 指定，缺省 _shared）
+#   - 每讲独立日志 data/_workspace/<profile>/logs/netdisk_<讲名>.log；百度侧已存在文件走MD5秒传
 #   - 只传面向使用者的内容，技术过程文件由 upload_course.sh 过滤
 
 set -u
@@ -28,8 +28,10 @@ PARALLEL="${3:-3}"
 FILTER="${4:-.*}"
 export BAIDU_ENC_PASS="lover123"
 
-DONE_DIR="$PROJECT_DIR/logs/netdisk_done"
-mkdir -p "$DONE_DIR" logs
+PROFILE="${GAODUN_COURSE_PROFILE:-_shared}"
+WS="$PROJECT_DIR/data/_workspace/$PROFILE"
+DONE_DIR="$WS/logs/netdisk_done"
+mkdir -p "$DONE_DIR"
 
 upload_one() {
   local name="$1" local_base="$2" remote_base="$3"
@@ -38,7 +40,7 @@ upload_one() {
     echo "[跳过] $name（已完成）"
     return 0
   fi
-  local logf="$PROJECT_DIR/logs/netdisk_$(echo "$name" | tr '/' '_').log"
+  local logf="$WS/logs/netdisk_$(echo "$name" | tr '/' '_').log"
   echo "[开始] $name $(date '+%H:%M:%S')"
   if bash "$PROJECT_DIR/scripts/upload_course.sh" "$local_base/$name" "$remote_base/$name" > "$logf" 2>&1; then
     echo "OK $name $(date '+%H:%M:%S')" > "$done_flag"
@@ -49,7 +51,7 @@ upload_one() {
   fi
 }
 export -f upload_one
-export DONE_DIR PROJECT_DIR
+export DONE_DIR PROJECT_DIR WS
 
 echo "============================================"
 echo " 课程并发同步网盘"

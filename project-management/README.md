@@ -1,66 +1,47 @@
-# 项目管理（动态内容）
+# 项目管理（project-management）
 
-> **文档类型**：Reference（参考资料）
-> **更新频率**：目录结构变更时
-> **维护者**：AI自动维护
-> **读者**：AI代理+人类
+> **文档类型**：Reference（治理结构说明）
+> **更新频率**：目录结构 / 治理机制变更时
+> **维护者**：AI 自动维护
+> **读者**：AI 代理 + 用户
 
-本目录存放项目管理的**动态内容**，包括任务状态、问题跟踪、测试计划、任务报告等（验证为必做动作但默认并入任务报告、不单独成文）。
+## 本目录装什么
 
-> **与 docs/ 的区别**：
-> - `docs/`：只放静态内容（方法论、流程、说明、规范、决策记录）
-> - `project-management/`：放动态内容（任务状态、问题跟踪、测试计划、报告等）
-
----
-
-## 目录结构
+只放**跨课全局、需要跨会话持续维护的活态台账**，常驻只有 `active/`：
 
 ```
 project-management/
-├── active/                    # 活动状态（频繁更新）
-│   ├── TASK_STATUS.md         # 任务状态（唯一任务状态来源）
-│   ├── ISSUES.md              # 问题跟踪（唯一问题跟踪来源）
-│   ├── BATCH_TASK_STATUS.md   # 批量任务状态
-│   ├── COURSE_INDEX.md        # 课程索引
-│   └── README.md
-├── test-plans/                # 测试计划（按需生成、不常驻）
-└── task-reports/              # 任务执行报告（验证结论默认并入；目录保留 README）
-    └── README.md
+└── active/                       # 跨课全局活态台账（仅此两份，不再增加常驻文件）
+    ├── TASK_STATUS.md            # 进度视图：项目到哪了、全局里程碑、当前课指针、断点与下一步
+    ├── ISSUES.md                 # 问题视图：跨课/机制级 BUG 与风险的生命周期、解法
+    └── README.md                 # 两份台账的职责与边界
 ```
 
----
+## 单课过程件不在这里（关键分层）
 
-## 各目录职责
+**某一门课生产过程中的一切过程件都是临时件，统一落 `data/_workspace/<course>/`（gitignore、不入库）：**
 
-| 目录 | 类型 | 更新频率 | 说明 |
-|------|------|----------|------|
-| **active/** | 动态 | 频繁更新 | 任务状态、问题跟踪、课程索引等实时状态 |
-| **test-plans/** | 半动态 | 按课程生成 | 具体课程的测试计划，按课程新增 |
-| **task-reports/** | 动态 | 按任务生成 | 任务执行完成报告（含验证结论），按任务新增 |
+| 过程件 | 落点 |
+|--------|------|
+| 工单 / spec / 实时进度台账 | `data/_workspace/<course>/tickets/` |
+| 需求表 REQUIREMENTS、BUG 表 BUG_BACKLOG | `data/_workspace/<course>/tickets/` |
+| 任务报告、侦查/检查报告 | `data/_workspace/<course>/task-reports/` |
+| 日志、断点哨兵、manifest、原始抓取、临时文件 | `data/_workspace/<course>/{logs,manifest,sniff,tmp,...}` |
 
----
+课程 finalize 后这些过程件本地留底（不入库）；其中**稳定、跨课复用的结论**提炼进下面的静态治理层。
 
-## 与 docs/ 的职责边界
+## 与 `docs/project-management/` 的边界（动态 vs 静态）
 
-| 内容类型 | 存放位置 | 说明 |
-|----------|----------|------|
-| 方法论、流程、说明 | `docs/` | 静态内容，不频繁更新 |
-| 标准规范 | `docs/project-management/standards/` | 静态规范 |
-| 决策记录（ADR） | `docs/project-management/decisions/` | 半静态，只增不改 |
-| 任务状态 | `project-management/active/` | 动态，频繁更新 |
-| 问题跟踪 | `project-management/active/` | 动态，频繁更新 |
-| 测试计划 | `project-management/test-plans/` | 半动态，按课程生成 |
-| 任务报告 | `project-management/task-reports/` | 动态，按任务生成（验证结论默认并入） |
+| 内容 | 位置 | 性质 |
+|------|------|------|
+| 当前任务状态、全局断点下一步 | `project-management/active/TASK_STATUS.md` | 动态，频繁更新 |
+| 跨课/机制级问题与 BUG | `project-management/active/ISSUES.md` | 动态，频繁更新 |
+| 标准 / 规范 / SOP（怎么做事的规则） | `docs/project-management/standards/` | 静态，规则变更才改 |
+| 架构决策记录 ADR（为什么这么定，只增不改） | `docs/project-management/decisions/` | 半静态，只增不改 |
+| 工程记忆 OKF bundle（跨会话稳定结论编译层） | `docs/project-management/memory/` | 静态，稳定结论变化时改 |
 
----
-
-## 文件命名规范
-
-| 目录 | 命名格式 | 示例 |
-|------|----------|------|
-| test-plans/ | `测试计划_{课程名}.md` | 按需、不常驻；模板 `TEST_PLAN_TEMPLATE.md` |
-| task-reports/ | `任务报告_{对象}_{日期}.md` | 现存任务报告；模板 `REPORT_TEMPLATE.md`（验证结论默认并入） |
+> 一句话：**活的、会变的当前态在本目录 `active/`；怎么做事的规则和为什么这么定在 `docs/project-management/`；单门课的生产过程在 `data/_workspace/<course>/`。**
 
 ---
 
-**文档维护**：本目录结构变更时，必须更新本文档和 `docs/DIRECTORY_STRUCTURE.md`。
+**文档维护**：本结构变更时同步更新本文档、`docs/DIRECTORY_STRUCTURE.md` 与 `docs/DOCUMENTATION_MAP.md`。

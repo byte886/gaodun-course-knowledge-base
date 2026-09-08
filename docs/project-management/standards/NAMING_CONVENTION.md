@@ -199,7 +199,7 @@ data/_workspace/
 | L2 | 方法/操作/流程/工具 API/最佳实践 | 英文小写 kebab-case（9.7） | `guides/api/tools/knowledge/methodology/` | `git-workflow.md`、`multi-role-collaboration.md` |
 | L3 | 可执行脚本 | 英文小写 snake_case（9.4） | `scripts/` | `baidu_upload.py` |
 | L4 | 知识库成品（同步飞书，不入库） | 中文，对应飞书节点/H1（9.5） | `data/.../知识详解/`（gitignore） | `增值税税率.md`、`考试指导速查手册.md` |
-| L5 | 项目管理过程产物（报告/计划/记录） | 中文，对应 H1、ISO 日期（9.5） | `task-reports/`、`test-plans/` | `任务报告_对象_2026-08-31.md` |
+| L5 | 单课过程产物（任务报告/测试计划/侦查/工单记录） | 中文，对应 H1、ISO 日期（9.5） | `data/_workspace/<course>/{task-reports,tickets}/`（gitignore 不入库） | `任务报告_对象_2026-08-31.md` |
 | L6 | 架构决策记录 | `ADR-NNN-中文`（9.8） | `decisions/` | `ADR-012-三层解耦与按知识点聚合.md` |
 
 #### 9.1.1 五类命名形态速查（按"文件名长什么样"反查）
@@ -265,7 +265,7 @@ data/_workspace/
 
 > 题/标准答案/官方解析由接口落 `data/_workspace/<profile>/papers/*.json`，不再手抄成中文 md；旧 `知识拆解.md/考试指导.md` 双文档已废止（ADR-012）。
 
-**L5 项目管理过程产物**（`project-management/` 下 task-reports / test-plans，以及 active 中的过程件）：每次任务生成、H1 为中文，文件名用中文并与 H1 对应：
+**L5 单课过程产物**（任务报告/测试计划/侦查/工单记录，统一落该课 `data/_workspace/<course>/`、不入库；`project-management/active/` 只留 TASK_STATUS/ISSUES 两份全局台账）：每次任务生成、H1 为中文，文件名用中文并与 H1 对应：
 
 - 统一格式：`{中文类型}_{对象}_{日期}.md`；日期用 ISO `YYYY-MM-DD`，无日期的持续性记录可省略日期段，但**不得中英前缀混排、不得用紧凑日期 `YYYYMMDD`**。
 - 中文类型词：任务报告 / 测试计划 / 问题调研 / 整改方案 / 优化记录 等（验证默认并入任务报告，不单设「同步报告/验证报告」类型；仅视频等非标准对象专项质检可用 `VERIFICATION.md`）。
@@ -277,7 +277,7 @@ data/_workspace/
 
 - 判定：回答"必须遵守什么、标准是什么、当前状态、供复制的骨架、清单索引"。
 - 位置：`docs/` 根、`docs/project-management/standards/`、`docs/development/templates/`、`project-management/active/` 的状态台账。
-- 正例：`NAMING_CONVENTION.md`、`CODE_STYLE.md`、`QUALITY_ASSURANCE.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`ISSUES.md`、`COURSE_INDEX.md`。
+- 正例：`NAMING_CONVENTION.md`、`CODE_STYLE.md`、`QUALITY_ASSURANCE.md`、`REPORT_TEMPLATE.md`、`TASK_STATUS.md`、`ISSUES.md`。
 - 模板统一以 `_TEMPLATE` 结尾；禁止同词大小写混排（反例 `VERIFICATION_TEMPLATE_knowledge_base.md`）。
 - **`docs/` 根顶层骨架文档固定大写**：`WORKFLOW.md`、`REQUIREMENTS.md`、`SYSTEM_REQUIREMENTS.md`、`DOCUMENTATION_MAP.md`、`DIRECTORY_STRUCTURE.md` 是全局主工作流/需求/总览/索引/结构骨架，统一 UPPER_SNAKE，**不随其内容类型（Task/Concept/Reference）改小写**，与子目录里的具体方法文档（小写）形成层级区分。
 
@@ -295,13 +295,13 @@ data/_workspace/
 
 ### 9.9 目录命名
 
-- **工程目录**：全小写 kebab-case，如 `task-reports/`、`test-plans/`、`methodology/`；不用空格、不用大写；`.github/`、`.secrets/` 等隐藏/平台目录从平台约定。
-- **课程数据目录分两类**（详见第一~八章）：用户接触层 `原始资源/ 知识详解` 及其下中文组目录 `NN_官方模块名` 用中文体系；非用户接触层统一工作区 `data/_workspace/`（账号级 `_account`、课程级 `<profile>` 七桶 `manifest/papers/notes-raw/sniff/tmp/pipeline/logs`）用英文。旧 `organized-content/`、`source-materials/` 已废止（ADR-012），旧课程内 `_workspace`、`cdp-sniff` 已上移统一（ADR-016）。
+- **工程目录**：全小写 kebab-case，如 `decisions/`、`standards/`、`guides/`、`methodology/`；不用空格、不用大写；`.github/`、`.secrets/` 等隐藏/平台目录从平台约定。
+- **课程数据目录分两类**（详见第一~八章）：用户接触层 `原始资源/ 知识详解` 及其下中文组目录 `NN_官方模块名` 用中文体系；非用户接触层统一工作区 `data/_workspace/`（账号级 `_account`、课程级 `<profile>` 各桶 `manifest/papers/notes-raw/sniff/tmp/pipeline/tickets/task-reports/logs`）用英文。旧 `organized-content/`、`source-materials/` 已废止（ADR-012），旧课程内 `_workspace`、`cdp-sniff` 已上移统一（ADR-016）。
 - 目录名与其中文件的命名风格相互独立：目录按本节，文件按 9.3–9.8。
 
 ### 9.10 跨类目录说明（避免误判"同目录不一致"）
 
-- `project-management/active/` 只放**持续状态台账**（L1，大写：`TASK_STATUS.md`、`ISSUES.md`、`COURSE_INDEX.md`、`BATCH_TASK_STATUS.md`），临时中文过程件按 L5。**不设任务交接文件**：角色职责在 AGENTS、项目当前情况由使用者用话术让 AI 读这些实时台账即可，原 `task-handover.md` 已删除。
+- `project-management/active/` 只放**两份跨课全局状态台账**（L1，大写：`TASK_STATUS.md`、`ISSUES.md`）；原 `COURSE_INDEX.md`、`BATCH_TASK_STATUS.md` 等课程级定格件已于 2026-09-08 删除，单课过程件按 L5 落 `data/_workspace/<course>/`。**不设任务交接文件**：角色职责在 AGENTS、项目当前情况由使用者用话术让 AI 读这些实时台账即可，原 `task-handover.md` 已删除。
 - `docs/development/guides/` 只放方法/最佳实践文档（L2 小写），如 `agents-md-best-practices.md`；`CODE_STYLE.md` 正文是"必须/禁止"的强制编码与文档规范（Governance），已移至 `standards/` 并大写，不放 guides。
 
 ### 9.11 仓库命名检查清单（新增/改名文件时逐项过）

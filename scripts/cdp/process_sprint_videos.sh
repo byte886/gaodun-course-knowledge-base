@@ -9,9 +9,11 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-SV="$ROOT/data/_workspace/${GAODUN_COURSE_PROFILE:-cpa-tax-2026}/tmp/download/sprint-videos"
-LOG="$ROOT/logs/sprint_video_process.log"
-mkdir -p "$ROOT/logs"
+RP="${GAODUN_COURSE_PROFILE:-cpa-tax-2026}"
+SV="$ROOT/data/_workspace/$RP/tmp/download/sprint-videos"
+LOGDIR="$ROOT/data/_workspace/$RP/logs"
+LOG="$LOGDIR/sprint_video_process.log"
+mkdir -p "$LOGDIR"
 THREADS_PER=5
 : > "$LOG"
 log(){ echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }

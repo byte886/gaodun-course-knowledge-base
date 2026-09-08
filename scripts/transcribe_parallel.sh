@@ -23,9 +23,10 @@ source "$ROOT/scripts/course_config.sh"
 # shellcheck source=lib/parallel.sh
 source "$ROOT/scripts/lib/parallel.sh"
 COURSE="$COURSE_DESKTOP_ROOT"
-WORK="$ROOT/transcription/.parallel_work"
-LOGDIR="$WORK/logs"
-mkdir -p "$LOGDIR"
+RP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-_shared}}"
+WORK="$ROOT/data/_workspace/$RP/tmp/parallel_work"   # 并行任务队列工作区（过程件，不入库）
+LOGDIR="$ROOT/data/_workspace/$RP/logs"
+mkdir -p "$WORK" "$LOGDIR"
 
 # ---------- 单讲 worker（自递归，任务=讲目录，作为最后参数 $2 传入） ----------
 if [ "${1:-}" = "--worker" ]; then

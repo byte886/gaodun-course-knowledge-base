@@ -30,28 +30,16 @@
 
 | 文档 | 位置 | 更新内容 |
 |------|------|---------|
-| TASK_STATUS.md | `project-management/active/TASK_STATUS.md` | 当前任务进度、待办事项、完成状态 |
-| 飞书多维表格 | 在线 | 同步任务状态（与TASK_STATUS.md保持一致） |
+| TASK_STATUS.md | `project-management/active/TASK_STATUS.md` | **全局**任务状态：跨课里程碑、当前课指针、断点/下一步；不抄单课批次明细 |
+| ISSUES.md | `project-management/active/ISSUES.md` | 跨课/机制级问题生命周期 |
 
-### 2.2 测试计划
-
-| 文档 | 位置 | 更新内容 |
-|------|------|---------|
-| 测试计划_*.md | `project-management/test-plans/` | 每个课程的测试计划、试卷清单、完成状态 |
-
-### 2.3 课程索引
+### 2.2 单课过程件（gitignore、不入库、不同步飞书）
 
 | 文档 | 位置 | 更新内容 |
 |------|------|---------|
-| COURSE_INDEX.md | `project-management/active/COURSE_INDEX.md` | 所有课程的清单、讲座数量、完成进度 |
+| 工单/批次状态、测试计划、任务报告、检查点 | 该课 `data/_workspace/<course>/{tickets,task-reports,logs}/` | 单课逐讲/逐卷/批次明细、测试计划、任务报告、断点与问题记录 |
 
-### 2.4 大任务执行状态
-
-| 文档 | 位置 | 更新内容 |
-|------|------|---------|
-| BATCH_TASK_STATUS.md | `project-management/active/BATCH_TASK_STATUS.md` | 批量任务的详细进度、当前步骤、检查点、问题记录 |
-
-> **触发时机**：开始大任务前创建，每完成一个步骤更新，遇到异常记录，恢复任务前读取。详见 `standards/BATCH_TASK_EXECUTION.md`。
+> 课程/讲座清单以官方 syllabus 与该课 workspace 的 manifest 为准，active 不再维护 COURSE_INDEX；大任务批次状态不再放 active（原 BATCH_TASK_STATUS 已下沉 workspace）。触发时机与恢复机制见 `standards/BATCH_TASK_EXECUTION.md`。
 
 ---
 

@@ -2,15 +2,15 @@
 # 长任务守护器：自动续跑断点任务，全部完成或异常时发 macOS 通知
 #
 # 用法:
-#   nohup bash scripts/run_supervised.sh <任务名> <单次执行命令> <完成检测命令> [进度标量命令] > logs/supervisor_<任务名>.log 2>&1 &
+#   nohup bash scripts/run_supervised.sh <任务名> <单次执行命令> <完成检测命令> [进度标量命令] > data/_workspace/<profile>/logs/supervisor_<任务名>.log 2>&1 &
 #   - 第4参数[进度标量命令]可选：输出一个随推进单调变化的标量（做题等不产 .done 标记的任务用）；
-#     缺省则回退到统计 logs/raw_done/<任务名>_*.done（视频/上传等老任务，向后兼容）。
+#     缺省则回退到统计 data/_workspace/<profile>/logs/raw_done/<任务名>_*.done（profile 取 GAODUN_COURSE_PROFILE，缺省 _shared）。
 #
 # 示例:
-#   nohup bash scripts/run_supervised.sh videos \
+#   GAODUN_COURSE_PROFILE=cpa-accounting-2026 nohup bash scripts/run_supervised.sh videos \
 #     "bash scripts/sync_raw_resources.sh videos 2" \
-#     "test $(ls logs/raw_done/videos_*.done 2>/dev/null | wc -l) -ge 39" \
-#     > logs/supervisor_videos.log 2>&1 &
+#     "test \$(ls data/_workspace/cpa-accounting-2026/logs/raw_done/videos_*.done 2>/dev/null | wc -l) -ge 39" \
+#     > data/_workspace/cpa-accounting-2026/logs/supervisor_videos.log 2>&1 &
 #
 # 机制:
 #   - 循环执行 <单次执行命令>，每次结束后用 <完成检测命令> 判断是否全部完成
@@ -29,6 +29,7 @@ SLEEP_SEC=5
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
+RP="${GAODUN_COURSE_PROFILE:-_shared}"
 
 notify() {
   local title="$1" msg="$2"
@@ -44,7 +45,7 @@ progress_count() {
   if [ -n "$PROGRESS_CMD" ]; then
     eval "$PROGRESS_CMD" 2>/dev/null
   else
-    find logs/raw_done -name "${TASK_NAME}_*.done" 2>/dev/null | wc -l | tr -d ' '
+    find "data/_workspace/$RP/logs/raw_done" -name "${TASK_NAME}_*.done" 2>/dev/null | wc -l | tr -d ' '
   fi
 }
 

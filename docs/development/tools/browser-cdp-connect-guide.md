@@ -37,7 +37,7 @@ UI 兜底 ───────────────────────�
 | 形态 | 是否复用日常登录态 | 说明 |
 |---|---|---|
 | **运行时通道 + puppeteer-core（本项目）** | 是 | Chrome 已开着、勾着远程调试，直接 attach，免重启/免重登 |
-| `launchPersistentContext` + 独立 Profile | 否（首次要登录一次） | 自己启动一个专用 Profile，如 `scripts/poc_persistent_browser.js` |
+| `launchPersistentContext` + 独立 Profile | 否（首次要登录一次） | 自己启动一个专用 Profile（早期 PoC 已被 ADR-010 否决并清理，现役统一 attach 日常 Chrome） |
 | 命令行 `--remote-debugging-port` | 默认 Profile 下被 Chrome 136+ 屏蔽 | 必须配非默认 `--user-data-dir`，又回到独立 Profile |
 
 ---
@@ -150,7 +150,7 @@ Profile 选择规则（`pickProfile()`，可传 `{profile:'Profile 1'}` 强制�
 
 ## 5. 排障对策（按症状速查）
 
-> 只保留「能指导解决问题」的对策；完整探索过程与数据见[选型实测报告](../../../project-management/task-reports/任务报告_浏览器连接通道选型实测_2026-09-01.md)。
+> 只保留「能指导解决问题」的对策；完整探索过程与数据见《任务报告_浏览器连接通道选型实测_2026-09-01》（课程过程件，存 `data/_workspace/cpa-tax-2026/task-reports/`，不入库），结论性决策见 [ADR-010](../../project-management/decisions/ADR-010-浏览器自动化连接通道与技术栈选型.md)。
 
 | 症状 | 原因 | 对策 |
 |---|---|---|

@@ -53,13 +53,13 @@
 | 文件类型 | 放置位置 | 说明 |
 |----------|----------|------|
 | 通用规范/流程 | `docs/` 对应子目录 | 如 QUALITY_ASSURANCE.md、PROJECT_MAINTENANCE.md |
-| 通用模板 | `project-management/task-reports/` 或 `docs/` | 如 REPORT_TEMPLATE.md、VERIFICATION_TEMPLATE.md |
+| 通用模板 / 规范（入库） | `docs/development/templates/`、`docs/` | 如 REPORT_TEMPLATE.md、VERIFICATION_TEMPLATE.md |
 | 具体课程产出物 | 对应课程目录两层下 | 如 原始资源/ 的 video.mp4、transcript.md、讲义，知识详解/ 的 {知识点}.md |
 | 具体课程专项质检（按需） | 对应课程目录下 | 仅视频/转写等非标准对象用 VERIFICATION.md，非每次必出；做题/同步验证默认并入任务报告 |
-| 具体课程测试计划 | `docs/project-management/` | 测试计划是项目管理文档，不是课程产出物 |
-| 具体任务报告 | `project-management/task-reports/` 或对应课程目录 | 根据报告性质决定 |
+| 具体课程测试计划（过程件，不入库） | `data/_workspace/<course>/` | 测试计划是单课过程件，不进仓库持久目录 |
+| 具体任务报告（过程件，不入库） | `data/_workspace/<course>/task-reports/` | 课程 finalize 后本地留底 |
 
-**原则**：针对具体课程/讲座的产出物，放在对应课程目录下；通用模板和规范放在 `docs/` 或 `project-management/task-reports/` 下。
+**原则**：针对具体课程/讲座的产出物放在对应课程目录，单课过程件（任务报告、测试计划、侦查检查）放该课 `data/_workspace/<course>/`（不入库）；通用模板和规范（入库）放在 `docs/`（模板在 `docs/development/templates/`）。
 
 ### 2.1 产物落点与忽略模式表（运行产物不入库）
 
@@ -283,7 +283,7 @@ L3 默认不入库，但**同时满足三问**的"轻量派生/路由元数据"�
 
 ### 6.2 标准七步与每步交付物
 
-| 步 | 动作 | 交付物（落盘到 task-reports/） | 进入下一步的门 |
+| 步 | 动作 | 交付物（过程件落 `data/_workspace/<course>/task-reports/`，不入库） | 进入下一步的门 |
 |---|---|---|---|
 | 1 问题调研 | 按目录树逐文件检查，无问题也列；问题分类 | 《问题调研报告》 | 问题清单与范围经用户确认 |
 | 2 修订依据规范 | 改 SSOT 规范、消除自相矛盾、自洽复核 | 依据文档优化记录 | 规范自身 0 矛盾 |

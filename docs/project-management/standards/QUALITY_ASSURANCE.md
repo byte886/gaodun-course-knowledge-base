@@ -66,9 +66,9 @@ done
 
 - 做题回查由接口返回的 exam-report / batch_result JSON 客观判定（**回查的是"提交是否被平台正确结算"的技术闭环，不是答案正确性——答案取自 redo 标准答案、提交即标准、无需验证**，非满分按漏交/AI 批改未完成等技术异常排查）；飞书同步由 lark-cli 返回状态 + 同步后回读校验；视频/转写由可播放性与抽检确认。这些验证动作都必须执行，但结论直接体现在任务执行输出与《任务报告》中，**默认不再单独生成「验证报告_*.md / 同步报告_*.md」**。
 - 仅当验证对象非标准（视频/转写/OCR 等专项质检）、AI 判断确需独立留痕时，才用通用模板 `docs/development/templates/VERIFICATION_TEMPLATE.md`：综合质检命名 `VERIFICATION.md`（放对应课程目录，和被验证对象在一起），专项命名 `验证报告_<对象>_<范围>.md`（仅本地、不上传飞书/网盘）。
-- 需要记录一次完整任务的过程与结论时，用任务报告模板 `docs/development/templates/REPORT_TEMPLATE.md`，落 `project-management/task-reports/`。
+- 需要记录一次完整任务的过程与结论时，用任务报告模板 `docs/development/templates/REPORT_TEMPLATE.md`，落 `data/_workspace/<course>/task-reports/`。
 
-> **文件归属原则**：针对具体课程/讲座的产出物放在对应课程目录下；通用模板和规范放在 `docs/` 或 `project-management/task-reports/` 下。
+> **文件归属原则**：针对具体课程/讲座的产出物放在对应课程目录或该课 `data/_workspace/<course>/`；通用模板和规范（入库）放在 `docs/`（模板在 `docs/development/templates/`）。任务报告是过程件，落该课 `data/_workspace/<course>/task-reports/`、不入库。
 
 ### 1.5 问题处理
 
@@ -118,7 +118,7 @@ ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default
 
 ## 四、验证留痕与归档
 
-- 默认不单独产出验证/同步报告：验证结论并入任务输出或《任务报告》（`project-management/task-reports/`，用 REPORT_TEMPLATE）。
+- 默认不单独产出验证/同步报告：验证结论并入任务输出或《任务报告》（`data/_workspace/<course>/task-reports/`，用 REPORT_TEMPLATE）。
 - 确需独立验证留痕时用通用模板 VERIFICATION_TEMPLATE.md，仅本地、不上传飞书/网盘（见 1.4）。
 - 验证通过后，在任务状态文档中标记"已验证"。
 

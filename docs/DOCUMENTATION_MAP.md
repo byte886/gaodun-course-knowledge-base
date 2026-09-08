@@ -159,7 +159,7 @@
 | 开发文档索引 | `docs/development/README.md` | 开发文档快速索引 |
 | 高顿作业接口档案 | `docs/development/api/gaodun-exam-api.md` | 做题链路接口契约、ID映射、JWT鉴权与最小作答时长风控（接口为主路线） |
 | 项目管理索引 | `docs/project-management/README.md` | 项目管理文档快速索引 |
-| 报告模板 | `project-management/task-reports/README.md`、`docs/development/templates/REPORT_TEMPLATE.md` | 任务报告模板 |
+| 报告模板 | `docs/development/templates/REPORT_TEMPLATE.md` | 任务报告模板（产出的报告是过程件，落 `data/_workspace/<course>/task-reports/`，不入库） |
 | 通用验证模板 | `docs/development/templates/VERIFICATION_TEMPLATE.md` | 视频/转写等专项质检按需（验证默认不单独成文，无知识库专用模板） |
 | 批量整改清单模板 | `docs/development/templates/REFACTOR_PLAN_TEMPLATE.md` | 批量重命名/结构整改的全量清单与回归核对（配合 PROJECT_STRUCTURE_MAINTENANCE 第六章 SOP） |
 | 流程测试计划模板 | `docs/development/templates/TEST_PLAN_TEMPLATE.md` | 新学科首跑/链路改造的端到端流程测试（步骤状态、问题两级分级、通过标准） |
@@ -170,15 +170,10 @@
 
 | 文档 | 路径 | 用途 |
 |------|------|------|
-| 任务状态 | `project-management/active/TASK_STATUS.md` | 当前任务进度（唯一权威来源） |
-| 问题/BUG跟踪 | `project-management/active/ISSUES.md` | 未解决问题、已解决问题、潜在风险 |
-| 批量任务状态 | `project-management/active/BATCH_TASK_STATUS.md` | 大任务执行进度、恢复点 |
-| 课程索引 | `project-management/active/COURSE_INDEX.md` | 所有课程清单、进度、资源位置 |
-| 测试计划 | `project-management/test-plans/测试计划_*.md` | 各课程测试计划（按需、不常驻） |
-| 决策记录（ADR） | `docs/project-management/decisions/ADR-*.md` | 重要决策的背景、原因、后果 |
-| 题答解析（接口采集） | 课程 `data/_workspace/<profile>/papers/<paperId>.json`、`data/_workspace/<profile>/manifest/{paper_index,papers_inventory,course-manifest}.json` | 题面/标准答案/官方解析只读采集与归组路由（gitignore 不入库） |
-| 用户留言/笔记原件 | 课程 `data/_workspace/<profile>/notes-raw/` | 高赞留言/口诀原件，提炼入「学员补充」后清（gitignore） |
-| 任务报告 | `project-management/task-reports/任务报告_*.md` | 各任务执行报告（不要求引用） |
+| 任务状态（全局） | `project-management/active/TASK_STATUS.md` | 跨课里程碑、当前课指针、全局断点/下一步（唯一**全局**状态源；单课明细在 workspace） |
+| 问题/BUG 跟踪（全局） | `project-management/active/ISSUES.md` | 跨课/机制级问题生命周期；单课一次性问题进该课 workspace 的 BUG_BACKLOG |
+| 决策记录（ADR） | `docs/project-management/decisions/ADR-*.md` | 重要决策的背景、原因、后果（只增不改） |
+| 单课过程件（工单/批次/测试计划/任务报告/题答/笔记原件/日志） | 课程 `data/_workspace/<profile>/{tickets,task-reports,papers,notes-raw,manifest,logs}/` | 单门课生产过程的一切过程件，gitignore 不入库；finalize 后本地留底，稳定结论才提炼进 ADR/OKF/SOP |
 
 ### 五、治理规范（Governance — 规则）
 

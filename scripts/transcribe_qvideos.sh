@@ -16,10 +16,11 @@ PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
 # shellcheck source=lib/parallel.sh
 source "$ROOT/scripts/lib/parallel.sh"
-SRC="$ROOT/data/_workspace/${GAODUN_COURSE_PROFILE:-cpa-tax-2026}/tmp/download/sprint-videos/题目级讲解"
-WORK="$ROOT/transcription/.qv_work"
-LOGDIR="$WORK/logs"
-mkdir -p "$LOGDIR"
+RP="${GAODUN_COURSE_PROFILE:-cpa-tax-2026}"
+SRC="$ROOT/data/_workspace/$RP/tmp/download/sprint-videos/题目级讲解"
+WORK="$ROOT/data/_workspace/$RP/tmp/qv_work"
+LOGDIR="$ROOT/data/_workspace/$RP/logs"
+mkdir -p "$WORK" "$LOGDIR"
 
 # ---------- 单个 qvideo worker（自递归，目录作为最后参数 $2） ----------
 if [ "${1:-}" = "--worker" ]; then

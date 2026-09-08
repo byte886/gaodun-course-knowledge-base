@@ -93,6 +93,8 @@
 
 **开始任何大任务前，必须先创建执行状态记录，异常恢复时必须先读取状态记录。**
 
+**落点（分层）**：单门课的大任务状态记录（批次进度、工单、断点）落 `data/_workspace/<course>/`（不入库）；`active/TASK_STATUS.md` 只更新该课的**指针级**状态，不抄批次明细。
+
 **详细规范**：`docs/project-management/standards/BATCH_TASK_EXECUTION.md`
 
 **必须创建执行状态记录的场景**：
@@ -190,7 +192,7 @@
 2. 再读取`README.md`了解项目概览
 3. 再读取工程记忆 `docs/project-management/memory/index.md`，按需沿 concept 下钻源 ADR/规范，恢复跨会话稳定结论与硬约束（不靠对话记忆猜测）
 4. 再读取`project-management/active/TASK_STATUS.md`了解当前任务状态
-5. 按使用者话术，按需读取 `TASK_STATUS.md`、`BATCH_TASK_STATUS.md`、`ISSUES.md`、`COURSE_INDEX.md` 等实时台账了解项目当前情况（角色职责见本文档，无需固定交接摘要或文件）
+5. 按使用者话术，先读 `project-management/active/` 两份**全局**台账——`TASK_STATUS.md`（项目到哪、下一步）、`ISSUES.md`（跨课/机制级问题）；**单门课的工单、批次、逐讲/逐卷进度、任务报告等过程件在 `data/_workspace/<course>/`（不入库）**，按需再读，不靠对话记忆（角色职责见本文档，无需固定交接摘要或文件）
 6. **识别用户指定的角色**（开发工程师/项目架构师/产品经理/私人秘书），根据角色确定职责和关注点：
    - **开发工程师**：关注技术实现、代码结构、待开发功能、技术问题
    - **项目架构师**：关注项目进度、任务状态、风险问题、文档完整性、目录结构、下一步计划
@@ -364,7 +366,7 @@
 | 视频转文字 | `docs/WORKFLOW.md` 第5节 | `docs/development/tools/transcription.md` |
 | 知识库生成 | `docs/WORKFLOW.md` 第6节 | `docs/development/knowledge/knowledge-base-organization.md` |
 | **做题验证** | `docs/WORKFLOW.md` 第7节 | **`docs/development/guides/exam-workflow.md`** |
-| 任务报告 | `docs/WORKFLOW.md` 第8节 | `docs/project-management/README.md` |
+| 任务报告（过程件，不入库） | `docs/WORKFLOW.md` 第8节 | 模板 `docs/development/templates/REPORT_TEMPLATE.md`，产出落 `data/_workspace/<course>/task-reports/` |
 | Git操作 | `docs/development/guides/git-workflow.md` | - |
 | 项目维护 | `docs/project-management/standards/PROJECT_MAINTENANCE.md` | - |
 | 编码规范 | `docs/project-management/standards/CODE_STYLE.md` | - |
@@ -379,7 +381,7 @@
 
 **6类查询意图：**
 - Q1 任务状态查询 → 读 `TASK_STATUS.md`
-- Q2 问题/BUG查询 → 读问题列表（从TASK_STATUS和任务报告提取）
+- Q2 问题/BUG查询 → 读 `active/ISSUES.md`（跨课/机制级）+ 该课 `data/_workspace/<course>/tickets/BUG_BACKLOG.md`（单课一次性问题）
 - Q3 维护工作查询 → 读 `PROJECT_MAINTENANCE.md` + 待优化项
 - Q4 文档/操作查询 → 读 `DOCUMENTATION_MAP.md` + `WORKFLOW.md`
 - Q5 项目概览查询 → 读 `README.md` + `TASK_STATUS.md`

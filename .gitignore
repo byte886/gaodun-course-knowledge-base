@@ -52,13 +52,11 @@ logs/
 # --- 数据与抓包（data/ 是外部数据目录，题源 papers、cdp-sniff 等都在其内，整体不入库）---
 data/
 
-# --- 转写模块运行期产物（venv 已由通用规则忽略；成品 transcript 落外部课程库）---
+# --- 转写模块运行期产物（运行中转已统一 data/_workspace/<course>/tmp，由 data/ 整体忽略；下列为历史输出目录兜底）---
 transcription/.tmp_*/
 transcription/.transcribe_done
 transcription/transcripts_full/
 transcription/transcripts/
-transcription/.parallel_work/
-transcription/.qv_work/
 
 # --- 浏览器自动化运行缓存（Playwright CLI 兜底路线）---
 .playwright-cli/
