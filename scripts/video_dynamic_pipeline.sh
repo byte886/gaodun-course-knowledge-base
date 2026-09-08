@@ -141,6 +141,25 @@ reap(){
   done
 }
 
+# 结束清扫（幂等兜底，绝不误删在制）：只把「成品 transcript 已在 videos、却漏删」的 NN_讲名 残留
+# 移到 macOS 废纸篓（带时间戳，不硬删）；成品未齐＝在制/blocked，一律保留并列出，交人工。
+# 同时扫两个基准：旧契约残留落在课程根、新契约落在 $TMPBASE（dl-tmp）。
+sweep_base(){ # $1=基准目录  $2=标签
+  local base="$1" tag="$2" d nn fin stamp moved=0 kept=0 keptlist=""
+  for d in "$base"/[0-9][0-9]_*/; do
+    [ -d "$d" ] || continue
+    d="${d%/}"; nn="$(basename "$d" | cut -c1-2)"; fin="$(fin_dir "$nn")"
+    if [ -n "$fin" ] && [ -s "$fin/transcript.md" ]; then
+      if [ "$DRY" = 1 ]; then echo "    [dry-run][sweep:$tag] 将移废纸篓(成品已完成的漏删残留): $(basename "$d")"; moved=$((moved+1)); else
+        stamp=$(date +%Y%m%d%H%M%S)
+        mv "$d" "$HOME/.Trash/$(basename "$d")__sweep__$stamp" && { echo "  [sweep:$tag] 漏删残留已移废纸篓: $(basename "$d")"; moved=$((moved+1)); }
+      fi
+    else kept=$((kept+1)); keptlist="$keptlist $(basename "$d")"; fi
+  done
+  echo "  [sweep:$tag] 移废纸篓 $moved，保留(在制/blocked) $kept${keptlist:+ ->$keptlist}"
+}
+sweep_course_root(){ sweep_base "$COURSE_ROOT" "课程根"; sweep_base "$TMPBASE" "工作区"; }
+
 tick_once(){
   reap; sample_cpu
   local todo_dl="" todo_cmp="" todo_tr="" n_done=0 idx nn
@@ -180,10 +199,10 @@ tick_once(){
     "[$todo_dl ]" "[$todo_cmp ]" "[$todo_tr ]" "$rdl" "$rcmp" "$rtr" "$USED" "$FREE" "$LOAD1" "${actions:-（本tick不新增）}"
   # 终止条件
   local total=$((END-START+1))
-  if [ "$n_done" = "$total" ] && [ -z "$(ls "$RUND"/*.pid 2>/dev/null)" ]; then echo "ALL_DONE"; return 1; fi
+  if [ "$n_done" = "$total" ] && [ -z "$(ls "$RUND"/*.pid 2>/dev/null)" ]; then echo "ALL_DONE"; sweep_course_root; return 1; fi
   local nb=$(ls "$RUND"/blocked_* 2>/dev/null | wc -l | tr -d ' ')
   if [ "$n_done" -lt "$total" ] && [ -z "$todo_dl$todo_cmp$todo_tr" ] && [ "$rdl$rcmp$rtr" = "000" ]; then
-    echo "STALLED：剩余未完成但无在跑、无待办（可能全部被拉黑），blocked=$nb"; return 1
+    echo "STALLED：剩余未完成但无在跑、无待办（可能全部被拉黑），blocked=$nb"; sweep_course_root; return 1
   fi
   return 0
 }
