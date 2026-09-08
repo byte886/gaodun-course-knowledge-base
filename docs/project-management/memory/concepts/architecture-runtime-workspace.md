@@ -30,6 +30,7 @@ data/_workspace/
     ├── sniff/                    #   CDP 抓包原始报文
     ├── tmp/download/             #   临时下载
     ├── pipeline/                 #   流水线中间态
+    ├── dl-tmp/                   #   视频下载/压缩过程件（.vfetch 的 ts 分片/merged.ts，压完归位即清）
     └── logs/                     #   该课程日志
 ```
 - **正交原则**：`_workspace` 是**全局唯一工作区、不专属某门课**；区分课程靠子目录名 `<profile-key>`，区分账号共享物靠 `_account/`。账号课程清单这类"动态、跨课程、临时"的文件也归 `_account/`，不落到固定课程目录。
@@ -44,6 +45,7 @@ data/_workspace/
 
 ## 易踩坑
 - 看到 `data/` 下又冒出 `user-notes/`、`notes/`、`cdp-sniff/`、`logs/` 这类目录，基本都是旧脚本没走收口函数，应归位到 `_workspace` 对应子目录而不是新建第二套。
+- 视频下载/压缩的 `.vfetch`（上千 ts 分片、merged.ts）同样**禁止落课程库根**：曾误建 `课程库/NN_讲名/.vfetch`，只靠转写末尾 `rm -rf` 自清，一旦主控中断/讲次被拉黑就永久残留。现由 `fetch_lecture_video.js --work-base` 统一指向 `_workspace/<profile>/dl-tmp/`，压缩后成品才归 `原始资源/videos/`，课程库根全程不出现讲目录（commit 2b1f892）。
 - 账号级文件（auth、用户空间清单）不要放进某个 `<profile-key>`，否则换课时重复且会漂移。
 
 ## 来源与下钻

@@ -4,6 +4,10 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-09
+
+- **Update**：工作区收口 concept 补「视频下载/压缩过程件 `.vfetch` 落 `_workspace/<profile>/dl-tmp/`、课程库根不留讲目录」——`fetch_lecture_video.js` 新增 `--work-base`（缺省课程根、向后兼容），动态/串行两条流水线统一指向 dl-tmp，成品仍归 `原始资源/videos/`；根因是 .vfetch 曾建在课程库根、仅靠转写末尾自清，主控中断即永久残留（commit 2b1f892）。
+
 ## 2026-09-08
 
 - **Update**：做题链路 concept 补 answerMode=5 表格题双字段提交契约（`userAnswer` + `excelAnswer=JSON.stringify(luckysheet.getAllSheets())`，做题 UI 在独立子应用 sub-tiku.gaodun.com）与错误码分层（token 553649434 / 作答太快 10462203 / 账号级风控 10462222）；结论由 sub-tiku 前端源码逆向 + 三类卷（满分 t1/平台最优 t1/对照）redo 全拦的对照实测得到，细节指针到 exam-workflow §4.3.2/§4.4。
