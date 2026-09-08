@@ -40,7 +40,7 @@
 ### 正确方案：xargs -P（内核级并发管理）
 
 ```bash
-# 生成待处理列表（每行一个任务）
+# 生成待处理列表（每行一个任务）；process_one.sh 是"处理单条任务"的示例占位脚本名，落地时替换为本项目真实脚本
 cat pending.txt | xargs -P 3 -n 1 bash scripts/process_one.sh
 ```
 

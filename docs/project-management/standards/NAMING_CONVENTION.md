@@ -248,7 +248,7 @@ data/_workspace/
 ### 9.4 L3 脚本：全小写 snake_case
 
 - 适用 `scripts/` 下 `.py/.sh/.js/.mjs`：多词用下划线 `_`，**禁止连字符 `-`、禁止大写**。
-- 正例：`baidu_upload.py`、`check_directory_structure.sh`、`capture_key.js`。
+- 正例：`baidu_upload.py`、`check_directory_structure.sh`、`fetch_lecture_video.js`。
 - 反例：`check-kb-structure.sh`、`setup-transcription-env.sh`、`SetupTranscribe.js`。
 - 依据 PEP 8（Python 模块全小写、可用下划线）；Google JS 指南允许下划线或连字符但要求"跟随项目既有约定"，本项目主流为下划线，统一为 snake_case。
 - 唯一例外 `pre-commit`（见 9.3）。

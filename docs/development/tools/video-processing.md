@@ -52,52 +52,21 @@
 
 ## 详细操作流程
 
-### 步骤1：连接浏览器
+### 步骤1：下载与解密（CDP 自动化主链路）
 
-```bash
-PLAYWRIGHT_MCP_EXTENSION_TOKEN=<token> npx playwright cli -s=ga attach --extension=chrome
-```
+现役链路**不需要**手动 attach 浏览器、手动点回放或手动抓密钥——保持日常 Chrome 已登录高顿即可，脚本经 CDP 自动连接、抓流、解密合并：
 
-### 步骤2：打开课程表并遍历回放
+- **单讲**：`node scripts/cdp/fetch_lecture_video.js <idx> [--profile <key>]`
+  - 一轮内连续完成：从 syllabus 取该讲最新回放 token → CDP 抓 HLS（SD/FHD）密钥 → 下 m3u8 解析 IV → 下载分片并解密合并为 `merged.ts`（底层复用 `download_decrypt.js`，20 并发、断点续传）
+  - `idx` 为 course_catalog / syllabus children 下标；课程目录、courseId、syllabusId 全部读 `config/courses/<key>.json`（缺省税法，或用 `GAODUN_COURSE_PROFILE` / `--profile` 指定）
+  - 幂等：目标讲目录已有成品则跳过；m3u8 / authorize token 会过期，故抓流→下载必须同一轮连续完成
+- **整门课批量**：`bash scripts/batch_video_pipeline.sh <start> <end>`（断点续跑，已完成讲自动跳过；下载后串行压缩，并按配置衔接转写）
 
-课程表 URL 格式：`https://glivepro.gaodun.com/course/<course_id>/class-schedule`
+解密原理（密钥取 hls.js Worker 返回前 16 字节原始 ASCII、IV 取 m3u8 `#EXT-X-KEY` 去 `0x` 前缀、分片解密后首字节应为 `0x47` TS sync byte）见上文「加密方案」与 `encryption.md`，日常下载无需手动操作。
 
-- 用 `snapshot`/`find` 找到"看回放"按钮
-- **跳过"开班典礼"**（标题含"开班典礼"的场次）
-- 点击"看回放"会在新标签页打开播放器（`v-glive.gaodun.com/player?token=...`）
-- 切换到新标签页：`npx playwright cli -s=ga tab-select 1`
+> 旧的手动 Playwright run-code 路线（`attach --extension` → 手动遍历回放 → `run-code capture_key.js` → 手动 curl m3u8）已被上述 CDP 链路完全取代，相关脚本于 2026-09-08 清理。
 
-### 步骤3：捕获 FHD 密钥
-
-在播放器标签页运行 capture_key.js（注入 Worker hook → reload → 播放 → 切换 1080P → 提取密钥）：
-
-```bash
-npx playwright cli -s=ga run-code scripts/capture_key.js
-```
-
-返回 JSON 包含 `streams` 数组，每项有 `quality`、`m3u8`、`keyAscii`。取 `FHD-1080P` 项。
-
-**注意**：
-- 自定义元素标签名（如 `G-3F001E35`）每次加载会变，通过 `.gp-video-wrap` 子元素遍历找 `.video` 属性
-- 清晰度按钮 class：`.gp-setting-quality-item`，FHD 选项文本含"1080"
-- 如果 FHD 切换后没有新密钥，检查视频是否已在播放（需 seek 到 0 并 play）
-
-### 步骤4：下载 m3u8 和分片
-
-```bash
-# 下载 FHD m3u8
-curl -s -o playlist.m3u8 "<fhd_m3u8_url>" \
-  -H "User-Agent: Mozilla/5.0 ..." -H "Referer: https://v-glive.gaodun.com/"
-
-# 下载+解密+合并全部分片（20并发，支持断点续传）
-node scripts/download_decrypt.js playlist.m3u8 merged.ts ./segments <keyAscii> <iv_hex> 20
-```
-
-IV 从 m3u8 的 `#EXT-X-KEY` 行提取，去掉 `0x` 前缀。
-
-**验证**：检查每个分片解密后首字节为 0x47（TS sync byte）。
-
-### 步骤5：压缩（必须在 iTerm 中运行，禁止后台运行）
+### 步骤2：压缩（必须在 iTerm 中运行，禁止后台运行）
 
 > ⚠️ **强制要求：必须在 iTerm 终端窗口中运行，禁止使用 `&` 后台运行！**
 >
@@ -154,7 +123,7 @@ end tell"
 
 压缩完成后 compress.sh 自动验证时长和可播放性。
 
-### 步骤6：下载讲义文档
+### 步骤3：下载讲义文档
 
 在课程表页，每个直播场次下有"讲义|"/"课件|"前缀的条目，带"下载"链接。
 
@@ -235,7 +204,7 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 
 **文档格式**：可能是 PDF、PPT、DOC 等，以实际下载为准。下载后用 `file` 命令确认格式。
 
-### 步骤7：目录结构
+### 步骤4：目录结构
 
 ```
 <download_root>/
@@ -253,7 +222,7 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 └── _reports/                  # 任务报告
 ```
 
-### 步骤8：验证清单
+### 步骤5：验证清单
 
 每个视频压缩后必须确认：
 - [ ] ffprobe 能正常读取（moov atom 存在）
@@ -262,7 +231,7 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 - [ ] 音频编码为 aac
 - [ ] 文件可正常播放（首尾都有画面）
 
-### 步骤9：百度网盘上传（可选）
+### 步骤6：百度网盘上传（可选）
 
 百度网盘开放平台 REST API 支持文件上传、目录管理（mkdir/move/delete/rename）。
 配置和使用见 `netdisk-setup.md`。
@@ -299,7 +268,8 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 
 | 脚本 | 位置 | 说明 |
 |------|------|------|
-| 密钥捕获 | `scripts/capture_key.js` | Playwright Worker hook 注入脚本 |
+| 单讲下载主控 | `scripts/cdp/fetch_lecture_video.js` | 取回放token→CDP抓key→下m3u8→解密合并（内部调下面两个） |
+| CDP 密钥捕获 | `scripts/cdp/capture_video_key.js` | CDP 连日常 Chrome、注入 Worker hook，抓 m3u8(SD/FHD) 与 AES key |
 | 下载解密 | `scripts/download_decrypt.js` | HLS分片下载解密合并脚本 |
 | 压缩脚本 | `scripts/compress.sh` | ffmpeg H.265压缩脚本 |
 | 知识库结构检查 | `scripts/check_kb_structure.sh` | 自动检测重复节点、空节点、链接问题 |

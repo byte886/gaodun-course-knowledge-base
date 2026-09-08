@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * capture_video_key.js — 经 CDP(puppeteer-core) 打开高顿回放页，注入 Worker hook，
- * 捕获 HLS 的 m3u8(SD/FHD) 与 AES key。等价于旧 Playwright run-code 版 capture_key.js，
- * 但走本项目主链路（连接日常 Chrome，复用登录态）。
+ * 捕获 HLS 的 m3u8(SD/FHD) 与 AES key。走本项目主链路（连接日常 Chrome，复用登录态），
+ * 由 fetch_lecture_video.js 内部调用，一般不单独运行。
  *
  * 用法：node scripts/cdp/capture_video_key.js "<回放player?token=URL>" [输出json路径]
  * 输出 JSON：{quality,m3u8,keyAscii}[]（通常含 SD-540P / FHD-1080P 两项）

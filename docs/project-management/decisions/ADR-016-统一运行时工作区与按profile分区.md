@@ -79,3 +79,7 @@ data/
 - [ADR-012 三层解耦与按知识点聚合](ADR-012-三层解耦与按知识点聚合.md)（本决策修订其工作区位置）
 - [DIRECTORY_STRUCTURE 第二章](../../DIRECTORY_STRUCTURE.md)
 - 收口实现：`scripts/cdp/load_profile.js`、`scripts/cdp/gaodun_paper_core.js#findJwt`
+
+---
+
+> **2026-09-08 演进注记**：正文第 49 行所述"一次性历史迁移工具 `scripts/migrate/*` 保留旧路径不动"已随项目管理分层治理调整——`scripts/migrate/`（align_m0 / build_course_manifest / migrate_resources / verify_migration）为税法存量迁移定格快照、现役零调用、会计 manifest 由独立的 `cdp/refresh_inventory.js` 生成，故整体清理出工作树（移入带时间戳废纸篓，git 历史永久保留可复现性）。本 ADR 记录的运行时收口决策不变。

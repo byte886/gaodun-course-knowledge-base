@@ -187,7 +187,6 @@ Profile 选择规则（`pickProfile()`，可传 `{profile:'Profile 1'}` 强制�
 
 - **纯接口主链路**：`cdp/api_do_paper.js` / `cdp/batch_redo_papers.js` / `cdp/do_sprint_paper.js`，零 UI 点选；CDP 仅用于 connect_browser 连接日常 Chrome 复用登录态。
 - **接口化主链路用本手册的 puppeteer-core 通道**；两条通道可同时 attach 到同一个日常 Chrome，互不冲突。
-- 页面内 hook 方案 `scripts/capture_exam_net.js`（经扩展注入 fetch/XHR hook 到 `window.__net`）是另一种采集思路，可作为 CDP 抓包的交叉校验，不替代连接层。
 
 ---
 

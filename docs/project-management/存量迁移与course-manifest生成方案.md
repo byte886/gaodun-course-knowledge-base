@@ -5,6 +5,7 @@
 > **上游范式**：[ADR-012](decisions/ADR-012-三层解耦与按知识点聚合.md)、[WORKFLOW 四阶段](../WORKFLOW.md)、[DIRECTORY_STRUCTURE](../DIRECTORY_STRUCTURE.md)
 > **执行 SOP**：迁移本身是"把旧按讲存量搬进三层 + 生成 manifest"，为阶段①②③铺好原料；不替代四阶段 SOP。
 > **历史注记（2026-09-07，ADR-016）**：本文记录的是 M0–M6 当时迁入"课程内 `_workspace/`"的一次性动作；该工作区物理位置后经 [ADR-016](decisions/ADR-016-统一运行时工作区与按profile分区.md) 上移为统一的 `data/_workspace/`（账号级 `_account` + 课程级 `<profile>`），课程目录回归两层。下文出现的课程内 `_workspace`、`knowledge-source`、`cdp-sniff` 均为当时路径，仅作历史留痕，现以 ADR-016 与 DIRECTORY_STRUCTURE 为准。
+> **历史注记（2026-09-08，脚本清理）**：下文「新增 `scripts/migrate/`」所列 4 个一次性迁移脚本（align_m0 / build_course_manifest / migrate_resources / verify_migration）已随项目管理分层治理清理出工作树——迁移已完成、现役零调用、新课 manifest 由 `scripts/cdp/refresh_inventory.js` 生成。脚本可从 git 历史取回，本文作为施工记录保留原文不改。
 
 ---
 

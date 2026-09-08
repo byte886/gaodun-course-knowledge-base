@@ -26,7 +26,7 @@
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
 
-> **全量对齐（2026-09-05；2026-09-07 增补）**：历史脚本已一次性补登；2026-09-07 多课程/并行化改造新增单课总编排器 `run_course_pipeline.sh` 与并发标准件 `lib/parallel.sh`（见「课程配置」末小节），并同步更新各去硬编码脚本条目。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/migrate scripts/lib` 核对，避免再次出现"在跑但没上台账"。
+> **全量对齐（2026-09-05；2026-09-07 增补）**：历史脚本已一次性补登；2026-09-07 多课程/并行化改造新增单课总编排器 `run_course_pipeline.sh` 与并发标准件 `lib/parallel.sh`（见「课程配置」末小节），并同步更新各去硬编码脚本条目。新增脚本必须按文末「维护规则」同步登记，并定期用 `ls scripts/ scripts/cdp scripts/ocr scripts/knowledge scripts/lib` 核对，避免再次出现"在跑但没上台账"。
 
 ---
 
@@ -106,7 +106,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；等价旧 Playwright 版 `capture_key.js`，但走主链路（连日常 Chrome、复用登录态） |
+| **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；现役取密钥主链路（连日常 Chrome、复用登录态；旧 Playwright run-code 路线已清理） |
 | **用法** | `node scripts/cdp/capture_video_key.js "<回放 player?token=URL>" [输出json路径]`，输出 `{quality,m3u8,keyAscii}[]` |
 | **可靠性** | ✅ 高（纯采集，只开一个临时静音播放标签触发 worker 流量、抓完即关，不动用户其它页） |
 | **相关文档** | `docs/development/tools/video-processing.md`、ADR-010 |
@@ -527,20 +527,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 八、数据采集（2个）
-
-### `capture_key.js` — 按键捕获
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 捕获页面中的加密密钥（用于HLS视频解密） |
-| **用法** | `node scripts/capture_key.js <url>` |
-| **可靠性** | ⚠️ 中（依赖页面结构，可能需要调整） |
-| **相关文档** | `docs/development/tools/video-processing.md` |
-
----
-
-## 九、浏览器 CDP 连接（2个，位于 `scripts/cdp/`）
+## 八、浏览器 CDP 连接（2个，位于 `scripts/cdp/`）
 
 > 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
 
@@ -569,7 +556,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 十、高顿做题接口链路（6个，位于 `scripts/cdp/`）
+## 九、高顿做题接口链路（6个，位于 `scripts/cdp/`）
 
 > 「接口为主、UI 兜底」的纯接口做题脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)。报文落 `data/_workspace/<profile>/sniff/`（不入库）。
 
@@ -686,7 +673,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 十一、飞书知识库同步（1个）
+## 十、飞书知识库同步（1个）
 
 > 飞书同步现役脚本。同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准。
 
@@ -711,7 +698,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 ---
 
 
-## 十二、知识详解生成（5个，位于 `scripts/knowledge/`）
+## 十一、知识详解生成（5个，位于 `scripts/knowledge/`）
 
 > 按官方知识点聚合生成知识详解 md 的核心生产脚本。流程：collect_point_questions（按知识点收题）→ render_point_qa（渲染题答解析）→ organize_user_notes（整理学员补充）→ assemble_point（组装成篇）。
 
@@ -767,80 +754,6 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `python3 scripts/knowledge/assemble_point.py` |
 | **可靠性** | ✅ 高（92 篇+2 全局篇，已用于税法课全量生成） |
 | **相关文档** | ADR-012、knowledge-detail-build-sop.md |
-
----
-
-## 十三、存量迁移工具（4个，位于 `scripts/migrate/`）
-
-> 为税法课从旧「按讲端到端」结构迁移到新「三层解耦+按知识点聚合」结构而写的一次性工具。新课程不直接套用，通用化属「会计课开工前工具建设」另议。详见 `scripts/migrate/README.md`。
-
-### `migrate/align_m0.py` — M0 存量对齐
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 迁移前存量对齐：核对旧按讲目录与新三层结构的资源映射 |
-| **用法** | `python3 scripts/migrate/align_m0.py` |
-| **可靠性** | ⚠️ 一次性迁移工具，新课程不直接套用 |
-| **相关文档** | scripts/migrate/README.md、ADR-012 |
-
----
-
-### `migrate/build_course_manifest.py` — 构建课程 manifest
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 从 syllabus 接口报文 + papers 生成 course-manifest.json（讲↔资源↔知识点完整映射），可 rebuild、可校验 |
-| **用法** | `python3 scripts/migrate/build_course_manifest.py` |
-| **可靠性** | ⚠️ 一次性工具、为税法课定制（硬编码课程路径、读当时 `data/cdp-sniff` 报文，该目录后经 ADR-016 上移为 `data/_workspace`），非通用生成器，新课程不直接套用 |
-| **相关文档** | scripts/migrate/README.md、ADR-012 |
-
----
-
-### `migrate/migrate_resources.py` — 资源迁移（旧按讲→新三层）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 把旧按讲目录中的 videos/notes/papers 迁移到新三层结构（原始资源/按类型分桶） |
-| **用法** | `python3 scripts/migrate/migrate_resources.py` |
-| **可靠性** | ⚠️ 一次性迁移工具 |
-| **相关文档** | scripts/migrate/README.md、ADR-012 |
-
----
-
-### `migrate/verify_migration.py` — 迁移总校验
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 对照《存量迁移方案》验收清单逐项核验，全绿才判定迁移完成 |
-| **用法** | `python3 scripts/migrate/verify_migration.py` |
-| **可靠性** | ✅ 高（税法课迁移已全绿通过） |
-| **相关文档** | scripts/migrate/README.md、ADR-012 |
-
----
-
-## 十四、侦查 / PoC 网络采集（3个）
-
-> 路线探索期脚本。现役浏览器链路是 `cdp/connect_browser.js` 直连日常 Chrome（ADR-010）、现役接口侦查是第十类 cdp 脚本；下列为 Playwright 备用采集手段，**非生产链路**（自开独立 Profile 的持久化浏览器 PoC 路线已否决，脚本于 2026-09-08 清理）。
-
-### `capture_exam_net.js` — Playwright 网络钩子注入
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 在考试页注入 fetch/XHR 网络钩子并 reload（使钩子先于页面脚本生效），把高顿业务请求/响应记录到 `window.__net`；默认只读采集，置 `__netBlockWrite=true` 可阻断写请求，用于"捕获交卷 payload 但不真正发送" |
-| **用法** | `npx playwright cli -s=ga run-code scripts/capture_exam_net.js`（页面操作后用 dump_exam_net.js 导出） |
-| **可靠性** | ⚠️ 中（备用采集手段；现役接口侦查走 cdp/ 第十类） |
-| **相关文档** | gaodun-exam-api.md |
-
----
-
-### `dump_exam_net.js` — 导出 window.__net 网络数据
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 导出 capture_exam_net.js 记录在 `window.__net` 的全部网络数据为 JSON，Shell 侧重定向保存到 `data/`（不入库） |
-| **用法** | `npx playwright cli -s=ga run-code scripts/dump_exam_net.js`；可选清空：`... eval "window.__net.length=0"` |
-| **可靠性** | ⚠️ 中（与 capture_exam_net.js 配套） |
-| **相关文档** | gaodun-exam-api.md |
 
 ---
 
