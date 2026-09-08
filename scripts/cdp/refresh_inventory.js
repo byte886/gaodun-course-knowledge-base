@@ -87,6 +87,8 @@ async function inspectSubmitted(H, logId) {
         configured += 1;
         if (ai.correctStatus === 2) configuredFull += 1;
         else if (ai.correctStatus === 6 && answerMatchesCanon(leaf)) ceiling += 1; // AI 判分上限：提交=标准答案原文但模型反复判部分分
+        else if (ai.correctStatus === 3) ceiling += 1; // AI 批改返回空结果(pointList/corrects空、已耗权益)，平台侧批改失败，非答案错误(实锤82337 Q1757524)
+        else if (ai.correctStatus === 1) ceiling += 1; // 批改中/未出结果，多次重做仍为1则稳定为平台不出分，暂归平台最优
         else bad.push({ q: leaf.questionId, cs: ai.correctStatus, matchCanon: ai.correctStatus === 6 ? answerMatchesCanon(leaf) : undefined });
       } else {
         unsupported += 1; // 题库未配 AI 判分，平台不给分，忽略

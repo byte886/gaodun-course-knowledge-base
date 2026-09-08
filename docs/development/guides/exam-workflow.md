@@ -206,6 +206,8 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 - `aiCeiling`：我方提交内容归一化后就是标准答案、三级补全与 best-of-N×4 仍 cs=6，经 paper/analysis 逐字比对确认非我方问题，归 AI 判分上限、视同平台最优（依据见 flaky-ai-judging）。
 - **作业目标 100%**：非满分且不属于 unsupported/aiCeiling 的，视为需排查异常，记录原因，不允许默默放过。
 - **refresh 判满口徑（2026-09-08 修复）**：`refresh_inventory` 对已交卷**一律走 `paper/analysis` 逐题判**（客观逐题拿满 + 配AI主观 cs=2/判分上限 + 未配AI忽略），best 即到顶，再按有无未配AI/判分上限区分真满分与平台最优。**绝对禁止用 `record.score >= record.questionTotal` 判满分**——score 是得分、questionTotal 是题数，量纲不同，百分制卷恒真会把错题卷误判满分并冻结永不再刷（实锤 82337 判"满分"实际 16 分、82339 判"满分"实际 10.25 分）。
+- **cs=3 / cs=1 归平台最优（2026-09-08 补充）**：配了 AI(cpaBotType=3) 但 `correctStatus=3`（AI 批改返回空结果，pointList/corrects 全空、已耗权益，实锤 82337 Q1757524）或 `correctStatus=1`（批改中/多次重做仍不出分）均属**平台侧不出分，非答案错误**，归 aiCeiling/平台最优，不纳入 bad、不触发重刷。
+- **禁止为刷满分反复重刷同一批卷（2026-09-08 风控教训）**：短时间内对同一批卷反复 redo 会触发平台 `10462222 做题行为异常，请联系学管师` 风控拦截，所有 redo 被拒。主观题（AI 评判/人工评判）**做到答案质量到位即可，不强制刷满分**——符合 ADR-014"不追求刷满分、知识覆盖优先"。守护器连续 3 轮进度无变化会自动退出，不空转重试。
 
 ---
 
