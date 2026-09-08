@@ -455,7 +455,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用途** | 针对 `batch_redo_papers.js` 长跑「零错误静默退出」：封装好"每轮先 `refresh_inventory` 从平台回查重建 audit（已满分剔除）→ 再 `batch_redo --go` 续跑剩余"的正确顺序与完成/停滞判据，避免裸跑或直接重启按旧 audit 从头重做（死循环根因）。redo 退出后 5 秒自动续跑，PPID=1 脱离 AI 会话 |
 | **用法** | `nohup bash scripts/cdp/run_papers_supervised.sh <profile> > data/_workspace/<profile>/logs/supervisor_papers.log 2>&1 & disown` |
 | **日志** | `supervisor_papers.log`（守护轮次/停滞）+ `refresh_supervised.log`（每轮平台回查）+ `batch_do_paper.log`（做题明细，追加），均在 `data/_workspace/<profile>/logs/` |
-| **终态** | audit=0 → macOS 通知并 exit 0；连续 3 轮平台已达成数不增长（个别卷客观无法满分）→ 通知并 exit 1 交人工 |
+| **终态/防眠** | audit=0 → 写 `[NOTIFY]✅` 日志并 exit 0；连续 3 轮平台已达成数不增长 → `[NOTIFY]❌` exit 1。做题线默认 `SUPERVISE_NO_OSASCRIPT=1` 不弹 macOS 弹窗，终态由 15 分钟定时唤醒的 AI 识别后接手推进并在豆包通知；已套 `caffeinate -i` 防 Mac 空闲睡眠 |
 
 ---
 

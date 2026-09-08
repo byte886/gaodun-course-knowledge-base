@@ -102,7 +102,7 @@ node scripts/cdp/batch_redo_papers.js --go 82174 82175   # 只跑指定 paperId
   nohup bash scripts/cdp/run_papers_supervised.sh <profile> \
     > data/_workspace/<profile>/logs/supervisor_papers.log 2>&1 & disown
   ```
-  全部达成（refresh 后 audit=0）或连续 3 轮平台已达成数不增长（个别卷客观无法满分）时发 macOS 通知并退出，后者交人工核查那几张卷。三份日志分工：`supervisor_papers.log`（守护轮次/停滞判定）、`refresh_supervised.log`（每轮平台回查）、`batch_do_paper.log`（做题明细，追加）。
+  全部达成（refresh 后 audit=0）或连续 3 轮平台已达成数不增长（个别卷客观无法满分）时写终态日志（`[NOTIFY]`）并退出。**做题线默认不弹 macOS 通知**（`SUPERVISE_NO_OSASCRIPT=1`），终态由 15 分钟定时任务唤醒 AI 识别、自动做终态核对/推进冲刺卷并在豆包通知；封装已套 `caffeinate -i` 防 Mac 空闲睡眠。三份日志分工：`supervisor_papers.log`（守护轮次/停滞/`[NOTIFY]` 终态）、`refresh_supervised.log`（每轮平台回查）、`batch_do_paper.log`（做题明细，追加）。
 
 ### 4.2 单卷
 

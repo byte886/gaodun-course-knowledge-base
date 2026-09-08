@@ -32,7 +32,12 @@ cd "$PROJECT_DIR"
 
 notify() {
   local title="$1" msg="$2"
-  osascript -e "display notification \"$msg\" with title \"$title\" sound name \"Glass\"" 2>/dev/null || true
+  # 始终写一行终态标记到日志（供定时唤醒的 AI 巡检识别完成/异常，不依赖屏幕弹窗）
+  echo "[$(date '+%H:%M:%S')] [NOTIFY] $title | $msg"
+  # SUPERVISE_NO_OSASCRIPT=1 时不弹 macOS 通知（做题线由 AI 定时唤醒接手，不需要屏幕弹窗）；缺省保留弹窗
+  if [ "${SUPERVISE_NO_OSASCRIPT:-0}" != "1" ]; then
+    osascript -e "display notification \"$msg\" with title \"$title\" sound name \"Glass\"" 2>/dev/null || true
+  fi
 }
 
 progress_count() {

@@ -10,8 +10,10 @@
 #   1) refresh_inventory 从平台只读回查、重建 audit（只保留真正未达成的卷，已满分自动剔除）
 #   2) batch_redo_papers --go 续跑这批剩余卷
 #   redo 一旦退出（正常做完 / 再次静默退出），5 秒后自动进入下一轮：重新 refresh → 只补剩余。
-#   - 全部完成（refresh 后 audit 长度=0）：macOS 通知并 exit 0
-#   - 连续 3 轮「平台满分+平台最优数」不增长（如个别卷客观上无法满分）：判异常、通知、exit 1 交人工
+#   - 全部完成（refresh 后 audit 长度=0）：写终态日志（[NOTIFY] ✅ 完成）并 exit 0
+#   - 连续 3 轮「平台满分+平台最优数」不增长（如个别卷客观上无法满分）：判异常、写终态日志、exit 1
+#   做题线不弹 macOS 通知（SUPERVISE_NO_OSASCRIPT=1）：终态由「定时唤醒的 AI」巡检日志/进程后接手
+#   推进、并在豆包内通知用户；caffeinate -i 防止 Mac 空闲睡眠导致进程暂停。
 #
 # 用法:
 #   nohup bash scripts/cdp/run_papers_supervised.sh <profile> \
@@ -48,4 +50,6 @@ DONE_TEST="node -e 'process.exit(require(\"./$MAN/papers_audit.json\").length===
 # 进度标量：平台已达成（满分+平台最优）张数，随轮次单调不减，用于停滞检测
 PROG_CMD="node -e 'const a=require(\"./$MAN/papers_inventory.json\");process.stdout.write(String(a.filter(p=>p.cls===\"满分\"||p.cls===\"平台最优\").length))'"
 
-exec bash scripts/run_supervised.sh "${PROFILE}-papers" "$RUN_CMD" "$DONE_TEST" "$PROG_CMD"
+# 做题线不弹 macOS 通知；caffeinate -i 在守护器整个生命周期内防止 Mac 空闲睡眠
+export SUPERVISE_NO_OSASCRIPT=1
+exec caffeinate -i bash scripts/run_supervised.sh "${PROFILE}-papers" "$RUN_CMD" "$DONE_TEST" "$PROG_CMD"
