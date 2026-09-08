@@ -98,7 +98,7 @@
 | 7.1 原料在途 | ✅ | 正课统一走课程库、工单03采集；不设"待整理"分区（基础必修12讲经采样为正课精讲子集，09-08 本地/网盘/飞书已清） |
 | 7.2 工具适用性 | ✅ | 工单08 A档：fetch 未上线边界、视频 pipeline(venv/归位/清理时机/成品级断点)、transcribe_all 加 TRANSCRIBE_ROOT、README 转写入口选用表 |
 | 7.3 工单03 视频 | 🔄 | 01–12 讲已下载压缩归位 `原始资源/videos`、venv 转写进行中；13–43 讲平台未上线（"待学习"放最后，上线后重跑 pipeline 断点续做） |
-| 7.4 工单04 做题 | 🔄 | refresh 重建 audit 后断点续跑（平台口径 59 已完成、续跑剩余），caffeinate 守护；定时自动恢复已改为"先 refresh 再重启" |
+| 7.4 工单04 做题 | 🔄 | `run_papers_supervised.sh` 守护器进程级续跑（每轮先 refresh 重建 audit 再 redo、PPID=1、完成/卡死 macOS 通知）；平台已达成 147、续跑剩余 27，定时巡检已停用、由守护器取代 |
 | 7.5 工单05+ | ⏳ | 等 03/04 集齐四来源后 Fan-In 生成知识详解；01 章 frontmatter 经完整读取核实本就合规（工单08 B1 撤销） |
 
 ---
@@ -120,4 +120,4 @@
 - [x] 读取本文档 + `docs/project-management/memory/index.md`，确认当前阶段（会计课 03/04 并行）
 - [ ] 读 `data/_workspace/cpa-accounting-2026/tickets/tickets-index.md` 与工单08确认单课进度
 - [ ] 查后台进程 `ps aux | grep -E 'batch_redo|transcribe_all|batch_video'`；日志在 `data/_workspace/cpa-accounting-2026/logs/`
-- [ ] 做题若中断：**必须先 `refresh_inventory.js` 重建 audit 再 caffeinate 重启**，禁止直接重启（防死循环复发）
+- [ ] 做题由 `scripts/cdp/run_papers_supervised.sh <profile>` 守护，静默退出后自动"先 refresh 重建 audit 再续跑"；仅手工兜底时才手动 `refresh_inventory.js` 后重启，**禁止不 refresh 直接重启**（死循环根因）

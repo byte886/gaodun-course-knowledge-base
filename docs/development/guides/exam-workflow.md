@@ -97,6 +97,12 @@ node scripts/cdp/batch_redo_papers.js --go 82174 82175   # 只跑指定 paperId
 - 默认 dry-run 是安全护栏，**先看清单确认无误再 `--go`**。
 - 单张失败不中断其它卷；结果落 `data/_workspace/<profile>/papers/batch_result_<日期>.json`；卷间停 4s 低频拟人。
 - **token 失效自愈**：批量过程中任一接口返回 553649434（登录超时），脚本自动调 `refresh_auth_token.js` 从已登录 Chrome 抓新 token，并用新 token 重试当前试卷（同一卷最多刷新 2 次）；2 次后仍失败才标记该卷异常、继续下一张。因此长跑期间 token 中途过期无需人工介入，前提是日常 Chrome 保持登录。
+- **长跑必须套守护器，不要裸跑 `--go`**：`batch_redo_papers.js` 连续跑数十张后会「零错误静默退出」（进程消失、日志停在 `[N/M]`、无异常栈，caffeinate 也拦不住）。而 redo 不回写 audit，**直接重启会按启动时的旧 audit 从 `[1]` 重做已满分卷**，陷入"永远前几十张"的死循环。标准启动用做题守护启动器，它让守护器每一轮严格「先 `refresh_inventory` 从平台回查重建 audit（已满分自动剔除）→ 再 `--go` 只续跑剩余」，redo 一退出 5 秒后自动进入下一轮，PPID=1 脱离 AI 会话，无需 AI 在线或定时巡检：
+  ```bash
+  nohup bash scripts/cdp/run_papers_supervised.sh <profile> \
+    > data/_workspace/<profile>/logs/supervisor_papers.log 2>&1 & disown
+  ```
+  全部达成（refresh 后 audit=0）或连续 3 轮平台已达成数不增长（个别卷客观无法满分）时发 macOS 通知并退出，后者交人工核查那几张卷。三份日志分工：`supervisor_papers.log`（守护轮次/停滞判定）、`refresh_supervised.log`（每轮平台回查）、`batch_do_paper.log`（做题明细，追加）。
 
 ### 4.2 单卷
 

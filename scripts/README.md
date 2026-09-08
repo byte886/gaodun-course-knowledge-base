@@ -444,9 +444,18 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 解决 AI `run_in_background` 约 8 分钟被回收、且 AI 是请求-响应模式无法被系统进程反向唤醒的问题：用 `nohup ... & disown` 让进程 PPID=1 被 launchd 接管，while 循环反复执行断点续传命令，用完成检测命令判终，连续 3 轮无进展判异常，完成/异常调 osascript 发 macOS 通知。配套「定时唤醒 AI + 临门一脚 + 完成自清理」实现 AI 自动接续 |
-| **用法** | `nohup bash scripts/run_supervised.sh <任务名> "<单次命令>" "<完成检测test命令>" > logs/supervisor_<任务名>.log 2>&1 & disown` |
+| **用法** | `nohup bash scripts/run_supervised.sh <任务名> "<单次命令>" "<完成检测test命令>" ["<进度标量命令>"] > logs/supervisor_<任务名>.log 2>&1 & disown`；第 4 参可选——输出一个随推进单调变化的标量供停滞检测（不产 `.done` 标记的任务用），缺省统计 `logs/raw_done/<任务名>_*.done` |
 | **可靠性** | ✅ 高（已用于 videos 39 个自动续跑到完成；BSD 兼容：完成统计用 `find -name` 不用 `ls glob`，画进度条前先判数量>0 避开 `seq 1 0`） |
-| **相关文档** | docs/development/performance/long-task-supervisor-guide.md（含第七章 AI 自动接续） |
+| **相关文档** | docs/development/performance/long-task-supervisor-guide.md（含第七章 AI 自动接续）；做题场景直接用下面的 `cdp/run_papers_supervised.sh` 薄封装 |
+
+### `cdp/run_papers_supervised.sh` — 批量做题守护启动器（run_supervised 的做题薄封装，每门课复用）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 针对 `batch_redo_papers.js` 长跑「零错误静默退出」：封装好"每轮先 `refresh_inventory` 从平台回查重建 audit（已满分剔除）→ 再 `batch_redo --go` 续跑剩余"的正确顺序与完成/停滞判据，避免裸跑或直接重启按旧 audit 从头重做（死循环根因）。redo 退出后 5 秒自动续跑，PPID=1 脱离 AI 会话 |
+| **用法** | `nohup bash scripts/cdp/run_papers_supervised.sh <profile> > data/_workspace/<profile>/logs/supervisor_papers.log 2>&1 & disown` |
+| **日志** | `supervisor_papers.log`（守护轮次/停滞）+ `refresh_supervised.log`（每轮平台回查）+ `batch_do_paper.log`（做题明细，追加），均在 `data/_workspace/<profile>/logs/` |
+| **终态** | audit=0 → macOS 通知并 exit 0；连续 3 轮平台已达成数不增长（个别卷客观无法满分）→ 通知并 exit 1 交人工 |
 
 ---
 

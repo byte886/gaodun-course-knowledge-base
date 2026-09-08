@@ -2,7 +2,9 @@
 # 长任务守护器：自动续跑断点任务，全部完成或异常时发 macOS 通知
 #
 # 用法:
-#   nohup bash scripts/run_supervised.sh <任务名> <单次执行命令> <完成检测命令> > logs/supervisor_<任务名>.log 2>&1 &
+#   nohup bash scripts/run_supervised.sh <任务名> <单次执行命令> <完成检测命令> [进度标量命令] > logs/supervisor_<任务名>.log 2>&1 &
+#   - 第4参数[进度标量命令]可选：输出一个随推进单调变化的标量（做题等不产 .done 标记的任务用）；
+#     缺省则回退到统计 logs/raw_done/<任务名>_*.done（视频/上传等老任务，向后兼容）。
 #
 # 示例:
 #   nohup bash scripts/run_supervised.sh videos \
@@ -21,6 +23,7 @@ set -u
 TASK_NAME="$1"
 RUN_CMD="$2"
 DONE_TEST="$3"
+PROGRESS_CMD="${4:-}"   # 可选：输出单调进度标量的命令；缺省统计 .done 标记
 MAX_STALL=3          # 连续多少轮进度无变化则判定异常
 SLEEP_SEC=5
 
@@ -33,7 +36,11 @@ notify() {
 }
 
 progress_count() {
-  find logs/raw_done -name "${TASK_NAME}_*.done" 2>/dev/null | wc -l | tr -d ' '
+  if [ -n "$PROGRESS_CMD" ]; then
+    eval "$PROGRESS_CMD" 2>/dev/null
+  else
+    find logs/raw_done -name "${TASK_NAME}_*.done" 2>/dev/null | wc -l | tr -d ' '
+  fi
 }
 
 echo "[$(date '+%H:%M:%S')] 守护器启动: $TASK_NAME"
