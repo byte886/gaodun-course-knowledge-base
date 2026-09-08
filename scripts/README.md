@@ -206,6 +206,18 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ## 三、音频转写（7个）
 
+> **如何选用（这些入口对象/粒度不同，不是重复实现，勿误删）**
+>
+> | 入口 | 对象 / 粒度 | 何时用 |
+> |---|---|---|
+> | `transcribe_all.sh` | 整门正课 · 串行 | 正课讲次批量转写**默认入口**；成品已归位时 `TRANSCRIBE_ROOT=<课程>/原始资源/videos bash scripts/transcribe_all.sh` |
+> | `transcribe_one.sh` | 单个讲目录 | 一般不单独用，是 parallel 的 xargs -P worker |
+> | `transcribe_parallel.sh` | 整门正课 · xargs 调度 | 需要并发时用；实测**串行吞吐最优**（18.5x > 6 并发 14.3x），默认并发 1 |
+> | `transcribe_qvideos.sh` | 题目级讲解视频（冲刺，`_workspace/.../qvideo_*`） | 仅冲刺模考题目级视频，数据源不同于正课，会计冲刺仍要用 |
+> | `batch_video_pipeline.sh` | 下载链内联 | 下载→压缩→归位→转写一条龙，断点续跑 |
+>
+> **铁律**：转写必须走 `transcription/venv/bin/python`（FunASR 只装在 venv，系统 `python3` 会 `ModuleNotFoundError: funasr`）；成品统一归位 `原始资源/videos/<讲名>/`，课程根不留散落讲目录。
+
 ### `transcribe_pipeline.py` — 单视频音频转写
 
 | 项目 | 说明 |

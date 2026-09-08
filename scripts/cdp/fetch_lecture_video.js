@@ -43,13 +43,17 @@ async function getLive(idx) {
   const H = makeHeaders(findJwt());
   const j = await (await fetch(
     `https://apigateway.gaodun.com/g-study/api/v1/front/course/${COURSE_ID}/syllabus/glive/${SYLLABUS_ID}`, { headers: H })).json();
-  const node = j.result.children[idx];
-  if (!node) throw new Error(`children[${idx}] 不存在`);
+  const children = j && j.result && j.result.children;
+  if (!Array.isArray(children)) {
+    const e = new Error(`idx${idx} 大纲未返回 children（该讲平台未上线/未开放，属"待学习"），跳过`); e.code = 'NOT_ONLINE'; throw e;
+  }
+  const node = children[idx];
+  if (!node) { const e = new Error(`children[${idx}] 不存在（该讲平台未上线），跳过`); e.code = 'NOT_ONLINE'; throw e; }
   let live = null;
   for (const key of ['preClassResource', 'inClassMainResource', 'inClassAssistResource', 'afterClassResource']) {
     for (const r of node[key] || []) if (r.discriminator === 'live_new') live = r;
   }
-  if (!live || !live.liveUrlPlayBackPc) throw new Error(`idx${idx} 无 live_new 回放`);
+  if (!live || !live.liveUrlPlayBackPc) { const e = new Error(`idx${idx} 无 live_new 回放（该讲平台未上线），跳过`); e.code = 'NOT_ONLINE'; throw e; }
   return { name: node.name || live.title, url: live.liveUrlPlayBackPc, durationMinutes: live.durationMinutes };
 }
 
@@ -111,4 +115,8 @@ async function getLive(idx) {
   }, null, 2));
   log(`✓ 下载解密完成 merged=${(fs.statSync(merged).size / 1024 / 1024).toFixed(1)}MB 时长=${Number(dur).toFixed(0)}s，待压缩 -> video.mp4`);
   process.exit(0);
-})().catch((e) => { console.error('[FETCH-FAIL]', e.stack || e.message); process.exit(1); });
+})().catch((e) => {
+  // 未上线/未开放讲（"待学习"放最后）：退出码 3，语义化跳过，不打误导性堆栈；真实下载失败才是 exit 1
+  if (e && e.code === 'NOT_ONLINE') { console.error('[SKIP-NOT-ONLINE]', e.message); process.exit(3); }
+  console.error('[FETCH-FAIL]', e.stack || e.message); process.exit(1);
+});

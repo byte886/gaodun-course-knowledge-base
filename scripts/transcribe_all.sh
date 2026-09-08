@@ -11,7 +11,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/course_config.sh"
 PY="$ROOT/transcription/venv/bin/python"
 PIPE="$ROOT/scripts/transcribe_pipeline.py"
-COURSE="$COURSE_DESKTOP_ROOT"   # 由 profile/COURSE_NAME 派生，缺省税法，换课设 COURSE_PROFILE
+# 遍历根默认课程根（旧布局：课程根/讲次/video.mp4）；成品已归位时用 TRANSCRIBE_ROOT 指向「原始资源/videos」
+COURSE="${TRANSCRIBE_ROOT:-$COURSE_DESKTOP_ROOT}"   # 由 profile/COURSE_NAME 派生，缺省税法，换课设 COURSE_PROFILE
 TMPROOT="$ROOT/transcription/.tmp_transcribe"
 LOG=/tmp/transcribe_all.log
 mkdir -p "$TMPROOT"
