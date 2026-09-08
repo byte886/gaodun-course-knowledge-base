@@ -126,6 +126,18 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 - type5 子题**必须随交卷一起提交、绝不能留空**（留空则 AI 批改也不回写分数）；最终项数=questionTotal。
 - 判断/填空等其它题型【待验证】：遇到先只读侦查、单独打通，不硬闯（见第六章出口②）。
 
+### 4.3.2 answerMode=5 表格作答题（Excel/Luckysheet；机制已逆向，待实现）
+
+> 2026-09-08 从做题前端源码逆向定稿（会计课因账号风控未做线上实测）；后续课程遇到表格填空类主观题按此实现，**先单卷验证再批量**。
+
+- **前端形态**：做题页是独立 qiankun 子应用 `sub-tiku.gaodun.com`（主应用只做容器，业务 bundle 为其 `static/js/index.*.js`）；题面 questionItem 带 `answerMode=5` 与空白模板 `excelAnswerContent`——后者本身就是 Luckysheet sheet 数组的 JSON 字符串。
+- **双字段缺一不可**（前端 onChange/提交契约）：这类题每题提交项同时含
+  - `userAnswer`：表格旁的文字解答（计算过程+会计分录），来源与普通 type6 主观题相同（`pickSubjectiveCanon`，保留分录换行/缩进排版）；
+  - `excelAnswer`：**`JSON.stringify(luckysheet.getAllSheets())`**，即在 `excelAnswerContent` 模板上把最终数值填进对应格子后的完整 sheet 数组（与模板同结构）；`excelAnswer` 非空即算"已作答"。
+- **纯接口实现路径**：`gaodun_paper_core.js` 的 `pushSubjectiveLeaf` 对 answerMode=5 题，除 userAnswer 外要补 `excelAnswer`——解析 excelAnswerContent 得到空白 celldata 坐标，把标准答案数值回填后 `JSON.stringify`。
+- **卡点（不可臆造）**：标准答案 `answer` 末尾的目标表格常是 `<img>` 截图（非结构化），需视觉/OCR 判定"哪个格子填什么值"；无法可靠映射坐标时，只交文字 userAnswer 并显式标记，**不要编表格坐标**。
+- 样例：会计课 85425 14-1（qid=1955394）；逆向细节与字段出处见 `data/_workspace/cpa-accounting-2026/tickets/BUG_BACKLOG.md` 关联观察。
+
 ### 4.3.1 主观题答案生成与完整性校验门（2026-09-06 第二次重构定稿）
 
 > **铁律：答案要像"会做题的人写的"——正式算式/结论为主体、判定法理精简为「依据：」、多小问逐行分点；先保证与官方解析一致且覆盖每一小问，再谈 AI 判分。有解析的题不能写错、写漏，也不能把教辅解析整段照抄堆砌。**
@@ -183,7 +195,8 @@ node scripts/cdp/api_do_paper.js <paperId 或 标题关键字> [最小停留秒]
 
 - **最小作答时长按 redo→submit 墙钟判定、与 body.costTime 无关**；太快被拒 `10462203`，脚本自动 +20s 重试。安全值 `max(20, 项数*1.5 向上取整到5s, 含主观保底25s)`。
 - AI 批改并发=3、发起前错峰 120ms；全程低频拟人，不压测高并发。
-- 全链路明文 JSON、**无 sign/nonce/加密 body**，无需逆向前端。
+- 全链路明文 JSON、**无 sign/nonce/加密 body**，无需逆向前端（做题 UI 本体在独立子应用 `sub-tiku.gaodun.com`，逆向前端题型组件时去那里找）。
+- **账号级风控 `10462222`「做题行为异常，请联系学管师」**：短时间大量 redo 后可能触发，**与单卷 / times / 章节无关——redo 写操作全账号被拒**（2026-09-08 满分 t1、平台最优 t1、对照卷三类实测 redo 全拦），只读 record/analysis 不受影响。冷却时长未知；期间**禁止一切 redo/submit 探测，也不要让守护器空转重试**（只会加重）。是否停止/恢复做题以用户明确指令为准；恢复前先用单张只读 record + 一次 redo 探测确认不再回 10462222。
 
 ### 4.5 AI 批改权益（用户已拍板策略）
 
