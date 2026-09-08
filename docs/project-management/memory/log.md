@@ -6,6 +6,7 @@
 
 ## 2026-09-08
 
+- **Update**：做题链路 concept 补 answerMode=5 表格题双字段提交契约（`userAnswer` + `excelAnswer=JSON.stringify(luckysheet.getAllSheets())`，做题 UI 在独立子应用 sub-tiku.gaodun.com）与错误码分层（token 553649434 / 作答太快 10462203 / 账号级风控 10462222）；结论由 sub-tiku 前端源码逆向 + 三类卷（满分 t1/平台最优 t1/对照）redo 全拦的对照实测得到，细节指针到 exam-workflow §4.3.2/§4.4。
 - **Add**：新增治理 concept `standard-debugging-first-principles`（故障排查先验顺序：九成失败是 AI/脚本自身问题、凭证最后怀疑、token 失效须有只读回包硬证据），并在 index 治理类登记；同步更新做题链路与浏览器 CDP 两篇 concept 的 token 自愈描述。
 - 来源：会计课 token 失效排查实战（误打端点、刷错课程页、findJwt 排序 bug 均为自身问题）+ 用户约 10 天运行经验。
 

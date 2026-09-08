@@ -38,6 +38,8 @@ vcourse/pc（盘点账号全部课程、拿 saasCourseId）
 - **来源域**：作业卷（sourceFromType=100533962）origin/referer 必须 `glivepro.gaodun.com`；题库专区卷（100534177）必须 `tiku.gaodun.com`，错则 AI 批改报 11193060。
 - **交卷**：type5 父题不进列表、type6 子题平铺且**绝不能留空**（留空则 AI 判分不回写）；项数=questionTotal；受**墙钟最小作答时长**风控（与 body costTime 无关），太快报 10462203，按公式等待、必要时 +20s 重试。
 - **AI 批改**：仅 `aiCorrect.cpaBotType===3` 的题发 cpa（=0 是平台未配评分，归 unsupported 不重试）；body 必带 `openEnergyToEquity:1`（漏带 cs=1 永久挂死、救不活）；cs：1 批改中 / **2 完成满分** / 6 缺采分点（三级补全→best-of-N×4→aiCeiling 视同平台最优）；成功扣 1 次权益/子题、失败不扣。
+- **answerMode=5 表格作答题（双字段提交，2026-09-08 逆向定稿）**：除 `userAnswer`（表格旁文字解答，同普通 type6）外必须带 `excelAnswer = JSON.stringify(luckysheet.getAllSheets())`，与题面空白模板 `excelAnswerContent` 同结构、回填数值；做题 UI 在独立 qiankun 子应用 `sub-tiku.gaodun.com`（主应用 bundle 搜不到这些字段）；标准答案表格常是 `<img>` 截图、需视觉映射格子坐标，无法可靠映射时只交文字并标记、不臆造坐标。实现路径见 exam-workflow §4.3.2。
+- **错误码分层**：token 失效 `553649434`（最后怀疑、须只读硬证据）/ 作答太快 `10462203`（墙钟，+20s 重试）/ **账号级风控 `10462222`**（短时大量 redo 后 redo 写操作全账号被拒，与单卷/times/章节无关，只读 record/analysis 正常；识别后停止一切 redo 与守护器空转，等冷却且用户明确重启，不自动重刷）。
 - **完成判据两层**：课程侧只看"是否成功交卷"（syllabus `progress=1`，与分数解耦）；严格满分 fullScore vs 平台最优 platformDone（unsupported/aiCeiling 不阻断）。
 
 ## 只读采集 vs 交卷（边界）
