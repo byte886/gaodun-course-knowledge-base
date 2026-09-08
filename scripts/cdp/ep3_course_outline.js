@@ -56,7 +56,7 @@ const flattenLeaves = (n, acc = []) => {
 
   const wantSeason = (name) => allSeason || /26\s*考季/.test(name || '');
   // 章节树：gradationSyllabuses
-  const grads = (chapter.result.gradationSyllabuses || [])
+  const grads = (chapter.result?.gradationSyllabuses || [])
     .filter((g) => wantSeason(g.name))
     .map((g) => {
       const tree = (g.syllabus || []).map(slimChapter);
@@ -97,6 +97,8 @@ const flattenLeaves = (n, acc = []) => {
   const manifest = {
     platform: 'ep3', saasCourseType: 13, courseId: Number(cid), courseName,
     fetchedAt: new Date().toISOString(), seasonFilter: allSeason ? 'all' : '26考季',
+    // 章节/视频树依赖「学习引导」状态：未走完引导时 analysis/chapter 返回 11063019、result=null
+    guideReady: !!chapter.result, chapterCode: chapter.status, chapterMessage: chapter.message,
     gradations: grads, handouts,
   };
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -104,6 +106,7 @@ const flattenLeaves = (n, acc = []) => {
   fs.writeFileSync(out, JSON.stringify(manifest, null, 2));
 
   console.log(`课程: ${courseName} (${cid})，梯度${grads.length}个，讲义文件${handouts.length}个`);
+  if (!grads.length) console.log(`  ⚠️ 章节/视频学习树为空（code=${chapter.status} ${chapter.message}）：账号未在 ep3 走完该课首次引导；讲义清单不依赖引导仍已输出，章节树待引导后或走 resource/live 接口补`);
   grads.forEach((g) => {
     const ho = handouts.filter((h) => h.syllabusId === g.syllabusId).length;
     console.log(`  ${g.name} grad=${g.gradationId} syl=${g.syllabusId} | 章${g.stats.chapters} 叶节${g.stats.leafSections} csItem${g.stats.csItems} 视频${g.stats.videoTotal} 题${g.stats.paperTotal} 讲义节点${g.stats.lectureNoteTotal} 讲义文件${ho}`);
