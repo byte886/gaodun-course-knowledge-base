@@ -103,7 +103,7 @@ const stripHtml = (s) => (s || '')
 // 保留会计分录排版的 HTML→纯文本：块级标签/<br> 转换行，&nbsp; 转空格，保留制表符与行首缩进（借/贷、金额对齐）。
 // 与 stripHtml 的区别：不折叠换行与行内多空格——分录/综合大题平台 AI 按"借/贷"逐笔识别，挤成一行会逐笔判 0（实测 85418 2-2）。
 const htmlToTextKeepLayout = (s) => (s || '')
-  .replace(/<\s*br\s*\/?>(\s*)/gi, '\n')
+  .replace(/<\s*br\b[^>]*>/gi, '\n')
   .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
   .replace(/<[^>]+>/g, '')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
