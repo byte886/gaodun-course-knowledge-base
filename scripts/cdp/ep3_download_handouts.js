@@ -23,6 +23,29 @@ const GW = 'https://apigateway.gaodun.com';
 const CDN = 'https://simg01.gaodunwangxiao.com';
 const safe = (s) => String(s || '未命名').replace(/[\/\\:]/g, '-').trim();
 
+// B 方案落位规则（用户 2026-09-09）：目录不按老师分层（沿用内容结构，两位老师同目录），
+// 老师只进文件名前缀；最终知识详解两源 Fan-In 成一套。
+const TEACHERS = ['陈蓓蓓', '姚远', '罗翔', '郁刚', '王潇粒'];
+const teacherOf = (h) => {
+  const s = `${h.category || ''} ${h.name || ''}`;
+  return TEACHERS.find((t) => s.includes(t)) || '其他';
+};
+// 剥离目录名/文件名里的老师字样，并清理残留的空括号与悬挂分隔
+const noTeacher = (s0) => {
+  let x = String(s0 || '');
+  for (const t of TEACHERS) x = x.split(t).join('');
+  return x
+    .replace(/老师/g, '')
+    .replace(/[-_、,，]\s*(?=[】（）)])/g, '')
+    .replace(/（\s*）/g, '').replace(/\(\s*\)/g, '')
+    .replace(/\s+/g, ' ').trim();
+};
+// 统一落盘相对路径：<梯度>/<内容分类(去老师)>/<老师>_<文件名(去老师)>
+const relDest = (h) => {
+  const teacher = teacherOf(h);
+  return path.join(safe(h.gradationName), safe(noTeacher(h.category)), safe(`${teacher}_${noTeacher(h.name)}`));
+};
+
 function download(url, dest, headers) {
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -63,7 +86,7 @@ function download(url, dest, headers) {
   let ok = 0, skip = 0, fail = 0, n = 0;
   for (const h of items) {
     n += 1; if (n > limit) break;
-    const dest = path.join(base, safe(h.gradationName), safe(h.category), safe(h.name));
+    const dest = path.join(base, relDest(h));
     if (fs.existsSync(dest) && fs.statSync(dest).size === h.fileSize) { skip += 1; continue; }
     if (dry) { console.log(`[dry] ${h.format} ${(h.fileSize / 1e6).toFixed(1)}MB -> ${path.relative(ROOT, dest)}`); continue; }
     try {
