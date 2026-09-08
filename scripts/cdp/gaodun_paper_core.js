@@ -56,10 +56,16 @@ async function mapLimit(items, limit, worker) {
   return ret;
 }
 
-/** 从账号鉴权抓包目录（默认 data/_workspace/_account/auth）最新 jsonl 倒序提取 authentication 头 */
+/** 从账号鉴权抓包目录（默认 data/_workspace/_account/auth）最新 jsonl 倒序提取 authentication 头
+ *  按文件 mtime 升序排列（旧到新），倒序遍历时优先读最新文件；不按文件名排序，
+ *  否则 refresh 开头的文件永远排在 schedule、sprint 开头文件前面、反而最后被读到（曾导致用过期token）。 */
 function findJwt(dir) {
   const authDir = dir || accountAuthDir();
-  const files = fs.readdirSync(authDir).filter((f) => f.endsWith('.jsonl')).sort();
+  const files = fs.readdirSync(authDir)
+    .filter((f) => f.endsWith('.jsonl'))
+    .map((f) => ({ f, mtime: fs.statSync(path.join(authDir, f)).mtimeMs }))
+    .sort((a, b) => a.mtime - b.mtime)  // 旧→新，下面倒序即最新优先
+    .map((x) => x.f);
   for (let i = files.length - 1; i >= 0; i -= 1) {
     const lines = fs.readFileSync(path.join(authDir, files[i]), 'utf8').split('\n').filter(Boolean);
     for (let j = lines.length - 1; j >= 0; j -= 1) {

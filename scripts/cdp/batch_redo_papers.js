@@ -19,10 +19,21 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { findJwt, doPaperViaApi, dwellSec } = require('./gaodun_paper_core');
 const { loadProfile, workspaceDirFor, argvProfileKey } = require('./load_profile');
 const ROOT = path.resolve(__dirname, '..', '..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const TOKEN_EXPIRED_CODE = '553649434';  // 高顿"登录超时,请重新登录"
+
+/** 通过 CDP 从用户已登录的日常 Chrome 重新抓取 authentication token */
+function refreshJwt() {
+  console.log('  [token] 检测到登录超时，正在通过 Chrome CDP 自动刷新 token...');
+  execFileSync('node', [path.join(__dirname, 'refresh_auth_token.js')], {
+    cwd: ROOT, stdio: 'inherit', timeout: 90000,
+  });
+  return findJwt();
+}
 const GO = process.argv.includes('--go');
 const DO_AI = !process.argv.includes('--no-ai');
 const idArgs = process.argv.slice(2).filter((a) => /^\d+$/.test(a)).map(Number);
@@ -65,38 +76,57 @@ function chapterKey(ch) {
     console.log(` ${String(i + 1).padStart(2)}. ${p.paperId} [${p.num}题 停${dwellSec(p.num, true)}s] 上次=${a ? a.score + '/' + a.total + ' ' + a.cls : '?'} 《${p.title}》`); });
   if (!GO) { console.log('\n[dry-run] 确认无误后加 --go 实跑。'); process.exit(0); }
 
-  const jwt = findJwt();
+  let jwt = findJwt();
   const results = [];
   for (let idx = 0; idx < todo.length; idx += 1) {
     const p = todo[idx];
     const rec = { paperId: p.paperId, title: p.title, num: p.num };
     const dbg = [];
-    try {
-      const out = await doPaperViaApi({
-        target: { paperId: p.paperId, csItemId: p.csItemId, resourceId: p.resourceId, title: p.title, num: p.num },
-        jwt, doAi: DO_AI, log: (m) => dbg.push(m),
-      });
-      rec.submitted = out.submitted;
-      rec.logId = out.logId;
-      rec.score = out.userScore; rec.total = out.totalScore;
-      rec.ai = `${out.aiFull}/${out.aiTotal}`;
-      rec.aiPartial = out.aiPartial; rec.aiFailed = out.aiFailed;
-      rec.aiUnsupported = out.aiUnsupported; rec.aiCeiling = out.aiCeiling;
-      rec.fullScore = out.fullScore; rec.platformDone = out.platformDone;
-      rec.wrong = out.wrong; rec.error = out.error;
-      // 成功完成 = 严格满分，或平台最优（客观全对+可AI题判满/判分上限，未配AI与AI判分上限题不阻断）
-      rec.ok = out.fullScore || out.platformDone;
-      const pdNote = out.aiCeiling.length
-        ? `${out.aiUnsupported.length}题未配AI/${out.aiCeiling.length}题AI判分上限`
-        : `${out.aiUnsupported.length}题未配AI`;
-      const tag = out.fullScore ? '✅满分'
-        : out.platformDone ? `🟡平台最优(${pdNote})`
-          : (out.submitted ? '⏺已交卷/未满分' : '❌未交卷');
-      console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ${out.userScore}/${out.totalScore} AI${out.aiFull}/${out.aiTotal} ${tag} 《${p.title}》`);
-      if (!out.fullScore) dbg.forEach((m) => console.log('     ' + m));
-    } catch (e) {
-      rec.ok = false; rec.error = e.message;
-      console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);
+    // token 失效自动刷新重试：最多刷新2次（同一试卷最多尝试3轮）
+    let tokenRefreshed = 0;
+    let done = false;
+    while (!done) {
+      try {
+        const out = await doPaperViaApi({
+          target: { paperId: p.paperId, csItemId: p.csItemId, resourceId: p.resourceId, title: p.title, num: p.num },
+          jwt, doAi: DO_AI, log: (m) => dbg.push(m),
+        });
+        rec.submitted = out.submitted;
+        rec.logId = out.logId;
+        rec.score = out.userScore; rec.total = out.totalScore;
+        rec.ai = `${out.aiFull}/${out.aiTotal}`;
+        rec.aiPartial = out.aiPartial; rec.aiFailed = out.aiFailed;
+        rec.aiUnsupported = out.aiUnsupported; rec.aiCeiling = out.aiCeiling;
+        rec.fullScore = out.fullScore; rec.platformDone = out.platformDone;
+        rec.wrong = out.wrong; rec.error = out.error;
+        // 成功完成 = 严格满分，或平台最优（客观全对+可AI题判满/判分上限，未配AI与AI判分上限题不阻断）
+        rec.ok = out.fullScore || out.platformDone;
+        const pdNote = out.aiCeiling.length
+          ? `${out.aiUnsupported.length}题未配AI/${out.aiCeiling.length}题AI判分上限`
+          : `${out.aiUnsupported.length}题未配AI`;
+        const tag = out.fullScore ? '✅满分'
+          : out.platformDone ? `🟡平台最优(${pdNote})`
+            : (out.submitted ? '⏺已交卷/未满分' : '❌未交卷');
+        console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ${out.userScore}/${out.totalScore} AI${out.aiFull}/${out.aiTotal} ${tag} 《${p.title}》`);
+        if (!out.fullScore) dbg.forEach((m) => console.log('     ' + m));
+        done = true;
+      } catch (e) {
+        const isTokenExpired = e.message && e.message.includes(TOKEN_EXPIRED_CODE);
+        if (isTokenExpired && tokenRefreshed < 2) {
+          tokenRefreshed += 1;
+          console.log(`[${idx + 1}/${todo.length}] ${p.paperId} token失效，第${tokenRefreshed}次自动刷新后重试...`);
+          try { jwt = refreshJwt(); } catch (refreshErr) {
+            console.log(`  [token] 自动刷新失败: ${refreshErr.message}`);
+            rec.ok = false; rec.error = e.message;
+            console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);
+            done = true;
+          }
+          continue;  // 用新 token 重试同一试卷
+        }
+        rec.ok = false; rec.error = e.message;
+        console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);
+        done = true;
+      }
     }
     results.push(rec);
     fs.writeFileSync(path.join(papersDir, `batch_result_${new Date().toISOString().slice(0, 10)}.json`), JSON.stringify(results, null, 1));
