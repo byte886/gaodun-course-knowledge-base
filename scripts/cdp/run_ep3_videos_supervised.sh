@@ -15,11 +15,13 @@
 # 用法:
 #   nohup bash scripts/cdp/run_ep3_videos_supervised.sh <profile> <梯度> <目标视频数> [dual标志] \
 #     > data/_workspace/_account/ep3/logs/superv_<profile>_<梯度>.log 2>&1 & disown
-# 例（会计全面精讲，目标261）:
-#   nohup bash scripts/cdp/run_ep3_videos_supervised.sh ep3-accounting-2026 全面精讲 261 --dual-teacher \
+# 例（会计全面精讲，双老师 485 个视频文件）:
+#   nohup bash scripts/cdp/run_ep3_videos_supervised.sh ep3-accounting-2026 全面精讲 485 --dual-teacher \
 #     > data/_workspace/_account/ep3/logs/superv_acct_jingjiang.log 2>&1 & disown
 #
-# 目标视频数 = 该梯度 outline 实测 videoTotal（会计全面精讲261/税法170/战略122/经济法157）。
+# 目标视频数 = 该梯度 *video.mp4「文件」总数（双老师要把各老师视频数相加，不是讲目录数）。
+# 会计全面精讲：姚远236+陈蓓蓓249=485 个视频文件，归并到 261 个统一讲目录（--dump-plan 实测）。
+# 单老师梯度才等于 outline videoTotal（税法170/战略122/经济法157，均为单口径，双老师时同样要相加）。
 # 明细日志在 data/_workspace/_account/ep3/logs/<profile>_<梯度>.log（追加不覆盖）。
 
 set -u

@@ -66,10 +66,66 @@ const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 function log(...x) { console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...x); }
 
 // ---------- 1. syllabus 树递归，收集视频讲次叶子 ----------
-async function fetchSyllabus(cid, grad, syllabus) {
-  const r = await apiGet(`/ep-study/front/course/${cid}/syllabus?gradation_id=${grad}&syllabus_id=${syllabus}`);
+async function fetchSyllabus(cid, grad, syllabus, teacherId) {
+  // teacherId 不传=默认折叠树（按主老师折叠，会漏其它老师整套）；B 方案双老师必须逐 teacher_id 各拉一套
+  const tq = teacherId ? `&teacher_id=${teacherId}` : '';
+  const r = await apiGet(`/ep-study/front/course/${cid}/syllabus?gradation_id=${grad}&syllabus_id=${syllabus}${tq}`);
   if (r.status !== 0) throw new Error(`syllabus 接口失败 status=${r.status} ${r.info || r.message || ''}`);
   return r.result;
+}
+
+// 简单并发池：并发 n 路对 items 调 fn，返回等序结果（单项失败落 {_err}，不中断整体）
+async function poolMap(items, n, fn) {
+  const out = new Array(items.length);
+  let i = 0;
+  const worker = async () => {
+    while (i < items.length) { const k = i++; try { out[k] = await fn(items[k], k); } catch (e) { out[k] = { _err: e.message }; } }
+  };
+  await Promise.all(Array.from({ length: n }, worker));
+  return out;
+}
+
+// 老师名字 → id（profile.teachers 存名字，接口要 id）；--teacher-ids 可直接覆盖
+const TEACHER_ID_BY_NAME = Object.fromEntries(Object.entries(TEACHER_NAME).map(([id, name]) => [name, Number(id)]));
+function resolveTeacherIds(profile) {
+  if (ARGS['teacher-ids']) return String(ARGS['teacher-ids']).split(',').map((s) => Number(s.trim())).filter(Boolean);
+  const names = (profile && profile.teachers) || [];
+  const ids = names.map((nm) => TEACHER_ID_BY_NAME[nm]).filter(Boolean);
+  return ids;
+}
+
+// 拉某老师在该梯度的「视频叶子」：带 teacher_id 拉树 → 并发 getVideoInfo 判视频，info 挂回 leaf（下载时复用，不重复请求）
+async function enumTeacherVideos(cid, grad, syllabus, teacherId) {
+  const result = await fetchSyllabus(cid, grad, syllabus, teacherId);
+  const gn = locateGradTree(result, grad);
+  if (!gn) throw new Error(`teacher_id=${teacherId} 未找到 gradation 节点 ${grad}`);
+  const parentGrad = findParentGrad(result, grad) || grad;
+  const leaves = leavesOfGrad(gn);
+  leaves.forEach((l, i) => { l.seq = i + 1; });
+  await poolMap(leaves, 12, async (l) => { l.info = await getVideoInfo(cid, l.csItemId, syllabus, l.resourceId); });
+  const videos = leaves.filter((l) => !l._err && l.info && l.info.discriminator === 'video' && l.info.video_id);
+  return { teacherId, parentGrad, videos };
+}
+
+// 多老师视频按 chapterPath 归并成统一讲目录：同章节路径=同一讲（姚/陈落同一目录、文件名前缀区分），
+// 老师独有讲各自成目录。目录序号以第一套老师（profile.teachers 顺序，通常主老师）树序为锚、其它老师独有讲按其树序插入。
+// 返回任务数组 [{dirSeq, teacherId, leaf(已挂 info/dirSeq)}]，并附统计。
+function buildDualTasks(perTeacher) {
+  const pathOrder = new Map(); // chapterPath -> 排序锚点（首见老师的树序）
+  const grouped = new Map();   // chapterPath -> [{teacherId, leaf}]
+  perTeacher.forEach(({ teacherId, videos }) => videos.forEach((leaf) => {
+    const p = leaf.chapterPath;
+    if (!pathOrder.has(p)) pathOrder.set(p, leaf.seq);
+    if (!grouped.has(p)) grouped.set(p, []);
+    grouped.get(p).push({ teacherId, leaf });
+  }));
+  const paths = [...pathOrder.keys()].sort((a, b) => pathOrder.get(a) - pathOrder.get(b));
+  const tasks = [];
+  paths.forEach((p, idx) => {
+    const dirSeq = idx + 1;
+    grouped.get(p).forEach(({ teacherId, leaf }) => { leaf.dirSeq = dirSeq; tasks.push({ dirSeq, teacherId, leaf }); });
+  });
+  return { tasks, dirCount: paths.length };
 }
 
 // 在某顶层阶段里找到 grad 节点（可能在顶层或其 children），返回它的章节树（g.syllabus 或递归 children）
@@ -245,7 +301,7 @@ async function downloadOne(leaf, ctx) {
   // learning URL（capture 取 key 用）
   const learningUrl = `https://epiphany.gaodun.com/ep3/course/${cid}/learning/1/${parentGrad}/${grad}/${syllabus}/${leaf.chapterId}/${leaf.csItemId}/${leaf.resourceId}/0`;
 
-  const info = await getVideoInfo(cid, leaf.csItemId, syllabus, leaf.resourceId);
+  const info = leaf.info || await getVideoInfo(cid, leaf.csItemId, syllabus, leaf.resourceId);
   if (!info || info.discriminator !== 'video' || !info.video_id) {
     return { skipped: true, reason: `非视频(${info && info.discriminator})`, name: leaf.name };
   }
@@ -253,7 +309,9 @@ async function downloadOne(leaf, ctx) {
   const teacher = TEACHER_NAME[info.teacher_id] || (info.teacher_id ? `T${info.teacher_id}` : '');
   const lr = await getLiveResource(videoId, res);
 
-  const dirName = `${String(leaf.seq).padStart(2, '0')}_${safeName(leaf.name)}`;
+  // 双老师归并时用统一目录序号 dirSeq（同讲姚/陈同目录）；单老师/单讲回退树序 seq
+  const seqNo = leaf.dirSeq ?? leaf.seq;
+  const dirName = `${String(seqNo).padStart(2, '0')}_${safeName(leaf.name)}`;
   const lessonDir = path.join(outDir, dirName);
   fs.mkdirSync(lessonDir, { recursive: true });
   const pfx = dualTeacher && teacher ? `${teacher}_` : '';
@@ -347,19 +405,50 @@ function initCache(outDir) {
   if (!cid || !grad || !syllabus) {
     console.error('批量/枚举需要 --course --grad --syllabus，或用 --profile <key> --stage <梯度名>'); process.exit(2);
   }
-  const result = await fetchSyllabus(cid, grad, syllabus);
-  const gradNode = locateGradTree(result, grad);
-  if (!gradNode) { console.error('未找到 gradation 节点', grad); process.exit(1); }
-  // parentGrad（learning URL 必需段）：命令行优先，否则按子树归属自动定位顶层阶段
-  let parentGrad = ARGS['parent-grad'] || findParentGrad(result, grad) || grad;
-  const leaves = leavesOfGrad(gradNode);
-  leaves.forEach((l, i) => { l.seq = i + 1; });
-  log(`枚举到 ${leaves.length} 个讲次叶子（parentGrad=${parentGrad}）`);
-
-  if (ARGS.list) {
-    for (const l of leaves) console.log(`${String(l.seq).padStart(3)} cs=${l.csItemId} rid=${l.resourceId} ch=${l.chapterId} | ${l.chapterPath}`);
-    process.exit(0);
+  // 枚举讲次：双老师按 teacher_id 分拉两套、按章节路径归并到统一讲目录；单老师走默认折叠树
+  let tasks = [];
+  let parentGrad;
+  if (ARGS['dual-teacher']) {
+    const teacherIds = resolveTeacherIds(profile);
+    if (!teacherIds.length) { console.error('--dual-teacher 需要 profile.teachers（老师名字）或 --teacher-ids <id,id>'); process.exit(2); }
+    const perTeacher = [];
+    for (const tid of teacherIds) {
+      const r = await enumTeacherVideos(cid, grad, syllabus, tid);
+      log(`老师 ${TEACHER_NAME[tid] || tid}：视频 ${r.videos.length} 个`);
+      perTeacher.push(r); parentGrad = parentGrad || r.parentGrad;
+    }
+    const built = buildDualTasks(perTeacher);
+    tasks = built.tasks;
+    log(`双老师归并：统一讲目录 ${built.dirCount} 个，视频任务共 ${tasks.length} 个`);
+    // 结构化归并计划（迁移旧目录序号 / 排查用）：dirSeq+老师+章节路径+讲名，与下载同源
+    if (ARGS['dump-plan']) {
+      const plan = tasks.map((t) => ({ dirSeq: t.dirSeq, teacherId: t.teacherId, teacher: TEACHER_NAME[t.teacherId] || String(t.teacherId), chapterPath: t.leaf.chapterPath, name: t.leaf.name, cs: t.leaf.csItemId, rid: t.leaf.resourceId }));
+      fs.writeFileSync(ARGS['dump-plan'], JSON.stringify(plan, null, 2));
+      log(`归并计划 -> ${ARGS['dump-plan']}（${plan.length} 条）`);
+      process.exit(0);
+    }
+    if (ARGS.list) {
+      perTeacher.forEach(({ teacherId, videos }) => console.log(`# ${TEACHER_NAME[teacherId] || teacherId}: ${videos.length} 视频`));
+      console.log(`# 统一讲目录 ${built.dirCount} 个 / 总视频 ${tasks.length} 个`);
+      tasks.forEach((t) => console.log(`${String(t.dirSeq).padStart(3)} [${TEACHER_NAME[t.teacherId] || t.teacherId}] ${t.leaf.chapterPath}`));
+      process.exit(0);
+    }
+  } else {
+    const result = await fetchSyllabus(cid, grad, syllabus);
+    const gradNode = locateGradTree(result, grad);
+    if (!gradNode) { console.error('未找到 gradation 节点', grad); process.exit(1); }
+    // parentGrad（learning URL 必需段）：命令行优先，否则按子树归属自动定位顶层阶段
+    parentGrad = findParentGrad(result, grad) || grad;
+    const leaves = leavesOfGrad(gradNode);
+    leaves.forEach((l, i) => { l.seq = i + 1; });
+    log(`枚举到 ${leaves.length} 个讲次叶子（parentGrad=${parentGrad}）`);
+    if (ARGS.list) {
+      for (const l of leaves) console.log(`${String(l.seq).padStart(3)} cs=${l.csItemId} rid=${l.resourceId} ch=${l.chapterId} | ${l.chapterPath}`);
+      process.exit(0);
+    }
+    tasks = leaves.map((leaf) => ({ leaf }));
   }
+  if (ARGS['parent-grad']) parentGrad = ARGS['parent-grad'];
 
   // 批量下载落位：--out 优先；否则按 profile 落正式课程库 原始资源/videos/<梯度>
   let outDir = ARGS.out;
@@ -369,10 +458,10 @@ function initCache(outDir) {
   if (!outDir) { console.error('批量下载需要 --out，或用 --profile 自动落位课程库'); process.exit(2); }
   log('输出目录:', path.relative(REPO_ROOT, outDir));
   const { cacheDir, keyCache, keyCachePath } = initCache(outDir);
-  const limit = ARGS.limit ? parseInt(ARGS.limit, 10) : leaves.length;
+  const limit = ARGS.limit ? parseInt(ARGS.limit, 10) : tasks.length;
   let okN = 0, skipN = 0, failN = 0; const fails = [];
-  for (let i = 0; i < Math.min(limit, leaves.length); i += 1) {
-    const leaf = leaves[i];
+  for (let i = 0; i < Math.min(limit, tasks.length); i += 1) {
+    const leaf = tasks[i].leaf;
     try {
       const r = await downloadOne(leaf, { cid, parentGrad: parentGrad || grad, grad, syllabus, outDir, res: ARGS.res, concurrency: ARGS.concurrency, dualTeacher: !!ARGS['dual-teacher'], keyCache, keyCachePath });
       if (r.skipped) { skipN += 1; log(`跳过(${r.reason}): ${r.name}`); } else { okN += 1; }
