@@ -1,7 +1,7 @@
 ---
 type: Workflow
 title: 名师课 ep3 视频取流解密与平台字幕链路
-description: 名师专业课（ep3/epiphany，saasCourseType=13）区别于正课 glive(16)：讲次叶子枚举→getVideoInfo 取 videoId→live/resource 取 FHD m3u8 与平台 VTT 字幕→CDP 真实播放页 Worker 边界截 AES key（32hex 前16字符 ASCII，非 hex 解码）→本地 aes-128-cbc 解密；平台自带 VTT 字幕免转写，正式一律 1080P。
+description: 名师专业课（ep3/epiphany，saasCourseType=13）区别于正课 glive(16)：讲次叶子枚举→getVideoInfo 取 videoId→live/resource 取 FHD m3u8 与平台 VTT 字幕→CDP 真实播放页 Worker 边界截 AES key（32hex 前16字符 ASCII，非 hex 解码）→本地 aes-128-cbc 解密；平台自带 VTT 字幕免转写，正式一律 1080P（清晰度按 m3u8 URL 鲁棒判，兼容双路 CDN 命名，不能只认 FHD 字符串）；长跑套 caffeinate 守护器防睡眠/CDP 瞬断静默停摆，不裸 nohup。
 tags: [ep3, epiphany, video, hls, aes, cdp, vtt, subtitle, workflow, mingshi]
 sources:
   - id: adr-018
@@ -33,6 +33,7 @@ status: stable
 - 正解（CDP 复用日常 Chrome，见 [浏览器 CDP](workflow-browser-cdp.md)、ADR-010）：打开 learning 播放页 → reload 前 hook `window.Worker` 双向消息 → ep3 调 **`window.gp.play()` 让视频真播**（`gp.video` 在 closed shadow DOM，querySelector 取不到但 `gp.video` 可用；DOM `.click()` 对播放键无效）→ 截主线程回传 `{id,response:Uint8Array(32)}`。
 - **AES key 形态（反直觉，易错）**：32 个十六进制字符的**前 16 个字符的 ASCII 字节**（**不是**把 32 串 hex 解码）；IV = m3u8 `IV=0x<32hex>` 的 **hex 解码 16 字节**；算法 `aes-128-cbc` + **`setAutoPadding(false)`**。
 - **三档清晰度各有独立 transcodeId → 各有独立 m3u8/key**（subtitle 三档相同、唯一）。正式一律 **FHD-1080P**；切清晰度点 `.gp-setting-quality-item` 含"1080"项（DOM 与 glive 一致），一次播放可同时抓 SD+FHD。key 由 transcodeId 固定、可按 `videoId:res` 缓存，但跨视频不同、每视频取一次（约 26–30s）。
+- **★ 清晰度只能由 m3u8 URL 鲁棒判，不能只认 `FHD` 字符串（实战曾稳定漏采 16 讲）**：两路 CDN 命名不同——主流 `glive2-video-resource/.../tc/FHD_xxx.m3u8`（路径含 FHD/HD/SD 字样），另一路 `glive-video-cdn/outputm3u8/<uuid>_1080_xxx.m3u8`（用 `_1080_/_720_/_540_` 分辨率后缀、**无 FHD 字样**）。播放器**默认就起播 1080 时整段只 init 一次 hls**，再点"1080"不会产生新流；此时若用 `url.includes('FHD')` 判档，会把这条真 1080 流误标成 SD，于是 key 明明已截获、上层却报「capture 未取到 FHD key」而漏采（且会把错标内容写进 `videoId:FHD` 缓存键）。capture 已用 `classifyQuality`：先 `/FHD|1080/`、再 `/HD|720/`、余者归 SD（FHD 含 HD 子串，**顺序必须先判 FHD**）；该函数运行在 `page.evaluate` **浏览器作用域内**，定义在 Node 顶层页面里取不到。
 
 ## 平台 VTT 字幕替代本地转写（仅 ep3）
 - `live/resource` 的 `result.subtitle` 是完整 VTT URL（域名 video-resource.gaodun.com），**免认证** GET 即标准 WebVTT；抽查不同 encrypt_type/时长视频 100% 有字幕。播放器"字幕开关"只控 UI，与接口取 URL 无关。
@@ -41,6 +42,7 @@ status: stable
 
 ## 脚本与边界
 - 薄编排 `scripts/cdp/ep3_download_videos.js`（`--list`/`--learning-url`/批量；默认 FHD；断点续跑、单讲失败不中断、双老师文件名前缀），取 key 复用 `scripts/cdp/capture_video_key.js`（输出**顶层数组** `[{quality,m3u8,keyAscii}]`），解密零改动复用 `scripts/download_decrypt.js`，ffmpeg `-c copy`（FHD 分片本就是 h264/aac，不再重压）。
+- **★ 长跑必须套防睡眠守护，不要裸 nohup**：裸 `nohup node ep3_download_videos …` 会在 Mac 空闲睡眠 / 日常 Chrome 的 CDP 瞬断时**零报错静默终止**（日志停在"取 key"、无崩溃栈、无结束标记；曾停约 8h 只落 36/261）。统一用 `scripts/cdp/run_ep3_videos_supervised.sh <ep3-profile> <梯度> <目标视频数> [--dual-teacher]`：`caffeinate -i` 防空闲睡眠（治本）、每轮断点续跑（已下幂等跳过 / 上轮 capture 失败自动重试 / 没跑到的继续）、连续 3 轮成品数不增长写 `[NOTIFY]❌` 退出（个别讲反复取不到 key 时人工看明细、不空转），PPID=1 脱离 AI 会话；目标数取该梯度 outline 实测 videoTotal。同一时刻只有一条 ep3 视频批量在跑（每讲取 key 间歇占用同一个日常 Chrome，多科串行错峰）。
 - 每讲目录 `<NN_讲名>/{video.mp4(1080P),subtitle.vtt,transcript.md,meta.json}`，临时 `_work` 用完即清；成品归课程库"原始资源"（正式落位归 EP3-06）。
 - 错误码：553649434=token 失效（须硬证据，见 [故障排查先验顺序](standard-debugging-first-principles.md)）；10161000=getVideoInfo 缺参数；40301=离线取 key 死路、必须走 CDP 播放。
 - 完整探路实测（含每轮证据）在过程件 `data/_workspace/_account/ep3-platform-probe.md`（不入库）；平台适配器抽象与其余 5 科推广是 EP3-06（L1）。

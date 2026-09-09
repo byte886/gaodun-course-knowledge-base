@@ -6,6 +6,7 @@
 
 ## 2026-09-09
 
+- **Update**：`workflow-ep3-vod-decryption` 补两条 T3 会计全面精讲批量实战结论：①清晰度只能由 m3u8 URL 鲁棒判——两路 CDN 命名 `glive2-video-resource/.../tc/FHD_xxx`（含 FHD 字样）vs `glive-video-cdn/outputm3u8/<uuid>_1080_xxx`（分辨率后缀、无 FHD），播放器默认就起播 1080 时整段只 init 一次 hls，`includes('FHD')` 会把真 1080 误标 SD、key 已截获却报「未取到 FHD key」稳定漏采 16 讲；capture 改 `classifyQuality`（先 FHD|1080、再 HD|720、余 SD），且分类函数必须在 `page.evaluate` 浏览器作用域内。②ep3 视频长跑必须套 `run_ep3_videos_supervised.sh`（`caffeinate -i` 防 Mac 睡眠/CDP 瞬断导致的零报错静默停摆——裸 nohup 曾停约 8h 仅落 36/261；断点续跑 + 连续 3 轮无增长判 ❌），不裸 nohup、同一时刻只跑一条（共用日常 Chrome）。来源 commit 32e8ac7 + 05 讲修复前后端到端对照。AI 编译，未标 verified。
 - **Add**：新增链路 concept `workflow-ep3-vod-decryption`（名师课 ep3/saasType13 平台路由、讲次枚举/getVideoInfo、CDP Worker 截 AES key=32hex 前16字符 ASCII、FHD-1080P、平台 VTT 字幕免 FunASR）与治理 concept `standard-dynamic-observation`（动态交互取证优先于静态逆向/纯接口复现的跨项目方法），并在 index 链路类/治理类登记；正课视频 concept 补"本链路只用于 glive、ep3 走 VTT"分流。来源：ADR-018 + ep3 key 攻坚第五轮双重端到端验证（25/26 考季）。AI 编译，未标 verified（machine-confirmed，待人核）。
 - **Update**：工作区收口 concept 补「视频下载/压缩过程件 `.vfetch` 落 `_workspace/<profile>/dl-tmp/`、课程库根不留讲目录」——`fetch_lecture_video.js` 新增 `--work-base`（缺省课程根、向后兼容），动态/串行两条流水线统一指向 dl-tmp，成品仍归 `原始资源/videos/`；根因是 .vfetch 曾建在课程库根、仅靠转写末尾自清，主控中断即永久残留（commit 2b1f892）。
 
