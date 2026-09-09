@@ -81,7 +81,10 @@ def main():
 
     bucket = {pid: [] for pid in targets}
     for fp in sorted(glob.glob(os.path.join(WS, "papers", "*.json"))):
-        paper_id = int(os.path.splitext(os.path.basename(fp))[0])
+        basename = os.path.splitext(os.path.basename(fp))[0]
+        if not basename.isdigit():
+            continue  # 跳过 batch_result_*.json 等非 paperId 文件
+        paper_id = int(basename)
         d = json.load(open(fp, encoding="utf-8"))
         ptitle = titles.get(paper_id, "")
         for mod in d.get("moduleList", []):

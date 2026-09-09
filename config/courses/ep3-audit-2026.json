@@ -1,0 +1,34 @@
+{
+  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。审计科目。ID/梯度来自 ep3 接口实测(2026-09-08)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。老师信息待补充。",
+  "key": "ep3-audit-2026",
+  "schemaVersion": 1,
+  "platform": "ep3",
+  "project": { "id": 8, "name": "CPA" },
+  "subject": { "id": 47, "name": "审计" },
+  "season": "2026考季",
+  "teachers": [],
+  "primaryCourse": {
+    "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
+    "name": "【VIPCPA专享】名师专业课-审计",
+    "saasCourseId": 17245,
+    "platform": "epiphany",
+    "saasCourseType": 13,
+    "studyUrl": "https://epiphany.gaodun.com/ep3/course/17245"
+  },
+  "companionCourses": [],
+  "stages": [
+    { "label": "基础必修", "attribute": 3, "gradationId": 72916, "syllabusId": 71334 },
+    { "label": "全面精讲", "attribute": 4, "gradationId": 0, "syllabusId": 0 },
+    { "label": "重点强化", "attribute": 5, "gradationId": 0, "syllabusId": 0 },
+    { "label": "考前冲刺", "attribute": 6, "gradationId": 0, "syllabusId": 0 }
+  ],
+  "paths": {
+    "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-审计",
+    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-审计"
+  },
+  "notes": [
+    "老师信息待补充（从ep3接口获取）",
+    "梯度ID待补充（从ep3接口获取，当前仅基础必修有ID）",
+    "首次运行时可能需要探索课程结构"
+  ]
+}

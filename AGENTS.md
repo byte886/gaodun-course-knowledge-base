@@ -280,6 +280,37 @@
 
 ---
 
+## 3.13 Idea-to-Tickets 任务工程方法论（强制）
+
+**核心原则**：把模糊需求一步步变成 Agent 可稳定执行的任务。四个模式（clarify/spec/slice/explain）可单用、可串联，**不依赖特定 IDE、任务系统或画图工具**。
+
+> 通用方法论（四个模式详解、组合套路、三条纪律）见全局技能 `~/Doubao/skills/idea-to-tickets/SKILL.md`；本项目只记录**特有约定**，不重复通用内容。
+
+### 本项目工单落点（强制）
+
+| 层级 | 位置 | 装什么 | 不装什么 |
+|------|------|--------|----------|
+| **单课工单** | `data/_workspace/<course>/tickets/`（过程件，不入库） | 工单 01..N、BUG_BACKLOG、REQUIREMENTS、tickets-index | 全局状态、跨课机制问题 |
+| **全局任务状态** | `project-management/active/TASK_STATUS.md` | 指针级状态、全局里程碑、下一步 | 单课逐讲/逐卷计数、工单勾选 |
+| **全局问题/BUG** | `project-management/active/ISSUES.md` | 跨课/机制级问题（换课还会踩） | 单课一次性问题（进该课 BUG_BACKLOG） |
+| **稳定决策** | `docs/project-management/decisions/`（ADR） | 不可逆决策、只增不改 | 易变状态、临时方案 |
+| **工程记忆** | `docs/project-management/memory/`（OKF bundle） | 跨会话稳定结论编译层 | 进度、计数、当天日期 |
+
+### 模板位置（vendor 进项目，不依赖全局技能）
+
+- 共识小结：`docs/project-management/templates/idea-to-tickets/consensus.md`
+- 规范 Spec：`docs/project-management/templates/idea-to-tickets/spec.md`
+- 工单 Ticket：`docs/project-management/templates/idea-to-tickets/ticket.md`
+- 工单台账：`docs/project-management/templates/idea-to-tickets/tickets-index.md`
+
+### 与 OKF 的关系（互补，不重复建设）
+
+- **I2T 负责"生产"**：clarify/spec 里稳定、不可逆的结论，按 OKF 沉淀成 concept/log
+- **OKF 负责"记忆"**：跨会话恢复时读 memory/index.md 定位，再沿 concept 下钻源 ADR/规范
+- **二者互补**：I2T 不另建记忆体系，OKF 不替代工单系统
+
+---
+
 ## 4. Things to Avoid（明确禁止事项）
 
 ### 4.1 操作禁止

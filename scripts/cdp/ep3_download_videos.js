@@ -24,6 +24,14 @@
  *   node ep3_download_videos.js --course 17244 --parent-grad 23408 --grad 62676 --syllabus 57580 \
  *        --out <dir> [--res FHD] [--limit N] [--concurrency 16] [--dual-teacher]
  *
+ *   # 4) 生产者-消费者模型（生产端：只预取key不下载）
+ *   node ep3_download_videos.js --profile ep3-accounting-2026 --stage 基础必修 --dual-teacher \
+ *        --global-key-cache data/_workspace/_account/ep3/global_keycache.json --prefetch-only
+ *
+ *   # 5) 生产者-消费者模型（消费端：只从全局缓存读key下载，不主动取key）
+ *   node ep3_download_videos.js --profile ep3-accounting-2026 --stage 基础必修 --dual-teacher \
+ *        --global-key-cache data/_workspace/_account/ep3/global_keycache.json --consumer
+ *
  * 注意：取 key 依赖日常 Chrome 已登录且可播放 ep3（CDP 复用登录态，绝不用自带浏览器）。
  */
 const fs = require('fs');
@@ -49,7 +57,10 @@ function parseArgs(argv) {
     if (k.startsWith('--')) a[k.slice(2)] = (argv[i + 1] && !argv[i + 1].startsWith('--')) ? argv[++i] : true;
   }
   a.res = a.res || 'FHD';           // 默认 1080P
-  a.concurrency = parseInt(a.concurrency || '16', 10);
+  a.concurrency = parseInt(a.concurrency || "64", 10);
+  a['global-key-cache'] = a['global-key-cache'] || '';  // 全局key缓存路径（生产者-消费者模型）
+  a['prefetch-only'] = !!a['prefetch-only'];  // 生产者模式：只取key不下载
+  a.consumer = !!a.consumer;  // 消费者模式：只从缓存读key，不主动取
   return a;
 }
 const ARGS = parseArgs(process.argv);
@@ -297,7 +308,7 @@ function vttToTranscript(vttText, durationSec, sourceLabel) {
 function safeName(s) { return String(s).replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '').slice(0, 60); }
 
 async function downloadOne(leaf, ctx) {
-  const { cid, parentGrad, grad, syllabus, outDir, res, concurrency, dualTeacher, keyCache, keyCachePath } = ctx;
+  const { cid, parentGrad, grad, syllabus, outDir, res, concurrency, dualTeacher, keyCache, keyCachePath, isGlobal, prefetchOnly, consumer } = ctx;
   // learning URL（capture 取 key 用）
   const learningUrl = `https://epiphany.gaodun.com/ep3/course/${cid}/learning/1/${parentGrad}/${grad}/${syllabus}/${leaf.chapterId}/${leaf.csItemId}/${leaf.resourceId}/0`;
 
@@ -319,18 +330,60 @@ async function downloadOne(leaf, ctx) {
   const vtt = path.join(lessonDir, `${pfx}subtitle.vtt`);
   const md = path.join(lessonDir, `${pfx}transcript.md`);
 
+  // 获取/预取key
+  const cacheKey = `${videoId}:${res}`;
+  let streams = keyCache[cacheKey];
+  let keyFetched = false;
+
+  if (!streams || !streams[res]) {
+    if (consumer) {
+      // 消费者模式：缓存中没有key，等待60秒后重试，最多重试30次（总共30分钟）
+      // 轮询生产者需要约27秒/个来预取key，且是轮询方式，所以需要更长的等待时间
+      for (let retry = 0; retry < 30; retry += 1) {
+        log(`  ⏳ 消费者等待key（${dirName}），重试 ${retry + 1}/30...`);
+        await sleep(60000);
+        // 重新读取缓存（生产者可能已经写入）
+        if (fs.existsSync(keyCachePath)) {
+          const freshCache = JSON.parse(fs.readFileSync(keyCachePath, 'utf8'));
+          streams = freshCache[cacheKey];
+          if (streams && streams[res]) {
+            keyCache[cacheKey] = streams;
+            break;
+          }
+        }
+      }
+      if (!streams || !streams[res]) {
+        return { skipped: true, reason: `消费者等待key超时（${dirName}）`, name: leaf.name };
+      }
+    } else {
+      // 生产者模式或普通模式：主动取key
+      log(`  取 key（CDP 播放）: ${dirName}`);
+      streams = captureKey(learningUrl, keyCache, keyCachePath);
+      keyCache[cacheKey] = streams;
+      saveCacheAtomic(keyCachePath, keyCache);
+      keyFetched = true;
+    }
+  }
+
+  // 生产者模式：只取key不下载
+  if (prefetchOnly) {
+    log(`  ✓ key已预取: ${dirName} (key=${streams[res] && streams[res].keyAscii})`);
+    // 生产者模式也下载VTT字幕（不需要key，轻量操作）
+    if (lr.subtitleUrl) {
+      if (!fs.existsSync(vtt)) downloadHttp(lr.subtitleUrl, vtt);
+    }
+    fs.writeFileSync(path.join(lessonDir, `${pfx}meta.json`), JSON.stringify({
+      videoId, transcodeId: lr.transcodeId, teacherId: info.teacher_id, teacher, res,
+      durationSec: lr.duration, csItemId: leaf.csItemId, resourceId: leaf.resourceId, chapterPath: leaf.chapterPath,
+      keyPrefetched: true,
+    }, null, 2));
+    return { ok: true, name: dirName, teacher, keyPrefetched: true, durationSec: lr.duration };
+  }
+
   // 断点续跑：视频
   if (fs.existsSync(mp4) && fs.statSync(mp4).size > 0) {
     log(`  跳过视频(已存在 ${(fs.statSync(mp4).size / 1e6).toFixed(1)}MB): ${dirName}`);
   } else {
-    const cacheKey = `${videoId}:${res}`;
-    let streams = keyCache[cacheKey];
-    if (!streams || !streams[res]) {
-      log(`  取 key（CDP 播放）: ${dirName}`);
-      streams = captureKey(learningUrl, keyCache, keyCachePath);
-      keyCache[cacheKey] = streams;
-      fs.writeFileSync(keyCachePath, JSON.stringify(keyCache, null, 2));
-    }
     const wanted = streams[res];
     if (!wanted || !wanted.keyAscii) throw new Error(`capture 未取到 ${res} key（${dirName}）`);
     log(`  下载解密 ${res} key=${wanted.keyAscii}: ${dirName}`);
@@ -364,14 +417,31 @@ function buildLearningUrlFromArg(u) {
 }
 
 // ---------- main ----------
-function initCache(outDir) {
+function initCache(outDir, globalCachePath) {
+  // 全局缓存模式：所有科目共享同一个缓存文件
+  if (globalCachePath) {
+    const cacheDir = path.dirname(globalCachePath);
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const keyCachePath = globalCachePath;
+    const keyCache = fs.existsSync(keyCachePath) ? JSON.parse(fs.readFileSync(keyCachePath, 'utf8')) : {};
+    keyCache._work = cacheDir;
+    return { cacheDir, keyCachePath, keyCache, isGlobal: true };
+  }
+  // 本地缓存模式：每个任务独立缓存
   fs.mkdirSync(outDir, { recursive: true });
   const cacheDir = path.join(outDir, '.ep3cache');
   fs.mkdirSync(cacheDir, { recursive: true });
   const keyCachePath = path.join(cacheDir, 'keycache.json');
   const keyCache = fs.existsSync(keyCachePath) ? JSON.parse(fs.readFileSync(keyCachePath, 'utf8')) : {};
   keyCache._work = cacheDir;
-  return { cacheDir, keyCachePath, keyCache };
+  return { cacheDir, keyCachePath, keyCache, isGlobal: false };
+}
+
+// 原子写入缓存（避免多进程同时写入冲突）
+function saveCacheAtomic(keyCachePath, keyCache) {
+  const tmpPath = keyCachePath + `.tmp.${process.pid}.${Date.now()}`;
+  fs.writeFileSync(tmpPath, JSON.stringify(keyCache, null, 2));
+  fs.renameSync(tmpPath, keyCachePath);
 }
 
 (async () => {
@@ -379,10 +449,10 @@ function initCache(outDir) {
   if (ARGS['learning-url']) {
     const outDir = ARGS.out;
     if (!outDir) { console.error('单讲模式需要 --out'); process.exit(2); }
-    const { keyCache, keyCachePath } = initCache(outDir);
+    const { keyCache, keyCachePath, isGlobal } = initCache(outDir, ARGS['global-key-cache']);
     const p = buildLearningUrlFromArg(ARGS['learning-url']);
     const leaf = { csItemId: Number(p.csItemId), resourceId: Number(p.resourceId), chapterId: Number(p.chapterId), name: ARGS.name || 'single', seq: 0 };
-    const ctx = { cid: p.cid, parentGrad: p.parentGrad, grad: p.grad, syllabus: p.syllabus, outDir, res: ARGS.res, concurrency: ARGS.concurrency, dualTeacher: !!ARGS['dual-teacher'], keyCache, keyCachePath };
+    const ctx = { cid: p.cid, parentGrad: p.parentGrad, grad: p.grad, syllabus: p.syllabus, outDir, res: ARGS.res, concurrency: ARGS.concurrency, dualTeacher: !!ARGS['dual-teacher'], keyCache, keyCachePath, isGlobal, prefetchOnly: ARGS['prefetch-only'], consumer: ARGS.consumer };
     const r = await downloadOne(leaf, ctx);
     log('单讲结果:', JSON.stringify(r));
     process.exit(0);
@@ -457,20 +527,26 @@ function initCache(outDir) {
   }
   if (!outDir) { console.error('批量下载需要 --out，或用 --profile 自动落位课程库'); process.exit(2); }
   log('输出目录:', path.relative(REPO_ROOT, outDir));
-  const { cacheDir, keyCache, keyCachePath } = initCache(outDir);
+  const { cacheDir, keyCache, keyCachePath, isGlobal } = initCache(outDir, ARGS['global-key-cache']);
+  if (ARGS['global-key-cache']) log('全局key缓存:', ARGS['global-key-cache']);
+  if (ARGS['prefetch-only']) log('模式: 生产者（只预取key不下载）');
+  if (ARGS.consumer) log('模式: 消费者（只从缓存读key下载）');
   const limit = ARGS.limit ? parseInt(ARGS.limit, 10) : tasks.length;
+  const offset = ARGS.offset ? parseInt(ARGS.offset, 10) : 0;
+  if (ARGS.offset) log(`偏移量: ${offset}（从第${offset + 1}个视频开始）`);
   let okN = 0, skipN = 0, failN = 0; const fails = [];
-  for (let i = 0; i < Math.min(limit, tasks.length); i += 1) {
+  for (let i = offset; i < Math.min(offset + limit, tasks.length); i += 1) {
     const leaf = tasks[i].leaf;
     try {
-      const r = await downloadOne(leaf, { cid, parentGrad: parentGrad || grad, grad, syllabus, outDir, res: ARGS.res, concurrency: ARGS.concurrency, dualTeacher: !!ARGS['dual-teacher'], keyCache, keyCachePath });
+      const r = await downloadOne(leaf, { cid, parentGrad: parentGrad || grad, grad, syllabus, outDir, res: ARGS.res, concurrency: ARGS.concurrency, dualTeacher: !!ARGS['dual-teacher'], keyCache, keyCachePath, isGlobal, prefetchOnly: ARGS['prefetch-only'], consumer: ARGS.consumer });
       if (r.skipped) { skipN += 1; log(`跳过(${r.reason}): ${r.name}`); } else { okN += 1; }
     } catch (e) {
       failN += 1; fails.push({ leaf: leaf.name, err: e.message });
       log(`✗ 失败: ${leaf.name} — ${e.message}`);
     }
   }
-  log(`批量结束：成功/已下载 ${okN}，非视频跳过 ${skipN}，失败 ${failN}`);
+  const modeLabel = ARGS['prefetch-only'] ? 'key预取' : (ARGS.consumer ? '消费者下载' : '下载');
+  log(`批量结束：成功/已${modeLabel} ${okN}，非视频跳过 ${skipN}，失败 ${failN}`);
   if (fails.length) { fs.writeFileSync(path.join(cacheDir, 'fails.json'), JSON.stringify(fails, null, 2)); log('失败明细 -> .ep3cache/fails.json'); process.exit(1); }
   process.exit(0);
 })().catch((e) => { console.error('[FATAL]', e.stack || e.message); process.exit(1); });

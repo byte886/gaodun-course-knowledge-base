@@ -70,11 +70,20 @@ def main():
     head = Path(a.head).read_text(encoding="utf-8").rstrip()
     final = f"{head}\n\n{rendered}\n\n{related}"
 
-    outdir = course / "知识详解" / f"{gc:02d}_{gname}"
+    # 输出目录用 profile code（01-32 连续），不用题库 groupCode（G24/G29 不连续），与01章试点一致
+    prof_code = None
+    for g in _prof.get("structure", {}).get("groups", []):
+        if g.get("name") == gname:
+            prof_code = g.get("code")
+            break
+    if prof_code is None:
+        prof_code = f"{gc:02d}"
+    dirname = f"{prof_code}_{gname}"
+    outdir = course / "知识详解" / dirname
     outdir.mkdir(parents=True, exist_ok=True)
     out = outdir / f"{title}.md"
     out.write_text(final, encoding="utf-8")
-    print(f"成篇：{gc:02d}_{gname}/{title}.md | 客观{len(obj)} 大题{len(groups)} 小问{n_sub} | {len(final)}字符 -> {out}")
+    print(f"成篇：{dirname}/{title}.md | 客观{len(obj)} 大题{len(groups)} 小问{n_sub} | {len(final)}字符 -> {out}")
 
 
 if __name__ == "__main__":

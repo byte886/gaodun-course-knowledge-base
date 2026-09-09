@@ -42,8 +42,8 @@
   "companionCoursesNote": "名师课(ep3 type=13)与正课(glive type=16)是两套平台、各自独立 profile；此处只留指针，正式采集走 profileKey 指向的卡，不在本卡内合并。",
   "structure": {
     "officialGroupCount": 32,
-    "pointCount": 92,
-    "historyHint": "知识图谱 32 官方组 92 知识点（来自 nice/transit/with-sid 接口，2026-09-08 拉取）；历史记录 36 章 164 考点可能含入门/衔接及 syllabus 章节，后续从 syllabus 接口核对",
+    "pointCount": 164,
+    "historyHint": "知识图谱 32 官方组 164 知识点（来自 nice/transit/with-sid 接口 content[].knowledge_children，2026-09-09 核实）；接口返回的 import_num=92 是学习进度/已掌握数，非总知识点数（旧 pointCount=92 系误读，已修正）。其中会计入门7+会计衔接15=22预科知识点无视频/讲义/题目来源，暂不做知识详解；正式考纲=30章/142知识点，全部有四来源支撑，知识详解按142生成（篇数=30章README+142知识点+2全局=174篇）",
     "groups": [
       {
         "code": "01",

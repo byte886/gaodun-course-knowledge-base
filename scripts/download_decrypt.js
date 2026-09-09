@@ -10,7 +10,7 @@ const OUT_TS = process.argv[3];
 const SEG_DIR = process.argv[4];
 const KEY_ASCII = process.argv[5];  // first 16 bytes as ASCII string
 const IV_HEX = process.argv[6];
-const CONCURRENCY = parseInt(process.argv[7] || '16');
+const CONCURRENCY = parseInt(process.argv[7] || "64");
 
 const key = Buffer.from(KEY_ASCII, 'ascii');
 const iv = Buffer.from(IV_HEX, 'hex');
