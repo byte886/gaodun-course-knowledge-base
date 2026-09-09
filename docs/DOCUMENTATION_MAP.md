@@ -140,7 +140,7 @@
 | 质量保证规范 | `docs/project-management/standards/QUALITY_ASSURANCE.md` | 验证标准、质量检查流程 |
 | 目录结构说明 | `docs/DIRECTORY_STRUCTURE.md` | 仓库/本地/网盘/飞书目录结构、Git忽略说明、维护原则 |
 | 系统要求与环境配置 | `docs/SYSTEM_REQUIREMENTS.md` | 平台兼容性、硬件要求、环境配置、迁移新Mac步骤 |
-| **工程记忆 bundle 入口** | `docs/project-management/memory/index.md` | OKF v0.2 跨会话记忆导航：架构/链路/治理/对照 10 篇 concept 索引（ADR-017） |
+| **工程记忆 bundle 入口** | `docs/project-management/memory/index.md` | OKF v0.2 跨会话记忆导航：架构/链路/治理/对照 13 篇 concept 索引（ADR-017/018） |
 | 工程记忆概念页 | `docs/project-management/memory/concepts/*.md` | 稳定结论 + 指向源 ADR/规范的相对指针，不复制正文；机器初编、人核后加 verified |
 | 工程记忆变更线 | `docs/project-management/memory/log.md` | 记忆层自身结构变更，倒序；业务流水看根 CHANGELOG |
 | OKF 一致性校验器 | `scripts/okf_validate.py` | vendored 零依赖校验，提交前 `python3 scripts/okf_validate.py docs/project-management/memory`，E 必须为 0 |
@@ -207,6 +207,17 @@
 ---
 
 ## 文档优化记录
+
+### 2026-09-09 名师课 ep3 取流解密与平台字幕（ADR-018）
+
+**新增**：
+- `docs/project-management/decisions/ADR-018-名师课ep3取流解密平台路由与平台字幕替代转写.md`
+- 工程记忆 2 篇 concept：`memory/concepts/workflow-ep3-vod-decryption.md`（ep3 取流/FHD/VTT 链路）、`standard-dynamic-observation.md`（动态交互取证方法论）；bundle 由 11 篇增至 13 篇
+- 脚本 `scripts/cdp/ep3_download_videos.js`（ep3 视频+字幕薄编排，复用 capture/解密）；`capture_video_key.js` 扩展支持 ep3 与 FHD
+
+**更新**：`video-processing.md`（新增"名师课 ep3"小节 + 相关脚本/参考文档）、`WORKFLOW.md`（阶段①按 saasCourseType 分流、工具表）、memory `index.md/log.md`、正课视频与课程 profile 两篇 concept 补分流、`scripts/README.md`、ADR README 索引。
+
+**原则**：正课 glive(16) 维持 H.265+FunASR；名师课 ep3(13) 用 FHD-1080P + 平台 VTT 字幕免转写；平台适配器抽象与 5 科推广留 EP3-06（L1 先出方案）。
 
 ### 2026-09-07 采用 OKF 工程记忆格式层（ADR-017）
 

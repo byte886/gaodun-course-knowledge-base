@@ -36,6 +36,8 @@ status: stable
 
 名称以平台完整名为准（如「【VIPCPA 专享】名师专业课-税法」），口头简称"名师专业课-税法/会计/…"不完整。
 
+**两线采集链路也不同（按 saasCourseType 路由，ADR-018）**：正课 glive(16) 视频走 H.265 压缩 + FunASR 转写，见 [视频压缩与转写](workflow-video-transcription.md)；名师课 ep3(13) 走 [ep3 取流解密与平台字幕](workflow-ep3-vod-decryption.md)——FHD-1080P、ffmpeg copy 不重压、平台 VTT 字幕免转写、取 key 用 `gp.play()` 真播。做题/讲义链路同样分平台，别把正课脚本直接套到 ep3。
+
 ## 税法 cpa-tax-2026（已完结，结构齐全）
 - 老师 蔡俊峻；考试 2026-08-29 13:00–15:00；账号有效期至 2026-10-31。
 - 正课 glivepro：vcourseId **96834** / saasCourseId **42660** / syllabusId **75181** / gradationId null / learnStatus **3（已完结）**。

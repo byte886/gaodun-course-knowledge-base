@@ -6,6 +6,7 @@
 
 ## 2026-09-09
 
+- **Add**：新增链路 concept `workflow-ep3-vod-decryption`（名师课 ep3/saasType13 平台路由、讲次枚举/getVideoInfo、CDP Worker 截 AES key=32hex 前16字符 ASCII、FHD-1080P、平台 VTT 字幕免 FunASR）与治理 concept `standard-dynamic-observation`（动态交互取证优先于静态逆向/纯接口复现的跨项目方法），并在 index 链路类/治理类登记；正课视频 concept 补"本链路只用于 glive、ep3 走 VTT"分流。来源：ADR-018 + ep3 key 攻坚第五轮双重端到端验证（25/26 考季）。AI 编译，未标 verified（machine-confirmed，待人核）。
 - **Update**：工作区收口 concept 补「视频下载/压缩过程件 `.vfetch` 落 `_workspace/<profile>/dl-tmp/`、课程库根不留讲目录」——`fetch_lecture_video.js` 新增 `--work-base`（缺省课程根、向后兼容），动态/串行两条流水线统一指向 dl-tmp，成品仍归 `原始资源/videos/`；根因是 .vfetch 曾建在课程库根、仅靠转写末尾自清，主控中断即永久残留（commit 2b1f892）。
 
 ## 2026-09-08

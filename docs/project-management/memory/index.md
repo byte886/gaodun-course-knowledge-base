@@ -18,13 +18,15 @@ okf_version: "0.2"
 
 * [浏览器自动化连接通道](concepts/workflow-browser-cdp.md) - 真实 Chrome 调试端口 + puppeteer-core、接口为主 UI 兜底、禁用内置浏览器
 * [做题/试卷采集接口链路](concepts/workflow-exam-paper-pipeline.md) - syllabus→record/redo→submit→AI 批改→回查、JWT、题型与只读/交卷边界
-* [视频压缩与音频转写链路](concepts/workflow-video-transcription.md) - H.265 CRF30 压缩、FunASR 本地转写、原始资源分桶
+* [视频压缩与音频转写链路（正课 glive）](concepts/workflow-video-transcription.md) - H.265 CRF30 压缩、FunASR 本地转写、原始资源分桶
+* [名师课 ep3 视频取流解密与平台字幕](concepts/workflow-ep3-vod-decryption.md) - saasType13 平台路由、讲次枚举/getVideoInfo、CDP Worker 截 key（前16 ASCII）、FHD-1080P、平台 VTT 字幕免转写
 * [飞书同步与单窗口导航](concepts/workflow-feishu-sync.md) - 本地是唯一源头、cite 结构化链接、跨文档必新开是平台事实、左侧目录树单窗口
 
 # 治理（Standard）
 
 * [命名规范与变更分级控制](concepts/standard-naming-change-control.md) - L0/L1/L2 先方案后动、ADR 只增不改、类型词与 snake_case、精简原则、质量门
 * [故障排查先验顺序](concepts/standard-debugging-first-principles.md) - 九成失败是自身问题、凭证最后怀疑、token 失效须有只读回包硬证据、交用户登录是最后手段
+* [动态交互取证优先于静态逆向](concepts/standard-dynamic-observation.md) - 静态/离线复现卡死时让真实系统在真实界面跑起来、交互触发、在对象边界截获；人机分工、先证明真运行再取证
 
 # 对照索引（Reference）
 

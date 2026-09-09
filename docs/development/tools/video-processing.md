@@ -50,6 +50,42 @@
 
 详细逆向分析见 `encryption.md`。
 
+## 名师课 ep3（saasCourseType=13）平台差异与采集流程
+
+> 正课 glive（saasCourseType=16）走下面"详细操作流程"；**名师专业课（ep3/epiphany，saasCourseType=13）走本节**。决策见 ADR-018，记忆层见 `docs/project-management/memory/concepts/workflow-ep3-vod-decryption.md`，探路实测在过程件 `data/_workspace/_account/ep3-platform-probe.md`。
+
+### 与正课的关键差异（务必先看）
+
+1. **平台自带 VTT 字幕 → ep3 不做 FunASR 转写**。`live/resource` 响应的 `result.subtitle` 是完整 VTT URL（video-resource.gaodun.com），免认证 GET 即标准 WebVTT，抽查覆盖率 100%。直接下 VTT 转 transcript，**省掉本地转写环节**；播放器里的"字幕开关"只控 UI、不影响取 URL。
+2. **正式清晰度一律 FHD-1080P**（与正课成片一致）。SD/HD/FHD 三档各有独立 `transcode_id`，故 **m3u8 与 key 三档各不相同**（subtitle 三档相同、唯一）；要 FHD 必须在播放页切到 1080P 取对应 key。
+3. **VTT 原始稿属于原始资源**：每讲同时保留 `subtitle.vtt`（原样）与 `transcript.md`（转换稿），不得只留转换稿。
+4. **取 key 路线相同但播放动作不同**：key 仍是"32 hex 串前 16 字符的 ASCII 字节、IV=m3u8 IV(hex)、aes-128-cbc + setAutoPadding(false)"；但 ep3 必须调 `window.gp.play()` 让视频真播（`gp.video` 在 closed shadow DOM，DOM 点击播放键无效），清晰度点 `.gp-setting-quality-item` 含"1080"的项（DOM 与 glive 一致），一次播放可同时抓 SD+FHD。**纯 node 调 authorize 全 40301、逆向 gdcrypto.wasm 是已证死路，不要再试**。
+5. **讲次/视频 ID 获取链不同**：syllabus 递归到带 `resource_id` 的讲次叶子 → `getVideoInfo` 拿 videoId。
+   - getVideoInfo：`/ep-study/api/v1/front/resource/<rid>?courseId=<cid>&csItemId=<cs>&syllabusId=<sid>&is_show_live=0&isRelatedResource=1`，**四个上下文参数缺一不可**（缺报 10161000）。
+   - videoId 取 `result.resource.video_id`（= `sewise.source_id`）；**顶层 `sewise_source_id` 恒为 null 是废弃字段，禁用**；`discriminator==='video'` 判定视频讲次。
+   - 只读/取流只需 `makeHeaders(jwt)` + `Referer=https://epiphany.gaodun.com/`，不需要 x_gdssid/cookie。
+6. **FHD 分片本就是 h264/aac，ffmpeg `-c copy` 直接封装 mp4，不再重压**（正课的 H.265 CRF30 压缩环节对 ep3 不适用）。
+
+### 采集命令（薄编排，复用取 key/解密组件）
+
+```bash
+# 1) 先枚举讲次、核对数量与章节路径（不下载）
+node scripts/cdp/ep3_download_videos.js --course 17244 --parent-grad 23408 \
+  --grad 76232 --syllabus 76456 --list
+
+# 2) 批量下载（默认 FHD；断点续跑，单讲失败记 .ep3cache/fails.json 不中断）
+node scripts/cdp/ep3_download_videos.js --course 17244 --parent-grad 23408 \
+  --grad 76232 --syllabus 76456 --out <输出目录> [--limit N] [--dual-teacher]
+
+# 单讲（给 learning URL 即可）
+node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --out <目录>
+```
+
+- 每讲产出 `<NN_讲名>/{video.mp4(1080P),subtitle.vtt,transcript.md,meta.json}`，临时 `_work` 用完即清。
+- 取 key 复用 `scripts/cdp/capture_video_key.js`（输出顶层数组 `[{quality,m3u8,keyAscii}]`，按 `videoId:res` 缓存），下载解密复用 `scripts/download_decrypt.js`。
+- 每个视频 CDP 取 key 约 26–30s（后台批量可接受）；双老师资源目录不分老师、文件名加老师前缀用 `--dual-teacher`（姚远_/陈蓓蓓_）。
+- 错误码：553649434=token 失效（须只读回包硬证据，先怀疑自身）；10161000=getVideoInfo 缺参数；40301=离线取 key 死路、必须走 CDP 真实播放。
+
 ## 详细操作流程
 
 ### 步骤1：下载与解密（CDP 自动化主链路）
@@ -272,9 +308,10 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 | 脚本 | 位置 | 说明 |
 |------|------|------|
 | 单讲下载主控 | `scripts/cdp/fetch_lecture_video.js` | 取回放token→CDP抓key→下m3u8→解密合并（内部调下面两个） |
-| CDP 密钥捕获 | `scripts/cdp/capture_video_key.js` | CDP 连日常 Chrome、注入 Worker hook，抓 m3u8(SD/FHD) 与 AES key |
-| 下载解密 | `scripts/download_decrypt.js` | HLS分片下载解密合并脚本 |
-| 压缩脚本 | `scripts/compress.sh` | ffmpeg H.265压缩脚本 |
+| CDP 密钥捕获 | `scripts/cdp/capture_video_key.js` | CDP 连日常 Chrome、注入 Worker hook，抓 m3u8(SD/FHD) 与 AES key；支持正课 glive 与名师课 ep3（ep3 用 gp.play() 真播+点1080P，输出顶层数组） |
+| 下载解密 | `scripts/download_decrypt.js` | HLS分片下载解密合并脚本（glive/ep3 零改动复用） |
+| **名师课 ep3 采集编排** | `scripts/cdp/ep3_download_videos.js` | ep3(saasType13) 讲次枚举→getVideoInfo→FHD m3u8+VTT→取key→解密→ffmpeg copy→subtitle.vtt/transcript.md；`--list`/`--learning-url`/批量，断点续跑、双老师前缀 |
+| 压缩脚本 | `scripts/compress.sh` | ffmpeg H.265压缩脚本（**仅正课 glive**；ep3 FHD 用 `-c copy` 不重压） |
 | 知识库结构检查 | `scripts/check_kb_structure.sh` | 自动检测重复节点、空节点、链接问题 |
 
 ## 参考文档
@@ -282,6 +319,8 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 | 文档 | 位置 | 说明 |
 |------|------|------|
 | 加密逆向分析 | `docs/development/api/encryption.md` | HLS AES-128 加密详细逆向分析 |
+| ep3 取流决策 | `docs/project-management/decisions/ADR-018-名师课ep3取流解密平台路由与平台字幕替代转写.md` | 名师课 ep3 平台路由、取 key、FHD、VTT 替代转写的决策记录 |
+| ep3 链路记忆 | `docs/project-management/memory/concepts/workflow-ep3-vod-decryption.md` | ep3 采集稳定结论编译页 |
 | 百度网盘 | `docs/development/api/netdisk-setup.md` | 百度网盘API配置和使用 |
 | 总体工作流 | `../WORKFLOW.md` | 完整工作流（下载→压缩→转写→知识库→做题验证） |
 | 知识库组织规范 | `knowledge-base-organization.md` | 知识库结构设计、节点命名规范、父页面规范 |

@@ -57,7 +57,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
 
 ### 总编排器与并发标准件
 
@@ -107,10 +107,10 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；现役取密钥主链路（连日常 Chrome、复用登录态；旧 Playwright run-code 路线已清理） |
-| **用法** | `node scripts/cdp/capture_video_key.js "<回放 player?token=URL>" [输出json路径]`，输出 `{quality,m3u8,keyAscii}[]` |
-| **可靠性** | ✅ 高（纯采集，只开一个临时静音播放标签触发 worker 流量、抓完即关，不动用户其它页） |
-| **相关文档** | `docs/development/tools/video-processing.md`、ADR-010 |
+| **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；现役取密钥主链路（连日常 Chrome、复用登录态；旧 Playwright run-code 路线已清理）。**同时支持正课 glive 与名师课 ep3**：ep3 用 `window.gp.play()` 真播（gp.video 在 closed shadow DOM）、点 `.gp-setting-quality-item` 1080P 切清晰度（DOM 与 glive 一致），一次运行同时抓 SD+FHD 两套（两档 transcodeId 不同故 key 不同） |
+| **用法** | `node scripts/cdp/capture_video_key.js "<回放/learning URL>" [输出json路径]`，**输出顶层是数组** `[{quality:'FHD-1080P'|'SD-540P',m3u8,keyAscii,keyBytes}]`；ep3 key 形态=32hex 串前 16 字符的 ASCII 字节（非 hex 解码） |
+| **可靠性** | ✅ 高（纯采集，只开一个临时静音播放标签触发 worker 流量、抓完即关，不动用户其它页）；ep3 经 25/26 考季双重验证 |
+| **相关文档** | `docs/development/tools/video-processing.md`、ADR-010、`data/_workspace/_account/ep3-platform-probe.md` 第四/五轮 |
 
 ---
 
@@ -683,6 +683,16 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `node scripts/cdp/ep3_download_handouts.js <cid> [--format=pdf\|all] [--limit=N] [--dry]`；试点落 `data/_workspace/_account/ep3/downloads/<cid>/梯度/分类/`（正式课程库落位待 L1 方案） |
 | **可靠性** | ✅ 3 份 PDF 逐字节一致、均为真 PDF（姚远172页/陈蓓蓓161页/词典65页） |
 | **相关文档** | 同 ep3_course_outline |
+
+### `cdp/ep3_download_videos.js` — 名师课 ep3 视频采集薄编排（枚举→取流→取key→解密→FHD mp4 + VTT字幕）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | ep3(saasType13) 讲次视频端到端采集。syllabus 递归枚举讲次叶子 → getVideoInfo 拿 videoId → glive2-vod live/resource 拿 FHD m3u8+**平台 VTT 字幕 URL** → 复用 `capture_video_key.js`(CDP 播放取 key，按 videoId:res 缓存) → 复用 `download_decrypt.js`(分片下载+AES解密) → ffmpeg -c copy 出 1080P mp4 → 下 VTT 原始稿 `subtitle.vtt` 并转 `transcript.md`（**平台自带字幕，ep3 不需 FunASR 转写**）。薄编排不重复实现取 key/解密 |
+| **用法** | 枚举：`node scripts/cdp/ep3_download_videos.js --course 17244 --parent-grad 23408 --grad 76232 --syllabus 76456 --list`；单讲：`--learning-url "<ep3 learning URL>" --out <dir>`；批量：同枚举参数去掉 `--list`、加 `--out <dir> [--res FHD] [--limit N] [--dual-teacher]`。断点续跑（mp4/transcript 存在即跳过）、单讲失败记 `.ep3cache/fails.json` 不中断批量 |
+| **产出** | 每讲 `<NN_讲名>/{video.mp4(1080P),subtitle.vtt,transcript.md,meta.json}`，临时 `_work` 用完即清；`--dual-teacher` 时文件加老师前缀（姚远_/陈蓓蓓_，目录不分老师） |
+| **可靠性** | ✅ 25考季样本(1585s/167.8MB/1080P/30段)+26考季批量 limit1(2337s/205.2MB/41段)双重端到端验证；枚举 25考季412/26考季408 与接口 total 吻合、chapterId 零缺失 |
+| **相关文档** | `data/_workspace/_account/ep3-platform-probe.md` 第四/五轮、`ep3/tickets-index.md` EP3-05、`docs/development/tools/video-processing.md`（ep3 小节） |
 
 ---
 

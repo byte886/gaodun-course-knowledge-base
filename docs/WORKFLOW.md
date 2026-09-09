@@ -114,8 +114,9 @@
 | 任务 | 统一使用 |
 |------|----------|
 | 连接日常 Chrome（主通道，ADR-010） | `scripts/cdp/connect_browser.js`（puppeteer-core 经 CDP 连已登录日常 Chrome，免重登） |
-| 视频下载解密 | `scripts/download_decrypt.js` |
-| 视频压缩 | `scripts/compress.sh` |
+| 视频下载解密 | `scripts/download_decrypt.js`（glive/ep3 共用） |
+| 名师课 ep3 视频+字幕采集（type=13） | `scripts/cdp/ep3_download_videos.js`（FHD-1080P + 平台 VTT 字幕，免 FunASR；ADR-018） |
+| 视频压缩（仅正课 glive） | `scripts/compress.sh`（ep3 FHD 用 ffmpeg -c copy，不重压） |
 | 讲义 OCR | `scripts/batch_ocr.sh` |
 | 音频转写 | `scripts/transcribe_pipeline.py` |
 | 网盘上传 | `scripts/baidu_upload.py` |
@@ -204,12 +205,14 @@
 - 讲义：**禁止点 Chrome 下载按钮**（弹对话框），用 CDN 直链 curl；PDF 多为图片型，必须 OCR，表格/公式/图表用 AI 视觉补。
 - 转写：FunASR SenseVoiceSmall（本地、0 成本），虚拟环境 `transcription/venv/`，**串行最优、禁止并发转写**。
 - 命名与落点遵循 NAMING_CONVENTION / DIRECTORY_STRUCTURE：`videos/NN_讲题/`、`notes/NN_模块/`。
+- **先按 saasCourseType 分流（ADR-018）**：正课 glive(type=16) 走上面"H.265 压缩 + FunASR 转写"全流程；**名师课 ep3/epiphany(type=13) 走 `scripts/cdp/ep3_download_videos.js` 独立链路**——正式 FHD-1080P、ffmpeg `-c copy` 不重压、**平台自带 VTT 字幕直接下载（subtitle.vtt 原始稿 + transcript.md），不做 FunASR 转写**；取 key 仍走 CDP 真实播放（gp.play + 点1080P）。详见 [video-processing.md](development/tools/video-processing.md) 的"名师课 ep3"小节。
 
 ### 参考文档
 
 - 配套阶段 SOP：[资源采集 SOP](development/guides/resource-collection-sop.md)
-- [video-processing.md](development/tools/video-processing.md)、[transcription.md](development/tools/transcription.md)、[document-download.md](development/tools/document-download.md)、[ocr.md](development/tools/ocr.md)
-- 脚本：`download_decrypt.js`、`compress.sh`、`transcribe_pipeline.py`、`batch_ocr.sh`
+- [video-processing.md](development/tools/video-processing.md)（含名师课 ep3 小节）、[transcription.md](development/tools/transcription.md)、[document-download.md](development/tools/document-download.md)、[ocr.md](development/tools/ocr.md)
+- 脚本：正课 `download_decrypt.js`、`compress.sh`、`transcribe_pipeline.py`、`batch_ocr.sh`；名师课 ep3 `cdp/ep3_download_videos.js`（复用 `capture_video_key.js`/`download_decrypt.js`）
+- 决策：[ADR-018 名师课 ep3 取流解密与平台字幕](project-management/decisions/ADR-018-名师课ep3取流解密平台路由与平台字幕替代转写.md)
 
 ---
 

@@ -22,6 +22,7 @@ if (!playUrl || !playUrl.startsWith('http')) {
   process.exit(2);
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const isEp3 = /epiphany\.gaodun\.com\/ep3\//.test(playUrl);
 
 // 注入到页面主世界：hook Worker 的双向 postMessage，记录到 window.__workerData
 const INIT_HOOK = () => {
@@ -84,7 +85,14 @@ const INIT_HOOK = () => {
     await sleep(6000);
 
     console.log('[2] 静音 + 从头播放以触发 hls worker...');
-    const play = await page.evaluate(() => {
+    const play = await page.evaluate(async () => {
+      // ep3：gp.video 在 closed shadow DOM，外部 querySelector 找不到，用 gp.play()
+      if (window.gp && typeof window.gp.play === 'function') {
+        try { await window.gp.play(); return 'ep3-gp-play'; } catch (e) { /* fall through */ }
+      }
+      if (window.gp && window.gp.video) {
+        try { window.gp.video.muted = true; window.gp.video.currentTime = 0; await window.gp.video.play(); return 'ep3-gp-video'; } catch (e) { /* fall through */ }
+      }
       const wrap = document.querySelector('.gp-video-wrap');
       if (!wrap) return 'no wrap';
       const customEl = Array.from(wrap.children).find((c) => c.tagName.startsWith('G-'));
@@ -99,10 +107,22 @@ const INIT_HOOK = () => {
     await sleep(9000);
 
     console.log('[3] 切 1080P...');
+    // ep3 与 glive 的清晰度项 DOM 一致（.gp-setting-quality-item：1080P超清/720P高清/540P标清），统一点击
     const fhd = await page.evaluate(() => {
-      const items = document.querySelectorAll('.gp-setting-quality-item');
-      for (const it of items) if (it.textContent.includes('1080')) { it.click(); return 'clicked 1080P'; }
-      return 'no1080; items=' + Array.from(items).map((i) => i.textContent.trim()).join('|');
+      const find1080 = () => {
+        const items = document.querySelectorAll('.gp-setting-quality-item');
+        for (const it of items) if (it.textContent.includes('1080')) return it;
+        return null;
+      };
+      let target = find1080();
+      if (!target) {
+        // 菜单未展开时先 hover 清晰度入口再找
+        const q = document.querySelector('.gp-icon-quality,.gp-quality-text,.gp-setting-quality');
+        if (q) ['mouseover', 'mouseenter'].forEach((ev) => q.dispatchEvent(new MouseEvent(ev, { bubbles: true })));
+        target = find1080();
+      }
+      if (target) { target.click(); return 'clicked 1080P'; }
+      return 'no1080; items=' + Array.from(document.querySelectorAll('.gp-setting-quality-item')).map((i) => i.textContent.trim()).join('|');
     });
     console.log('    ', fhd);
     await sleep(10000);
