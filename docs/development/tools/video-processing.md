@@ -5,9 +5,22 @@
 > **维护者**：AI自动维护
 > **读者**：AI代理
 
-> 本文档详细说明高顿Glive课程回放视频的下载、解密、压缩与归档流程。
+> 本文档详细说明高顿课程回放视频的下载、解密、压缩与归档流程。
 > 包含加密方案逆向分析、详细操作步骤、关键陷阱汇总等内容。
-> 总体工作流见 `../WORKFLOW.md` 第2节。
+> 总体工作流见 `../WORKFLOW.md` 阶段①。
+
+## 0. 先判断走哪条视频链（务必先做）
+
+账号下有两套平台、两条视频链，**不要用错脚本**：
+
+| 判据 | 正课 glive（saasCourseType=16） | 名师课 ep3（saasCourseType=13） |
+|---|---|---|
+| 平台 / URL | glivepro.gaodun.com，`/course/{id}/...` | epiphany.gaodun.com，`/ep3/course/{id}` |
+| 课程名规律 | 【26考季】VIPCPA系列-XX（某老师），如税法42660/会计42656 | 【VIPCPA专享】名师专业课-XX，会计17244/审计17245/财管17246/税法17247/经济法17248/战略17249 |
+| 主控脚本 | `fetch_lecture_video.js`→`download_decrypt.js`→`compress.sh`→FunASR | `cdp/ep3_download_videos.js` 一体 |
+| 压缩 / 文字稿 | H.265 CRF30 **重压** + **FunASR 转写**（本文步骤2/3） | FHD-1080P **ffmpeg copy 不重压** + **平台 VTT 字幕免转写**（见下方"名师课 ep3"小节） |
+
+判别优先级：**saasCourseType（权威）＞ 域名 URL ＞ 课程名 ＞ 取流响应有无 `result.subtitle`**。判为 ep3 直接跳下方"名师课 ep3（saasCourseType=13）"小节，不要走 H.265 压缩与 FunASR。详见记忆层 `docs/project-management/memory/concepts/reference-course-profiles.md`。
 
 ## 前置条件
 

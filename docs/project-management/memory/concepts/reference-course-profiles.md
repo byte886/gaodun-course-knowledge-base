@@ -38,6 +38,23 @@ status: stable
 
 **两线采集链路也不同（按 saasCourseType 路由，ADR-018）**：正课 glive(16) 视频走 H.265 压缩 + FunASR 转写，见 [视频压缩与转写](workflow-video-transcription.md)；名师课 ep3(13) 走 [ep3 取流解密与平台字幕](workflow-ep3-vod-decryption.md)——FHD-1080P、ffmpeg copy 不重压、平台 VTT 字幕免转写、取 key 用 `gp.play()` 真播。做题/讲义链路同样分平台，别把正课脚本直接套到 ep3。
 
+**拿到一门课怎么判断走哪条视频链（按优先级，命中即定）**：
+1. **saasCourseType（权威）**：账号清单/用户空间接口里 `=16`→glive 正课链；`=13`→ep3 名师链。
+2. **平台域名/URL**：`glivepro.gaodun.com/course/{id}/...`→glive；`epiphany.gaodun.com/ep3/course/{id}`→ep3。
+3. **课程完整名规律**：「【26考季】VIPCPA系列-XX（某老师）」=正课(glive)；「【VIPCPA专享】名师专业课-XX」=名师课(ep3)。
+4. **能力旁证**：取流响应有 `result.subtitle`(平台 VTT) 的是 ep3、免 FunASR；无平台字幕、需本地转写的是 glive。
+
+**两条视频链对照**：
+
+| 维度 | 正课 glive(16) | 名师课 ep3(13) |
+|---|---|---|
+| 主控脚本 | `cdp/fetch_lecture_video.js` + `download_decrypt.js` | `cdp/ep3_download_videos.js`（一体编排） |
+| 取 key | CDP Worker hook（glive 播放） | CDP `gp.play()` 真播 + 点 1080P（同为 Worker hook） |
+| 清晰度/封装 | 下载后 `compress.sh` H.265 CRF30 重压 | FHD-1080P，ffmpeg `-c copy` 不重压 |
+| 文字稿 | **FunASR 本地转写**（平台无字幕） | **平台 VTT 直下**（subtitle.vtt+transcript.md，免转写） |
+
+**六科名师课（ep3/type13）全名与 ID**：17244【VIPCPA专享】名师专业课-会计（试点已通）、17245 审计、17246 财管、17247 税法、17248 经济法、17249 战略（审计/财管未走学习引导、大纲树空报 11063019，但讲义清单可拉）。正课只有两门：税法 42660、会计 42656。
+
 ## 税法 cpa-tax-2026（已完结，结构齐全）
 - 老师 蔡俊峻；考试 2026-08-29 13:00–15:00；账号有效期至 2026-10-31。
 - 正课 glivepro：vcourseId **96834** / saasCourseId **42660** / syllabusId **75181** / gradationId null / learnStatus **3（已完结）**。
