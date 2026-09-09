@@ -1,0 +1,98 @@
+{
+  "description": "EP3平台名师课科目配置 - 支持n个科目，适应后面的多个课程同时变化",
+  "version": "2.0.0",
+  "updated": "2026-09-10",
+  "global_cache": "data/_workspace/_account/ep3/global_keycache.json",
+  "log_dir": "data/_workspace/_account/ep3/logs",
+  "cache_dir": "data/_workspace/_account/ep3/keycache",
+  "prefetch_count": 16,
+  "consumer_retry_count": 30,
+  "consumer_retry_interval_ms": 60000,
+  "min_cache_threshold": 20,
+  "max_cache_threshold": 100,
+  "subjects": [
+    {
+      "name": "accounting",
+      "profile": "ep3-accounting-2026",
+      "stages": [
+        "基础必修",
+        "全面精讲"
+      ],
+      "teachers": [
+        "姚远",
+        "陈蓓蓓"
+      ],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-accounting-2026.json",
+      "description": "会计科目 - 姚远/陈蓓蓓老师"
+    },
+    {
+      "name": "tax",
+      "profile": "ep3-tax-2026",
+      "stages": [
+        "全面精讲"
+      ],
+      "teachers": [
+        "杨志国",
+        "高蒙"
+      ],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-tax-2026.json",
+      "description": "税法科目 - 杨志国/高蒙老师"
+    },
+    {
+      "name": "strategy",
+      "profile": "ep3-strategy-2026",
+      "stages": [
+        "全面精讲"
+      ],
+      "teachers": [
+        "吴奕"
+      ],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-strategy-2026.json",
+      "description": "战略科目 - 吴奕老师"
+    },
+    {
+      "name": "econlaw",
+      "profile": "ep3-econlaw-2026",
+      "stages": [
+        "全面精讲"
+      ],
+      "teachers": [
+        "沈甜甜",
+        "齐萌"
+      ],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-econlaw-2026.json",
+      "description": "经济法科目 - 沈甜甜/齐萌老师"
+    },
+    {
+      "name": "audit",
+      "profile": "ep3-audit-2026",
+      "stages": [
+        "基础必修"
+      ],
+      "teachers": [],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-audit-2026.json",
+      "description": "审计科目 - 老师信息待补充"
+    },
+    {
+      "name": "finance",
+      "profile": "ep3-finance-2026",
+      "stages": [
+        "基础必修"
+      ],
+      "teachers": [],
+      "key_cache": "data/_workspace/_account/ep3/keycache/ep3-finance-2026.json",
+      "description": "财管科目 - 老师信息待补充"
+    }
+  ],
+  "future_subjects": [],
+  "notes": [
+    "添加新科目时，只需在subjects数组中添加新的配置项",
+    "不需要修改round_robin_prefetch.sh脚本",
+    "stages数组支持多个梯度（如基础必修、全面精讲）",
+    "profile必须与ep3_download_videos.js的--profile参数对应",
+    "每个科目有独立的key缓存（key_cache字段），避免科目间竞争",
+    "动态轮询策略：min_cache_threshold（最低缓存阈值）和max_cache_threshold（最高缓存阈值）",
+    "当某个科目的key缓存数量低于min_cache_threshold时，优先预取该科目",
+    "当某个科目的key缓存数量高于max_cache_threshold时，暂时跳过该科目"
+  ]
+}
