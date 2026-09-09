@@ -129,6 +129,14 @@ const INIT_HOOK = () => {
 
     console.log('[4] 提取 streams...');
     const streams = await page.evaluate(() => {
+      // 两路 CDN 命名不一：.../tc/FHD_xxx.m3u8（含 FHD/HD/SD）vs .../outputm3u8/<uuid>_1080_xxx.m3u8（分辨率后缀）
+      // 顺序：先 1080/FHD，再 720/HD（FHD 含 HD 子串须先返回），最后归 SD。
+      const classifyQuality = (u = '') => {
+        const s = String(u).toUpperCase();
+        if (/FHD|1080/.test(s)) return 'FHD-1080P';
+        if (/HD|720/.test(s)) return 'HD-720P';
+        return 'SD-540P';
+      };
       const msgs = window.__workerData || [];
       const inits = msgs.filter((m) => m.msg && m.msg.type === 'initHls');
       const resps = msgs.filter((m) => m.direction === 'to_worker' && m.msg && m.msg.response !== undefined);
@@ -138,7 +146,7 @@ const INIT_HOOK = () => {
         const resp = resps[i];
         const kb = resp ? resp.msg.response : null;
         out.push({
-          quality: url.includes('FHD') ? 'FHD-1080P' : 'SD-540P',
+          quality: classifyQuality(url),
           m3u8: url,
           keyAscii: kb ? String.fromCharCode.apply(null, kb.slice(0, 16)) : null,
           keyBytes: kb ? Array.from(kb) : null,

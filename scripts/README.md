@@ -108,7 +108,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 经 CDP（puppeteer-core）打开回放页、注入 Worker hook，捕获 m3u8(SD/FHD) 与 AES key；现役取密钥主链路（连日常 Chrome、复用登录态；旧 Playwright run-code 路线已清理）。**同时支持正课 glive 与名师课 ep3**：ep3 用 `window.gp.play()` 真播（gp.video 在 closed shadow DOM）、点 `.gp-setting-quality-item` 1080P 切清晰度（DOM 与 glive 一致），一次运行同时抓 SD+FHD 两套（两档 transcodeId 不同故 key 不同） |
-| **用法** | `node scripts/cdp/capture_video_key.js "<回放/learning URL>" [输出json路径]`，**输出顶层是数组** `[{quality:'FHD-1080P'|'SD-540P',m3u8,keyAscii,keyBytes}]`；ep3 key 形态=32hex 串前 16 字符的 ASCII 字节（非 hex 解码） |
+| **用法** | `node scripts/cdp/capture_video_key.js "<回放/learning URL>" [输出json路径]`，**输出顶层是数组** `[{quality:'FHD-1080P'|'HD-720P'|'SD-540P',m3u8,keyAscii,keyBytes}]`；清晰度由 m3u8 URL 鲁棒判定（兼容两路 CDN：`.../tc/FHD_xxx.m3u8` 与 `.../outputm3u8/<uuid>_1080_xxx.m3u8`，只认 `FHD` 字符串会把"默认就起播1080、只 init 一次"的讲误判 SD 而漏采）；ep3 key 形态=32hex 串前 16 字符的 ASCII 字节（非 hex 解码） |
 | **可靠性** | ✅ 高（纯采集，只开一个临时静音播放标签触发 worker 流量、抓完即关，不动用户其它页）；ep3 经 25/26 考季双重验证 |
 | **相关文档** | `docs/development/tools/video-processing.md`、ADR-010、`data/_workspace/_account/ep3-platform-probe.md` 第四/五轮 |
 
@@ -457,6 +457,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `nohup bash scripts/cdp/run_papers_supervised.sh <profile> > data/_workspace/<profile>/logs/supervisor_papers.log 2>&1 & disown` |
 | **日志** | `supervisor_papers.log`（守护轮次/停滞）+ `refresh_supervised.log`（每轮平台回查）+ `batch_do_paper.log`（做题明细，追加），均在 `data/_workspace/<profile>/logs/` |
 | **终态/防眠** | audit=0 → 写 `[NOTIFY]✅` 日志并 exit 0；连续 3 轮平台已达成数不增长 → `[NOTIFY]❌` exit 1。做题线默认 `SUPERVISE_NO_OSASCRIPT=1` 不弹 macOS 弹窗，终态由 15 分钟定时唤醒的 AI 识别后接手推进并在豆包通知；已套 `caffeinate -i` 防 Mac 空闲睡眠 |
+
+---
+
+### `cdp/run_ep3_videos_supervised.sh` — ep3 名师课视频批量守护启动器（run_supervised 的 ep3 视频薄封装，各科/各梯度复用）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 针对 `ep3_download_videos.js` 长跑在 Mac 睡眠 / 日常 Chrome CDP 瞬断时「零报错静默终止」（日志停在"取 key"、无栈）：每轮断点续跑（已下幂等跳过、上轮 capture 失败重试、没跑完的继续），退出 5 秒后自动续下一轮，PPID=1 脱离 AI 会话，套 `caffeinate -i` 防空闲睡眠（治本） |
+| **用法** | `nohup bash scripts/cdp/run_ep3_videos_supervised.sh <ep3-profile> <梯度> <目标视频数> [--dual-teacher] > data/_workspace/_account/ep3/logs/superv_<x>.log 2>&1 & disown`；目标数取该梯度 outline 实测 videoTotal（会计全面精讲261/税法170/战略122/经济法157）；成品目录从 profile 卡 localRoot 自动拼 |
+| **日志** | `superv_*.log`（守护轮次/停滞）+ `data/_workspace/_account/ep3/logs/<profile>_<梯度>.log`（下载明细，追加） |
+| **终态** | 该梯度 `*video.mp4` 数 ≥ 目标 → `[NOTIFY]✅` exit 0；连续 3 轮数量不增长 → `[NOTIFY]❌` exit 1（通常是个别讲反复取不到 key，需人工看明细，不空转） |
 
 ---
 
