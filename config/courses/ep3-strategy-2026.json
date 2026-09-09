@@ -1,0 +1,28 @@
+{
+  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。战略无『基础必修』梯度(仅3梯度)。ID/梯度来自 ep3 接口实测(2026-09-09)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。B方案双老师：吴奕&陈岩，目录不按老师分层、老师进文件名前缀，知识详解最后 Fan-In 一套。",
+  "key": "ep3-strategy-2026",
+  "schemaVersion": 1,
+  "platform": "ep3",
+  "project": { "id": 8, "name": "CPA" },
+  "subject": { "id": 46, "name": "战略" },
+  "season": "2026考季",
+  "teachers": ["吴奕", "陈岩"],
+  "primaryCourse": {
+    "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
+    "name": "【VIPCPA专享】名师专业课-战略",
+    "saasCourseId": 17249,
+    "platform": "epiphany",
+    "saasCourseType": 13,
+    "studyUrl": "https://epiphany.gaodun.com/ep3/course/17249"
+  },
+  "companionCourses": [],
+  "stages": [
+    { "label": "全面精讲", "attribute": 4, "gradationId": 76239, "syllabusId": 76474 },
+    { "label": "重点强化", "attribute": 5, "gradationId": 78862, "syllabusId": 77008 },
+    { "label": "考前冲刺", "attribute": 6, "gradationId": 79621, "syllabusId": 77009 }
+  ],
+  "paths": {
+    "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-战略",
+    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-战略"
+  }
+}

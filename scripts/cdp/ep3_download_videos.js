@@ -32,7 +32,12 @@ const { execFileSync } = require('child_process');
 const core = require('./gaodun_paper_core');
 
 const GATEWAY = 'https://apigateway.gaodun.com';
-const TEACHER_NAME = { 22455: '姚远', 14178: '陈蓓蓓', 11138: '罗翔', 15038: '郁刚', 57023: '王潇粒' };
+const TEACHER_NAME = {
+  22455: '姚远', 14178: '陈蓓蓓', 11138: '罗翔', 15038: '郁刚', 57023: '王潇粒', // 会计
+  24825: '杨志国', 50070: '高蒙', // 税法名师
+  15317: '吴奕', // 战略名师（陈岩宣传2套师资但26考季实际未挂视频，出现 id 再补）
+  24042: '沈甜甜', 15466: '齐萌', // 经济法名师
+};
 const SCRIPT_DIR = __dirname;
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 
