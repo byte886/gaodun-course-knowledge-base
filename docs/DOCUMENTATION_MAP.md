@@ -163,6 +163,11 @@
 | 通用验证模板 | `docs/development/templates/VERIFICATION_TEMPLATE.md` | 视频/转写等专项质检按需（验证默认不单独成文，无知识库专用模板） |
 | 批量整改清单模板 | `docs/development/templates/REFACTOR_PLAN_TEMPLATE.md` | 批量重命名/结构整改的全量清单与回归核对（配合 PROJECT_STRUCTURE_MAINTENANCE 第六章 SOP） |
 | 流程测试计划模板 | `docs/development/templates/TEST_PLAN_TEMPLATE.md` | 新学科首跑/链路改造的端到端流程测试（步骤状态、问题两级分级、通过标准） |
+| Idea-to-Tickets模板（汇总） | `docs/project-management/templates/idea-to-tickets/` | 任务工程四模式模板（clarify/spec/slice/explain），vendor自全局技能，项目自包含 |
+| ├ 共识小结模板 | `docs/project-management/templates/idea-to-tickets/consensus.md` | clarify模式产出：定了什么、为什么、放弃了什么 |
+| ├ 规范Spec模板 | `docs/project-management/templates/idea-to-tickets/spec.md` | spec模式产出：问题、方案、user stories、不做什么 |
+| ├ 工单Ticket模板 | `docs/project-management/templates/idea-to-tickets/ticket.md` | slice模式产出：垂直切片工单（目标/涉及层/验收/依赖/边界） |
+| └ 工单台账模板 | `docs/project-management/templates/idea-to-tickets/tickets-index.md` | slice模式产出：工单总表、依赖与并行、可并行批次 |
 
 ### 四、过程记录（Active — 做了什么）
 
