@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { findJwt, platformHeaders } = require('./gaodun_paper_core');
+const { argvProfileKey, loadProfile } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const GW = 'https://apigateway.gaodun.com';
@@ -68,8 +69,20 @@ function download(url, dest, headers) {
 }
 
 (async () => {
-  const cid = process.argv[2];
-  if (!cid) { console.error('用法: ep3_download_handouts.js <courseId> [--format pdf|all] [--limit N] [--dry]'); process.exit(1); }
+  // cid 来源：位置参数（探路，落工作区）优先；否则 --profile 从档案卡读（落正式课程库 原始资源/notes）
+  const profileKey = argvProfileKey(process.argv);
+  const profile = profileKey ? loadProfile(profileKey) : null;
+  // 先剔除 --profile <key> / --profile=<key>，避免把 profile 名误当成 courseId 位置参数
+  const rest = [];
+  const pv = process.argv.slice(2);
+  for (let i = 0; i < pv.length; i += 1) {
+    if (pv[i] === '--profile') { i += 1; continue; }
+    if (pv[i].startsWith('--profile=')) continue;
+    rest.push(pv[i]);
+  }
+  const positional = rest.find((a) => !a.startsWith('--'));
+  const cid = positional || (profile ? profile.primaryCourse.saasCourseId : null);
+  if (!cid) { console.error('用法: ep3_download_handouts.js <courseId|--profile key> [--format pdf|all] [--limit N] [--dry]'); process.exit(1); }
   const fmt = (process.argv.find((a) => a.startsWith('--format=')) || '').split('=')[1]
     || (process.argv.includes('--all') ? 'all' : 'pdf');
   const limitArg = process.argv.find((a) => a.startsWith('--limit='));
@@ -79,8 +92,11 @@ function download(url, dest, headers) {
   const manifestPath = path.join(ROOT, 'data/_workspace/_account/ep3/manifest', `${cid}.outline.json`);
   const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   let items = m.handouts.filter((h) => fmt === 'all' || h.format === 'pdf');
-  const base = path.join(ROOT, 'data/_workspace/_account/ep3/downloads', String(cid));
+  const base = profile
+    ? path.join(ROOT, profile.paths.localRoot, '原始资源', 'notes')
+    : path.join(ROOT, 'data/_workspace/_account/ep3/downloads', String(cid));
   console.log(`${m.courseName}：待处理 ${items.length} 个（format=${fmt}${Number.isFinite(limit) ? ' limit=' + limit : ''}）`);
+  console.log('落位:', path.relative(ROOT, base));
 
   const H = platformHeaders(findJwt(), 'ep3');
   let ok = 0, skip = 0, fail = 0, n = 0;

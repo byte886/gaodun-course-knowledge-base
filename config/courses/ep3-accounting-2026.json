@@ -1,0 +1,29 @@
+{
+  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。与正课卡(cpa-accounting-2026, glive type=16)并列、互不替代：正课=【26考季】VIPCPA系列，名师课=【VIPCPA专享】名师专业课。ID/梯度来自 ep3 接口实测(2026-09-09)。parentGrad(顶层阶段id)不写死，由 ep3_download_videos 按 attribute 自动匹配(21348基础必修/23408精讲/26320强化/27295冲刺)。B方案双老师：姚远&陈蓓蓓，目录不按老师分层、老师进文件名前缀，知识详解最后 Fan-In 一套。",
+  "key": "ep3-accounting-2026",
+  "schemaVersion": 1,
+  "platform": "ep3",
+  "project": { "id": 8, "name": "CPA" },
+  "subject": { "id": 37, "name": "会计" },
+  "season": "2026考季",
+  "teachers": ["姚远", "陈蓓蓓"],
+  "primaryCourse": {
+    "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
+    "name": "【VIPCPA专享】名师专业课-会计",
+    "saasCourseId": 17244,
+    "platform": "epiphany",
+    "saasCourseType": 13,
+    "studyUrl": "https://epiphany.gaodun.com/ep3/course/17244"
+  },
+  "companionCourses": [],
+  "stages": [
+    { "label": "基础必修", "attribute": 1, "gradationId": 72897, "syllabusId": 71235 },
+    { "label": "全面精讲", "attribute": 4, "gradationId": 76232, "syllabusId": 76456 },
+    { "label": "重点强化", "attribute": 5, "gradationId": 78856, "syllabusId": 76996 },
+    { "label": "考前冲刺", "attribute": 3, "gradationId": 79616, "syllabusId": 76997 }
+  ],
+  "paths": {
+    "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-会计",
+    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-会计"
+  }
+}

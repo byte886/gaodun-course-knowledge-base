@@ -48,7 +48,7 @@ function parseArgs(argv) {
   return a;
 }
 const ARGS = parseArgs(process.argv);
-if (!ARGS.out && !ARGS.list) { console.error('需要 --out <输出目录>（或 --list 仅枚举）'); process.exit(2); }
+if (!ARGS.out && !ARGS.list && !ARGS.profile) { console.error('需要 --out <输出目录>（或 --list 仅枚举，或 --profile 自动落位）'); process.exit(2); }
 
 function ep3Headers() {
   return core.platformHeaders(core.findJwt(), 'ep3');
@@ -76,6 +76,20 @@ function locateGradTree(result, gradId) {
       for (const c of st.children) if (String(c.id) === String(gradId)) return c;
     }
   }
+  return null;
+}
+
+// 子树是否含某 id（children / syllabus 两种挂载都递归）
+function subtreeHasId(node, id) {
+  if (String(node.id) === String(id)) return true;
+  for (const key of ['children', 'syllabus']) {
+    if (Array.isArray(node[key]) && node[key].some((c) => subtreeHasId(c, id))) return true;
+  }
+  return false;
+}
+// 找包含 gradId 的顶层阶段 id（= learning URL 的 parentGrad 段：基础必修21348/精讲23408/强化26320/冲刺27295）
+function findParentGrad(result, gradId) {
+  for (const st of (result.syllabus || [])) if (subtreeHasId(st, gradId)) return st.id;
   return null;
 }
 
@@ -311,24 +325,44 @@ function initCache(outDir) {
     process.exit(0);
   }
 
-  // 模式 B/C：枚举 syllabus
-  const cid = ARGS.course, parentGrad = ARGS['parent-grad'], grad = ARGS.grad, syllabus = ARGS.syllabus;
-  if (!cid || !grad || !syllabus) { console.error('批量/枚举需要 --course --parent-grad --grad --syllabus'); process.exit(2); }
+  // 模式 B/C：枚举 syllabus。参数来源：命令行手传优先（探路用），否则从 --profile 档案卡读
+  const profile = ARGS.profile ? require('./load_profile').loadProfile(ARGS.profile) : null;
+  const stageLabel = ARGS.stage || '';
+  let cid = ARGS.course;
+  let grad = ARGS.grad;
+  let syllabus = ARGS.syllabus;
+  if (profile) {
+    cid = cid || profile.primaryCourse.saasCourseId;
+    if (stageLabel && (!grad || !syllabus)) {
+      const stg = (profile.stages || []).find((s) => s.label === stageLabel);
+      if (!stg) { console.error(`profile 无此梯度「${stageLabel}」，可选：${(profile.stages || []).map((s) => s.label).join('/')}`); process.exit(2); }
+      grad = grad || stg.gradationId; syllabus = syllabus || stg.syllabusId;
+    }
+  }
+  if (!cid || !grad || !syllabus) {
+    console.error('批量/枚举需要 --course --grad --syllabus，或用 --profile <key> --stage <梯度名>'); process.exit(2);
+  }
   const result = await fetchSyllabus(cid, grad, syllabus);
   const gradNode = locateGradTree(result, grad);
   if (!gradNode) { console.error('未找到 gradation 节点', grad); process.exit(1); }
+  // parentGrad（learning URL 必需段）：命令行优先，否则按子树归属自动定位顶层阶段
+  let parentGrad = ARGS['parent-grad'] || findParentGrad(result, grad) || grad;
   const leaves = leavesOfGrad(gradNode);
   leaves.forEach((l, i) => { l.seq = i + 1; });
-  log(`枚举到 ${leaves.length} 个讲次叶子`);
+  log(`枚举到 ${leaves.length} 个讲次叶子（parentGrad=${parentGrad}）`);
 
   if (ARGS.list) {
     for (const l of leaves) console.log(`${String(l.seq).padStart(3)} cs=${l.csItemId} rid=${l.resourceId} ch=${l.chapterId} | ${l.chapterPath}`);
     process.exit(0);
   }
 
-  // 批量下载（--list 已在上面退出）
-  const outDir = ARGS.out;
-  if (!outDir) { console.error('批量下载需要 --out'); process.exit(2); }
+  // 批量下载落位：--out 优先；否则按 profile 落正式课程库 原始资源/videos/<梯度>
+  let outDir = ARGS.out;
+  if (!outDir && profile) {
+    outDir = path.join(REPO_ROOT, profile.paths.localRoot, '原始资源', 'videos', stageLabel || String(grad));
+  }
+  if (!outDir) { console.error('批量下载需要 --out，或用 --profile 自动落位课程库'); process.exit(2); }
+  log('输出目录:', path.relative(REPO_ROOT, outDir));
   const { cacheDir, keyCache, keyCachePath } = initCache(outDir);
   const limit = ARGS.limit ? parseInt(ARGS.limit, 10) : leaves.length;
   let okN = 0, skipN = 0, failN = 0; const fails = [];
