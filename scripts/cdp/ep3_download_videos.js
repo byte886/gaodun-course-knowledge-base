@@ -51,9 +51,7 @@ const ARGS = parseArgs(process.argv);
 if (!ARGS.out && !ARGS.list) { console.error('需要 --out <输出目录>（或 --list 仅枚举）'); process.exit(2); }
 
 function ep3Headers() {
-  const H = core.makeHeaders(core.findJwt());
-  H.Referer = 'https://epiphany.gaodun.com/';
-  return H;
+  return core.platformHeaders(core.findJwt(), 'ep3');
 }
 async function apiGet(p) {
   const r = await fetch(GATEWAY + p, { headers: ep3Headers() });

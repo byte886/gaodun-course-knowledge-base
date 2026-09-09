@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { findJwt, makeHeaders } = require('./gaodun_paper_core');
+const { findJwt, platformHeaders } = require('./gaodun_paper_core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const GW = 'https://apigateway.gaodun.com';
@@ -82,7 +82,7 @@ function download(url, dest, headers) {
   const base = path.join(ROOT, 'data/_workspace/_account/ep3/downloads', String(cid));
   console.log(`${m.courseName}：待处理 ${items.length} 个（format=${fmt}${Number.isFinite(limit) ? ' limit=' + limit : ''}）`);
 
-  const H = makeHeaders(findJwt());
+  const H = platformHeaders(findJwt(), 'ep3');
   let ok = 0, skip = 0, fail = 0, n = 0;
   for (const h of items) {
     n += 1; if (n > limit) break;

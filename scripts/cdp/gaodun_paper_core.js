@@ -91,6 +91,18 @@ function makeHeaders(jwt, opts = {}) {
   };
 }
 
+// 平台 header 预设：glive=正课(glivepro, saasCourseType=16)；ep3=名师专业课(epiphany, saasCourseType=13)。
+// 两平台鉴权头一致、只差 origin/referer。统一从这里取，避免各脚本事后赋值、甚至写出 Referer/referer 大小写重复键。
+const PLATFORM_PROFILES = {
+  glive: { origin: 'https://glivepro.gaodun.com' },
+  ep3: { origin: 'https://epiphany.gaodun.com', referer: 'https://epiphany.gaodun.com/' },
+};
+/** 按平台取鉴权头：platformHeaders(jwt,'ep3')；extra 可再覆盖个别字段 */
+function platformHeaders(jwt, platform = 'glive', extra = {}) {
+  const p = PLATFORM_PROFILES[platform] || {};
+  return makeHeaders(jwt, { origin: p.origin, referer: p.referer, ...extra });
+}
+
 /** 最小作答停留秒：max(20, 答案项*1.5 向上取整到 5s)；含主观大题再保底 25s */
 function dwellSec(answerCount, hasSubjective) {
   return Math.max(20, Math.ceil((answerCount * 1.5) / 5) * 5, hasSubjective ? 25 : 0);
@@ -660,7 +672,8 @@ async function doPaperViaApi(opts) {
 }
 
 module.exports = {
-  findJwt, makeHeaders, dwellSec, stripHtml, htmlToTextKeepLayout, isPlaceholderAnswerText, pickSubjectiveCanon,
+  findJwt, makeHeaders, platformHeaders, PLATFORM_PROFILES,
+  dwellSec, stripHtml, htmlToTextKeepLayout, isPlaceholderAnswerText, pickSubjectiveCanon,
   canonAnswer, fullAnswer, judgeAnswer, aiPoints,
   qualitativeAnswer, countAskedSubs, coveredSubs, multiSubAnswer, cleanSubjectiveAnswer, buildUserAnswers, doPaperViaApi,
   MINERVA_BASE, AITUTOR_BASE, COURSE_ID, SOURCE_FROM_TYPE,

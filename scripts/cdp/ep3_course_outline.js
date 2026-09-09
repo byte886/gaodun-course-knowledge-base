@@ -15,7 +15,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { findJwt, makeHeaders } = require('./gaodun_paper_core');
+const { findJwt, platformHeaders } = require('./gaodun_paper_core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data/_workspace/_account/ep3/manifest');
@@ -46,7 +46,7 @@ const flattenLeaves = (n, acc = []) => {
   const cid = process.argv[2];
   if (!cid) { console.error('用法: node ep3_course_outline.js <courseId> [--all-season]'); process.exit(1); }
   const allSeason = process.argv.includes('--all-season');
-  const H = makeHeaders(findJwt()); H.Referer = 'https://epiphany.gaodun.com/';
+  const H = platformHeaders(findJwt(), 'ep3');
   const get = async (p) => (await fetch(GW + p, { headers: H })).json();
 
   const course = await get(`/ep-course/api/v1/front/course/${cid}`);
