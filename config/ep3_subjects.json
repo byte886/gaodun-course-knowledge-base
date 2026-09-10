@@ -5,18 +5,18 @@
   "global_cache": "data/_workspace/_account/ep3/global_keycache.json",
   "log_dir": "data/_workspace/_account/ep3/logs",
   "cache_dir": "data/_workspace/_account/ep3/keycache",
-  "prefetch_count": 16,
+  "prefetch_count": 8,
   "consumer_retry_count": 30,
   "consumer_retry_interval_ms": 60000,
-  "min_cache_threshold": 20,
-  "max_cache_threshold": 100,
   "subjects": [
     {
       "name": "accounting",
       "profile": "ep3-accounting-2026",
       "stages": [
         "基础必修",
-        "全面精讲"
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
       ],
       "teachers": [
         "姚远",
@@ -66,22 +66,18 @@
     {
       "name": "audit",
       "profile": "ep3-audit-2026",
-      "stages": [
-        "基础必修"
-      ],
+      "stages": [],
       "teachers": [],
       "key_cache": "data/_workspace/_account/ep3/keycache/ep3-audit-2026.json",
-      "description": "审计科目 - 老师信息待补充"
+      "description": "审计科目 - 暂无视频课程（所有梯度下都是知识点练习/试卷，learnStatus=0待学习，待高顿上线视频后再启用）"
     },
     {
       "name": "finance",
       "profile": "ep3-finance-2026",
-      "stages": [
-        "基础必修"
-      ],
+      "stages": [],
       "teachers": [],
       "key_cache": "data/_workspace/_account/ep3/keycache/ep3-finance-2026.json",
-      "description": "财管科目 - 老师信息待补充"
+      "description": "财管科目 - 暂无视频课程（所有梯度下都是知识点练习/试卷，learnStatus=0待学习，待高顿上线视频后再启用）"
     }
   ],
   "future_subjects": [],
@@ -90,9 +86,8 @@
     "不需要修改round_robin_prefetch.sh脚本",
     "stages数组支持多个梯度（如基础必修、全面精讲）",
     "profile必须与ep3_download_videos.js的--profile参数对应",
-    "每个科目有独立的key缓存（key_cache字段），避免科目间竞争",
-    "动态轮询策略：min_cache_threshold（最低缓存阈值）和max_cache_threshold（最高缓存阈值）",
-    "当某个科目的key缓存数量低于min_cache_threshold时，优先预取该科目",
-    "当某个科目的key缓存数量高于max_cache_threshold时，暂时跳过该科目"
+    "key 缓存按「profile×阶段」独立成文件（subject.key_cache 去掉 .json 后加 __<阶段>.json），避免同一 profile 多阶段共享缓存、被先跑阶段的缓存条数饿死后序阶段",
+    "生产者只给当前有活跃消费者的阶段、每轮滚动预取 prefetch_count 个 key；无消费者的阶段不预取，防止 m3u8 token 闲置过期",
+    "消费者纯 --consumer 模式只读缓存下载、不碰 Chrome；全进程只有生产者操作播放页取 key"
   ]
 }

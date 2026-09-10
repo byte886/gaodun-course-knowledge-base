@@ -57,7 +57,10 @@ function parseArgs(argv) {
     if (k.startsWith('--')) a[k.slice(2)] = (argv[i + 1] && !argv[i + 1].startsWith('--')) ? argv[++i] : true;
   }
   a.res = a.res || 'FHD';           // 默认 1080P
-  a.concurrency = parseInt(a.concurrency || "64", 10);
+  // 分片并发分时段：白天 6:00-24:00 温和(12，配合最多3路消费者)防风控/留带宽，夜间 0:00-6:00 拉满(64)；显式 --concurrency 优先
+  const _nightH = new Date().getHours();
+  const _night = _nightH >= 0 && _nightH < 6;
+  a.concurrency = parseInt(a.concurrency || (_night ? "64" : "12"), 10);
   a['global-key-cache'] = a['global-key-cache'] || '';  // 全局key缓存路径（生产者-消费者模型）
   a['prefetch-only'] = !!a['prefetch-only'];  // 生产者模式：只取key不下载
   a.consumer = !!a.consumer;  // 消费者模式：只从缓存读key，不主动取

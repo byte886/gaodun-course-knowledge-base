@@ -99,6 +99,22 @@ node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --ou
 - 每个视频 CDP 取 key 约 26–30s（后台批量可接受）；双老师资源目录不分老师、文件名加老师前缀用 `--dual-teacher`（姚远_/陈蓓蓓_）。
 - 错误码：553649434=token 失效（须只读回包硬证据，先怀疑自身）；10161000=getVideoInfo 缺参数；40301=离线取 key 死路、必须走 CDP 真实播放。
 
+### 多科目节流调度（白天防风控 + 给前台/豆包留资源，2026-09-10）
+
+**为什么需要**：多路消费者齐发 × 每路 64 分片并发会把网络/磁盘打满，挤掉豆包与后端通信（表现为豆包卡死不回答）；业务网关取 key 接口密度过高也有账号风控风险。注意区分：视频 ts 分片走 CDN，下载带宽大小（如 14MB/s）本身不是风控点；真正敏感的是 apigateway.gaodun.com 取 key/学习接口的调用频率，以及高并发连接的"爬虫化"密度。
+
+**唯一推荐入口**：bash scripts/cdp/throttled_ep3_download.sh（任务队列在脚本内 TASKS，科目/阶段由 config/ep3_subjects.json 驱动）。
+
+- 1 个生产者串行轮询所有「科目×阶段」预取 key（round_robin_prefetch.sh，全进程只有它操作 Chrome，避免多进程抢播放页）；消费者纯 --consumer 只从 keycache 读 key 下载、不碰 Chrome。
+- **key 缓存按「profile×阶段」独立成文件 `<profile>__<阶段>.json`，且生产者只给"当前确有活跃消费者进程"的阶段、每轮滚动预取 prefetch_count 个**（pgrep 识别 `--stage X --consumer`，生产者自身是 --prefetch-only 不会误匹配）。没有消费者在下载的阶段不提前取 key，避免 m3u8 token 闲置过期。
+- 同时在跑的消费者路数受 MAX_PARALLEL 限制（默认 3），结束一路自动补下一路；夜间提速用 MAX_PARALLEL=6 重跑（断点续跑，已存在跳过）。
+- 所有子进程统一 nice -n 20 taskpolicy -c utility 降到后台调度类：前台 App（豆包/Chrome）需要资源时立即让出；这是解决"下载把豆包挤死"的关键。
+- 分片并发分时段自适应（在 ep3_download_videos.js 内）：白天 6:00–24:00 单路 12、夜间 0:00–6:00 单路 64；显式 --concurrency 优先。config/ep3_subjects.json 的 prefetch_count 白天取 8。
+- 并发计数只统计消费者 PID（kill -0 探测），不能用 jobs -rp——后者会把生产者后台 job 也算进去，生产者 1+消费者 2 即误顶满上限、把第三路永久卡死（macOS 自带 bash 3.2 不支持 wait -n，故用 PID 数组轮询）。
+- 消费者偶发启动卡死（进程在、CPU=0、零日志、无网络连接）多为启动拉课程树时请求挂起；直接 kill -9 该消费者，调度器下一轮检测到退出会自动补位（已下载视频断点跳过，无损失）。
+- 单讲 m3u8/分片偶发 curl 失败不中断，记 fails，待主体下完后重跑调度器统一补。
+- **踩坑（2026-09-10 修复，勿回退）**：① 同一 profile 多阶段（会计四阶段）绝不能共用一个 key 缓存文件——消费者只读不删 key、缓存只增不减，旧版用"缓存总条数 ≥ max 阈值就跳过整个 profile"会让先跑阶段把缓存顶高、连带把后跑阶段（重点强化）永久饿死、消费者等 key 30 分钟超时漏片。② 长跑生产者不要 `set -e`，单条命令瞬时失败会整体退出；任务 total/offset 字段必须做纯数字兜底，否则空值进整数比较会报 `integer expression expected` 空转。
+
 ## 详细操作流程
 
 ### 步骤1：下载与解密（CDP 自动化主链路）
