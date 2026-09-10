@@ -28,7 +28,7 @@
 
 | ID | 问题 | 发现 | 应对 / 现状 |
 |----|------|------|------|
-| I-009 | 账号级风控 10462221「做题行为异常请联系学管师」会**连带锁整条开卷链路**：2026-09-10 实测审计卷 `record` 可过、但只读的 `redo-paper`（取题面/标准答案/解析）也返回 10462221——即风控期不只是不能 submit，连题面都拉不到。审计（剩 81）、财管（剩 132）做题中断，且已做卷（218/208）此前只写了 audit 队列、未落题面解析，导致这两门在解除前「现有来源≈空」 | 2026-09-10 | ①风控由学管师人为解除，**AI 不主动申请/不申诉/不反复试探，等用户通知**（用户决策）；②解除前审计/财管整体搁置（符合"内容太少先忽略"），下载主线不受影响；③解除后先用 `scripts/cdp/fetch_ep3_paper_readonly.js --done-only` 只读回补已做卷题面/答案/解析（脚本只到 redo、绝不 submit，遇风控码第 1 张即 exit 2 不空转），再评估是否续做剩余队列；④凭证失效 553649434 与本码不同，排查仍先怀疑 AI 自身 |
+| I-009 | 账号级风控 10462221「做题行为异常请联系学管师」会**连带锁整条开卷链路**：2026-09-10 实测审计卷 `record` 可过、但只读的 `redo-paper`（取题面/标准答案/解析）也返回 10462221——即风控期不只是不能 submit，连题面都拉不到。审计（剩 81）、财管（剩 132）做题中断，且已做卷（218/208）此前只写了 audit 队列、未落题面解析，导致这两门在解除前「现有来源≈空」 | 2026-09-10 | ①风控由学管师人为解除，**AI 不主动申请/不申诉/不反复试探，等用户通知**（用户决策）；②解除前审计/财管整体搁置（符合"内容太少先忽略"），下载主线不受影响；③解除后先用 `scripts/cdp/fetch_ep3_paper_readonly.js --done-only` 只读回补已做卷题面/答案/解析（脚本只到 redo、绝不 submit，遇风控码第 1 张即 exit 2 不空转），再评估是否续做剩余队列；④凭证失效 553649434 与本码不同，排查仍先怀疑 AI 自身；⑤**视频/讲义/字幕等学习资源接口不被 10462221 连带**（2026-09-10 晚证实：审计 314 个视频/48 讲义、财管 389 个视频/28 讲义均正常采集，见 I-010），被锁的只有做题与题面链路，"纯试卷/现有来源≈空"的旧判断已作废 |
 
 ### 🟢 低优先级
 
@@ -40,6 +40,8 @@
 
 | ID | 问题描述 | 解决时间 | 解决方案 |
 |----|----------|----------|----------|
+| I-011 | throttled 下载调度器 `stage_missing` 在**阶段目录不存在、或存在但尚无任何 `*_meta.json`**（新课未开始）时返回 0，被主循环当成「阶段完整 ✓」而永不补位——现有科目目录都已存在故未暴露，新纳管的审计/财管（只有空 `videos/`）会被永久跳过 | 2026-09-10 | `stage_missing` 增加 total_meta 计数：目录不存在或 total_meta=0 时返回哨兵 `-1`（触发补位，消费者启动后自行枚举全量），补位日志把 -1 显示为「未开始(整阶段待下)」；已有内容的阶段仍按缺片数返回。重启调度器后审计基础必修实测 21:58 正常补位下载 |
+| I-010 | ep3 账号**未走完「入门测试+选老师」首次学习引导**时，大纲主接口 `analysis/chapter` 返回 code=11063019、result=null，被误判为该课「无视频/纯试卷」——审计/财管因此长期漏采全部视频（用户截图证实每知识点下是多视频+试卷混合） | 2026-09-10 | ①`ep3_course_outline.js` 加 fallback：主路径空时改走不依赖引导的 `ep-study/front/course/<cid>/gradation`（列四阶段×考季）+ `ep-study/front/course/<cid>/syllabus`（拉章节树），manifest 标 `treeSource`；②下载器 `fetchSyllabus` 本就用 ep-study/syllabus，机制直接复用；③profile/ep3_subjects 补四阶段 grad/syl 与单老师（审计王依然15251、财管李晶11134，均为26考季单老师，另一位在25考季不取）；④探测期间账号引导状态生效，主路径恢复并给出精确数（审计314视频/153题、财管389视频/174题）。教训：「接口返回空」≠「课程无此资源」，先换不依赖引导状态的旁路接口证伪 |
 | I-008 | CDP 采集反复抢走用户正在输入的前台焦点，两层根因：①`browser.newPage()` 建临时标签默认激活到前台，生产者每轮 newPage+close 反复切标签；②每次新连接弹官方强制「允许远程调试」sheet，sheet 出现时 macOS 自动把 Chrome 置前 | 2026-09-10 | ①`connect_browser` 新增 `newBackgroundPage()`（CDP `Target.createTarget{background:true}`，后台标签 hasFocus=false/visibility=hidden，失败兜底 newPage），三处统一；②**点中即还**：连接前 captureFrontmost 记前台名传入代点循环，`press_allow.applescript` 在 AXPress 点中「允许」同一刻用 System Events `set frontmost` 还回（pressed=false 不动、当前非 Chrome 不抢回），实测 Chrome 只在前台约 0.7s、整个采集期焦点不离开原 App；finally/异常 restoreFrontmost 兜底。必须 set frontmost（`tell app activate` 在 node 宿主被静默丢弃、对 Doubao 反把焦点切走）；代点间隔维持 800ms 防 System Events 拥塞。沉淀 OKF workflow-browser-cdp 与 CDP 手册 §4.5 |
 | I-007 | 多科目节流调度器 throttled 取代单路 supervised 时漏带 caffeinate，Mac 空闲睡眠/CDP 瞬断仍会零报错静默停摆（能力回退） | 2026-09-10 | throttled 补 `caffeinate -i -w $$` 跟随调度器生命周期、退出自动结束；运行中进程补挂；OKF ep3 concept 标注"防睡眠是长跑必备、换调度器不能丢" |
 | I-006 | EP3 多阶段共享一个 key 缓存会饿死后序阶段：消费者取 key 只读不删、缓存只增不减，旧生产者按 profile 缓存总数阈值硬跳过，先跑阶段把总数顶高后，后跑阶段一个 key 没拿到却被永久跳过、空转到超时漏片 | 2026-09-10 | key 缓存改按「profile×阶段」独立文件 `<profile>__<阶段>.json`；生产者改按需滚动预取（pgrep 锚定活跃消费者、只给在跑阶段每轮供 prefetch_count 个），废弃缓存总数阈值；长跑去 `set -e`、total/offset 纯数字兜底。沉淀进 OKF ep3 concept、video-processing SOP |

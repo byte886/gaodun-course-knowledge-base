@@ -66,18 +66,32 @@
     {
       "name": "audit",
       "profile": "ep3-audit-2026",
-      "stages": [],
-      "teachers": [],
+      "stages": [
+        "基础必修",
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
+      ],
+      "teachers": [
+        "王依然"
+      ],
       "key_cache": "data/_workspace/_account/ep3/keycache/ep3-audit-2026.json",
-      "description": "审计科目 - 暂无视频课程（所有梯度下都是知识点练习/试卷，learnStatus=0待学习，待高顿上线视频后再启用）"
+      "description": "审计科目 - 王依然老师（26考季单老师；陈岩为25考季不采）。四阶段资源413个，视频自带VTT字幕"
     },
     {
       "name": "finance",
       "profile": "ep3-finance-2026",
-      "stages": [],
-      "teachers": [],
+      "stages": [
+        "基础必修",
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
+      ],
+      "teachers": [
+        "李晶"
+      ],
       "key_cache": "data/_workspace/_account/ep3/keycache/ep3-finance-2026.json",
-      "description": "财管科目 - 暂无视频课程（所有梯度下都是知识点练习/试卷，learnStatus=0待学习，待高顿上线视频后再启用）"
+      "description": "财管科目 - 李晶老师（26考季单老师；周越26考季未挂视频）。四阶段资源532个，视频自带VTT字幕"
     }
   ],
   "future_subjects": [],

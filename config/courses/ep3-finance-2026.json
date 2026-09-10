@@ -1,12 +1,12 @@
 {
-  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。财管科目。ID/梯度来自 ep3 接口实测(2026-09-10)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。老师信息待补充。",
+  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。财管科目。ID/梯度来自 ep3 接口实测(2026-09-10)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。26考季主老师李晶(teacher_id=11134)，另一套周越26考季未挂视频。",
   "key": "ep3-finance-2026",
   "schemaVersion": 1,
   "platform": "ep3",
   "project": { "id": 8, "name": "CPA" },
   "subject": { "id": 48, "name": "财管" },
   "season": "2026考季",
-  "teachers": [],
+  "teachers": ["李晶"],
   "primaryCourse": {
     "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
     "name": "【VIPCPA专享】名师专业课-财管",
@@ -27,8 +27,8 @@
     "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-财管"
   },
   "notes": [
-    "老师信息待补充（从ep3接口获取）",
-    "梯度ID已补充（2026-09-10从ep3接口获取）",
-    "首次运行时可能需要探索课程结构"
+    "26考季主老师李晶(11134)；另一套周越26考季未挂视频，出现 id 再补",
+    "四阶段梯度ID 2026-09-10 从 ep-study/gradation 实测（analysis/chapter 因未走学习引导返回空，改用 ep-study 接口绕过）",
+    "视频自带VTT字幕(免FunASR)，每讲 related_resource 挂讲义PDF；试卷 redo-paper 受做题风控10462221锁定，解除后再采"
   ]
 }

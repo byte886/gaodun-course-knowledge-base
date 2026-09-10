@@ -41,15 +41,24 @@ if command -v caffeinate >/dev/null 2>&1; then
 fi
 
 # 消费者任务队列：profile|阶段(中文,与缓存命名一致)|tag(ASCII,用于PID/日志)
-# 顺序即补位优先级；会计四阶段齐全（全面精讲曾被误判下完而漏列，2026-09-10 补回），其后税/战略/经济法
+# 顺序即补位优先级；正课会计四阶段优先，其余名师课科目交错：审计/财管大头（基础必修+全面精讲）
+# 排中游，避免被会计全程压在队尾；量小的重点强化/考前冲刺垫后（2026-09-10 纳管审计/财管）
 TASKS=(
   "ep3-accounting-2026|全面精讲|ac_quanjing"
   "ep3-accounting-2026|基础必修|ac_jichu"
   "ep3-accounting-2026|重点强化|ac_zhongdian"
   "ep3-accounting-2026|考前冲刺|ac_kaoqian"
   "ep3-tax-2026|全面精讲|tax_quanjing"
+  "ep3-audit-2026|基础必修|audit_jichu"
+  "ep3-audit-2026|全面精讲|audit_quanjing"
   "ep3-strategy-2026|全面精讲|strategy_quanjing"
+  "ep3-finance-2026|基础必修|fin_jichu"
+  "ep3-finance-2026|全面精讲|fin_quanjing"
   "ep3-econlaw-2026|全面精讲|econlaw_quanjing"
+  "ep3-audit-2026|重点强化|audit_zhongdian"
+  "ep3-audit-2026|考前冲刺|audit_kaoqian"
+  "ep3-finance-2026|重点强化|fin_zhongdian"
+  "ep3-finance-2026|考前冲刺|fin_kaoqian"
 )
 
 # 后台降级包装：CPU nice 最低 + macOS utility 调度类（IO/CPU 均让位于前台）
@@ -60,8 +69,8 @@ echo "EP3 节流下载调度器(持续补位版) 启动 $(date '+%F %T')"
 echo "同时在跑消费者上限: $MAX_PARALLEL"
 echo "=========================================="
 
-# 1) 启动唯一生产者：轮询四科全部阶段、串行预取 key（只有它操作 Chrome）
-low bash scripts/cdp/round_robin_prefetch.sh accounting tax strategy econlaw \
+# 1) 启动唯一生产者：轮询六科全部阶段、串行预取 key（只有它操作 Chrome）
+low bash scripts/cdp/round_robin_prefetch.sh accounting tax strategy econlaw audit finance \
   >> "$LOG_DIR/round_robin_all.log" 2>&1 &
 PRODUCER_PID=$!
 echo "生产者已启动 PID=${PRODUCER_PID}（轮询预取 key）"
@@ -72,20 +81,27 @@ stage_missing() {
   python3 - "$profile" "$stage" <<'PY'
 import sys
 from pathlib import Path
-name={"ep3-accounting-2026":"会计","ep3-tax-2026":"税法","ep3-strategy-2026":"战略","ep3-econlaw-2026":"经济法"}
+name={"ep3-accounting-2026":"会计","ep3-tax-2026":"税法","ep3-strategy-2026":"战略","ep3-econlaw-2026":"经济法","ep3-audit-2026":"审计","ep3-finance-2026":"财管"}
 p,stage=sys.argv[1],sys.argv[2]
 c=Path("data/高顿/CPA/课程库")/f"【VIPCPA专享】名师专业课-{name[p]}"/"原始资源"/"videos"/stage
 miss=0
+total_meta=0
 if c.exists():
     for lec in c.iterdir():
         if not lec.is_dir() or lec.name.startswith("."): continue
         metas=list(lec.glob("*_meta.json"))
         if (lec/"meta.json").exists(): metas.append(lec/"meta.json")
         for m in metas:
+            total_meta+=1
             stem=m.name[:-len("_meta.json")] if m.name.endswith("_meta.json") else ""
             v=lec/(f"{stem}_video.mp4" if stem else "video.mp4")
             if not v.exists(): miss+=1
-print(miss)
+# 阶段目录不存在、或存在但尚无任何 meta（新课未开始）：返回哨兵 -1 触发补位，
+# 否则空目录会被当成 miss=0「已完整」而永远不下载（审计/财管纳管时暴露）
+if not c.exists() or total_meta==0:
+    print(-1)
+else:
+    print(miss)
 PY
 }
 
@@ -135,11 +151,12 @@ while true; do
       continue
     fi
     all_done=0
+    miss_show="$miss"; [ "$miss" = "-1" ] && miss_show="未开始(整阶段待下)"
     # 未完整且无消费者：在跑数达上限就等，有空位就补
     while [ "$(count_alive)" -ge "$MAX_PARALLEL" ]; do sleep 5; done
     run_consumer "$profile" "$stage" "$tag" &
     echo $! > "$pidf"
-    echo "[$(date '+%T')] 补位 $profile/$stage（缺 $miss），在跑 $(count_alive)/$MAX_PARALLEL"
+    echo "[$(date '+%T')] 补位 $profile/$stage（缺 $miss_show），在跑 $(count_alive)/$MAX_PARALLEL"
     sleep 8   # 错峰启动，避免同时初始化抢资源/抢 Chrome
   done
 
