@@ -11,7 +11,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { connectDailyChrome, safeDisconnect } = require('./connect_browser');
+const { connectDailyChrome, safeDisconnect, newBackgroundPage } = require('./connect_browser');
 const { workspaceDir } = require('./load_profile');
 
 const playUrl = process.argv[2];
@@ -77,7 +77,8 @@ const INIT_HOOK = () => {
 
 (async () => {
   const browser = await connectDailyChrome({ ensureRunning: false });
-  const page = await browser.newPage();
+  // 后台建标签（background:true），不抢占用户正在输入的前台标签焦点；静音后台播放仍触发 worker
+  const page = await newBackgroundPage(browser);
   try {
     await page.evaluateOnNewDocument(INIT_HOOK);
     console.log('[1] 打开回放页...');

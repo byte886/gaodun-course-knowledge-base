@@ -338,6 +338,44 @@ async function safeDisconnect(browser) {
   } catch { /* 已断开则忽略 */ }
 }
 
+/**
+ * 在「后台」新建一个标签：不激活、不抢占用户当前前台标签的输入焦点。
+ *
+ * 背景：browser.newPage() 底层 Target.createTarget 默认会激活新标签，取 key 每轮预取都
+ * newPage+close，会反复把用户正在打字的标签切走（丢输入焦点）。改用 CDP 的 background:true
+ * （Chrome 111+）后台建标签——标签在后台加载，静音视频仍可播放、Web Worker 不受后台节流影响，
+ * 因此不影响 hls worker 取 key。
+ *
+ * 注意：本函数只负责后台建一个 about:blank 标签并返回 Page，**不替调用方 goto**，
+ * 以便调用方保持「先 evaluateOnNewDocument 注入 hook、再 goto」的顺序。
+ * 若当前 Chrome/协议不支持 background，则退回普通 newPage（功能优先，仅会短暂抢焦）。
+ *
+ * @param {import('puppeteer-core').Browser} browser
+ * @returns {Promise<import('puppeteer-core').Page>}
+ */
+async function newBackgroundPage(browser) {
+  try {
+    const browserSession = await browser.target().createCDPSession();
+    const { targetId } = await browserSession.send('Target.createTarget', {
+      url: 'about:blank',
+      background: true,   // 关键：创建但不激活，不抢前台焦点
+      newWindow: false,
+    });
+    await browserSession.detach().catch(() => {});
+    const target = await browser.waitForTarget(
+      (t) => t._targetId === targetId
+        || (typeof t.targetId === 'function' && t.targetId() === targetId),
+      { timeout: 8000 },
+    );
+    const page = await target.page();
+    if (page) return page;
+    throw new Error('后台 target 转 Page 失败');
+  } catch (e) {
+    console.warn(`[cdp] 后台建标签不可用，退回普通 newPage（可能短暂抢焦）：${e && e.message}`);
+    return browser.newPage();
+  }
+}
+
 // 直接运行本文件 = 环境自检：确保 Chrome 运行 → 连接 → 打印浏览器版本与标签 → 断开
 // 用法：node scripts/cdp/connect_browser.js
 if (require.main === module) {
@@ -374,6 +412,7 @@ module.exports = {
   connectDailyChrome,
   listPages,
   findPage,
+  newBackgroundPage,
   safeDisconnect,
   PRESS_SCRIPT,
   USER_DATA_DIR,

@@ -36,6 +36,7 @@ status: stable
 - token 自愈模块 `refresh_auth_token.js`：连接日常 Chrome→找高顿 tab→监听 `apigateway.gaodun.com` 请求头→reload 抓新 `authentication`→落 `_account/auth/`；做题脚本遇 553649434 自动调用，也可手动跑。
 - Node 依赖由仓库根 `package.json` 声明（`puppeteer-core`，**不下载 Chromium**）；`node_modules` 不入库，新机 `npm install` 补足。
 - 抓包原始报文落 `data/_workspace/<profile>/sniff/`（见 [统一运行时工作区](architecture-runtime-workspace.md)）。
+- **采集建临时标签必须后台、不抢用户输入焦点**：`browser.newPage()` 底层 `Target.createTarget` 默认激活新标签，取 key 每轮 newPage+close 会反复把用户正在打字的前台标签切走。统一改用连接模块的 `newBackgroundPage(browser)`（CDP `Target.createTarget({background:true})`，新标签 `hasFocus=false / visibility=hidden`，不支持时兜底普通 newPage）。静音视频在后台 hidden 仍可播放、Web Worker 不受后台标签节流，故不影响 hls worker 取 key（2026-09-10 端到端验证连续取到 SD/FHD key）；调用方仍保持「先 `evaluateOnNewDocument` 注入 hook、再 goto」顺序。capture/fetch_question/refresh_token 三处已统一。
 - 详细连接步骤、授权、排障看连接操作手册，不要凭记忆拼端点。
 
 ## 关键方法论（可迁移）

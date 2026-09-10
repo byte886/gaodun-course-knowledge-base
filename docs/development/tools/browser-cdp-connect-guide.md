@@ -131,7 +131,28 @@ await safeDisconnect(browser);                        // 只断开调试，绝�
 
 结束时用 `browser.disconnect()`（模块封装为 `safeDisconnect()`），它只断开调试连接，**不会关闭用户的标签和 Chrome**；切勿用 `browser.close()`。
 
-### 4.5 Chrome 没开会自动拉起，Profile 怎么选
+### 4.5 建临时标签用 newBackgroundPage，不抢用户输入焦点
+
+采集/取 key/刷 token 这类"开一个临时标签、用完即关"的场景，**不要用 `browser.newPage()`**——它底层 `Target.createTarget` 默认激活新标签，循环里反复 newPage+close 会把用户正在打字的前台标签不断切走、丢失输入焦点。
+
+统一用连接模块导出的 `newBackgroundPage(browser)`：
+
+```js
+const { connectDailyChrome, newBackgroundPage, safeDisconnect } = require('./cdp/connect_browser');
+const browser = await connectDailyChrome({ ensureRunning: false });
+const page = await newBackgroundPage(browser);      // CDP background:true，后台标签 hasFocus=false / visibility=hidden
+await page.evaluateOnNewDocument(HOOK);             // 仍按"先注入 hook、再 goto"的顺序
+await page.goto(url, { waitUntil: 'domcontentloaded' });
+// ...采集...
+await page.close();                                 // 只关这个临时后台标签
+await safeDisconnect(browser);
+```
+
+- 原理：CDP `Target.createTarget({background:true})` 建标签但不激活；协议不支持时自动兜底普通 newPage（功能优先）。
+- 为什么后台仍能取 key：静音（muted）视频在 hidden 标签仍可自动播放，hls 解密跑在 Web Worker（独立线程、不受后台标签节流影响），2026-09-10 已端到端验证连续取到 SD/FHD key。
+- 已统一：`capture_video_key.js` / `fetch_question_video_keys.js` / `refresh_auth_token.js`。
+
+### 4.6 Chrome 没开会自动拉起，Profile 怎么选
 
 `connectDailyChrome()` 默认先调 `ensureChromeRunning()`，因此**日常 Chrome 开没开都能连**：
 

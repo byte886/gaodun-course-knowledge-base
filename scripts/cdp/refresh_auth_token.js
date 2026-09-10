@@ -11,7 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { connectDailyChrome, listPages, safeDisconnect } = require('./connect_browser');
+const { connectDailyChrome, listPages, safeDisconnect, newBackgroundPage } = require('./connect_browser');
 
 const AUTH_DIR = path.join(__dirname, '..', '..', 'data', '_workspace', '_account', 'auth');
 
@@ -34,7 +34,7 @@ async function main() {
 
   if (!gaodunPage) {
     console.log('[3] 未找到高顿页面，新建标签页打开 v.gaodun.com/space/...');
-    gaodunPage = await browser.newPage();
+    gaodunPage = await newBackgroundPage(browser);
     await gaodunPage.goto('https://v.gaodun.com/space/', { waitUntil: 'networkidle2', timeout: 30000 });
   } else {
     console.log(`[3] 找到高顿页面: ${gaodunPage.url()}`);

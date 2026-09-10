@@ -19,7 +19,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { connectDailyChrome, safeDisconnect } = require('./connect_browser.js');
+const { connectDailyChrome, safeDisconnect, newBackgroundPage } = require('./connect_browser.js');
 const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -117,7 +117,7 @@ async function grabOne(page, entry) {
   const browser = await connectDailyChrome({ ensureRunning: false });
   try {
     for (const p of PAPERS) {
-      const page = await browser.newPage();
+      const page = await newBackgroundPage(browser);
       await page.evaluateOnNewDocument(HOOK);
       await page.goto(urlOf(p), { waitUntil: 'domcontentloaded', timeout: 45000 });
       await sleep(5000);
