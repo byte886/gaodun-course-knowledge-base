@@ -50,6 +50,10 @@ SKIP_PATTERNS=(
     "transcript.json"       # 转写原始 JSON（可读版 transcript.md 才上传）
     "*.tmp"                 # 临时文件
     "*.log"                 # 日志文件
+    # —— 账号级动态台账（属 data/_workspace/_account/user-space，滚动留最新，绝不上网盘）——
+    "账号课程清单.json"      # 账号课程清单（中文旧名，历史曾误传到 CPA 根）
+    "account_courses.json"  # 账号课程清单（规范名）
+    "user_space_*.json"     # 用户空间抓取快照
     # —— 系统文件 ——
     ".DS_Store"             # macOS 系统文件
 )

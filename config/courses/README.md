@@ -48,5 +48,6 @@ GAODUN_COURSE_PROFILE=cpa-accounting-2026 node scripts/cdp/refresh_inventory.js
   `organize_user_notes.py`、`build_course_overview.py`（均支持 `--profile <key>` 或环境变量，缺省税法）
 
 课程清单（账号下到底有哪些课、各自 ID）由 `scripts/cdp/fetch_user_space_courses.js` 实时拉取，
-台账在 `data/高顿/CPA/账号课程清单.json`；本目录的档案卡是在台账基础上补全章组/路径后的**生产配置**，
+台账在 `data/_workspace/_account/user-space/account_courses.json`（账号级动态件，当次原始响应留痕
+`user_space_vcourse_<ts>.json`，滚动留最新、**不上网盘**）；本目录的档案卡是在台账基础上补全章组/路径后的**生产配置**，
 入 Git 跟踪。设计背景见 `docs/development/guides/parallel-toolkit-design.md`。
