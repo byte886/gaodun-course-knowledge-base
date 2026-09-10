@@ -17,7 +17,7 @@
 | 视频处理 | 10 | 单文件下载解密/压缩；CDP 抓 HLS key、单讲下载、分阶段下载/压缩与总控；冲刺点播视频侦查/纯接口下载/转写压缩后处理（scripts/cdp/） |
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
-| 百度网盘上传 | 5 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传 |
+| 百度网盘上传 | 6 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传、名师课下载进行中只传完整讲的就绪同步 |
 | 环境与工具 | 9 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
 | 检查与验证 | 8 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检、OKF 工程记忆校验 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
@@ -57,7 +57,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/build_notes_mapping.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`sync_ep3_ready.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/build_notes_mapping.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
 
 ### 总编排器与并发标准件
 
@@ -326,7 +326,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 五、百度网盘上传（5个）
+## 五、百度网盘上传（6个）
 
 ### `baidu_upload.py` — 单文件上传到百度网盘
 
@@ -371,6 +371,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `bash scripts/sync_raw_resources.sh <notes\|videos\|all> [并发数=2]`（网盘 IO 建议并发 2） |
 | **可靠性** | ✅ 高（已用于税法课 notes 17/17、videos 39/39；每讲独立日志 `logs/raw_<类型>_batch.log`） |
 | **相关文档** | long-task-supervisor-guide.md、finalize-sop.md、standards 2.2（L1/L2 备份） |
+
+---
+
+### `sync_ep3_ready.sh` — 名师课(ep3)「已就绪内容」安全同步网盘
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 视频仍在下载时安全备份：讲义 notes 整目录同步；视频只传「完整讲」——讲目录内每个 `*_meta.json`（或裸 `meta.json`）都有对应、非空的 `*_video.mp4`，缺视频的半成品讲不匹配、**不打 done**（否则以后补齐会被断点标记永久跳过、网盘缺件），下次重跑自动带上。核心上传/秒传/断点复用 sync_course_netdisk.sh，本脚本只做"就绪筛选"，profile 驱动、兼容双老师前缀与单老师无前缀两种命名 |
+| **用法** | `bash scripts/sync_ep3_ready.sh <profile> [并发=2] [notes\|videos\|all(默认)]`，如 `bash scripts/sync_ep3_ready.sh ep3-accounting-2026 2 all`；可在下载进行中反复重跑（断点续传、已存在 MD5 秒传） |
+| **可靠性** | ✅ 高（完整讲判定离线、零网络；不完整讲绝不打 done） |
+| **相关文档** | `docs/development/api/netdisk-setup.md`、ADR-018（字幕替代转写）、双老师文件名前缀约定 |
 
 ---
 
