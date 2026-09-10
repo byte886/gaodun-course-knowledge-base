@@ -175,9 +175,9 @@ async function ensureChromeRunning(opt = {}) {
  * 调用 macOS 辅助功能代点一次「允许」。无弹窗时 pressed=false、无副作用。
  * @returns {Promise<{pressed:boolean, detail:string}>}
  */
-function pressConsentOnce() {
+function pressConsentOnce(restoreTo = '') {
   return new Promise((resolve) => {
-    execFile('osascript', [PRESS_SCRIPT], { timeout: 2500 }, (err, stdout) => {
+    execFile('osascript', [PRESS_SCRIPT, restoreTo || ''], { timeout: 2500 }, (err, stdout) => {
       if (err) return resolve({ pressed: false, detail: err.message });
       const out = (stdout || '').trim();
       resolve({ pressed: /pressed=true/.test(out), detail: out });
@@ -193,14 +193,14 @@ function pressConsentOnce() {
  * 改为「上一次结束或超时后再排下一次」，并对单次点按设硬超时，绝不堆积。
  * @returns {() => void} stop()：停止循环
  */
-function startPressLoop({ intervalMs = 800, pressTimeoutMs = 2500, debug = !!process.env.DEBUG_CDP } = {}) {
+function startPressLoop({ intervalMs = 800, pressTimeoutMs = 2500, debug = !!process.env.DEBUG_CDP, restoreTo = '' } = {}) {
   let stopped = false;
   let inFlight = false;
   let timer = null;
   let currentChild = null;
   const runOnce = () => new Promise((resolve) => {
     const t0 = Date.now();
-    currentChild = execFile('osascript', [PRESS_SCRIPT], { timeout: pressTimeoutMs }, (err, stdout, stderr) => {
+    currentChild = execFile('osascript', [PRESS_SCRIPT, restoreTo || ''], { timeout: pressTimeoutMs }, (err, stdout, stderr) => {
       currentChild = null;
       const out = (stdout || '').trim();
       resolve({
@@ -277,7 +277,12 @@ async function connectDailyChrome(opt = {}) {
 
   // 串行授权点击循环（同一时刻只允许一个 osascript；并发访问 System Events 会拥塞死等、
   // 子进程堆积导致授权窗永远点不掉，详见 startPressLoop 注释与实测报告）
-  const stopPress = autoPress ? startPressLoop({ debug: !!process.env.DEBUG_CDP }) : null;
+  // 连接前先记前台 App：授权 sheet 出现时系统会把 Chrome 置前，代点脚本在「点中允许的同一时刻」
+  // 立刻把前台还给它（consentFront），不用等整个采集结束；外层 finally 的 restoreFrontmost 兜底。
+  const consentFront = autoPress ? captureFrontmost() : null;
+  const stopPress = autoPress
+    ? startPressLoop({ debug: !!process.env.DEBUG_CDP, restoreTo: consentFront ? consentFront.name : '' })
+    : null;
   try {
     let lastErr = null;
     for (let attempt = 1; attempt <= retries; attempt += 1) {

@@ -152,25 +152,31 @@ await safeDisconnect(browser);
 - 为什么后台仍能取 key：静音（muted）视频在 hidden 标签仍可自动播放，hls 解密跑在 Web Worker（独立线程、不受后台标签节流影响），2026-09-10 已端到端验证连续取到 SD/FHD key。
 - 已统一：`capture_video_key.js` / `fetch_question_video_keys.js` / `refresh_auth_token.js`。
 
-#### 还有一层抢焦：官方授权 sheet，用「记录—归还」兜底
+#### 还有一层抢焦：官方授权 sheet，「点中即还」+ 结束兜底
 
-`newBackgroundPage` 只解决"建标签不抢焦"，但**每次新连接 Chrome 都会弹官方强制、无法永久关闭的「要允许远程调试吗？」sheet，sheet 出现时 macOS 会自动把 Chrome 置前**（`press_allow.applescript` 只负责 AXPress 关窗，不会把焦点还回去）。这层无法消除，只能在采集生命周期两端把焦点还回：
+`newBackgroundPage` 只解决"建标签不抢焦"，但**每次新连接 Chrome 都会弹官方强制、无法永久关闭的「要允许远程调试吗？」sheet，sheet 出现时 macOS 会自动把 Chrome 置前**。这层无法消除，但可以让 Chrome 只在前台闪一下：
+
+- **点中即还（主路径，延迟最小）**：`connectDailyChrome` 连接前先 `captureFrontmost()` 记住前台 App，把名字传给代点循环；`press_allow.applescript` 接收该名为 argv，在 AXPress 点中「允许」的**同一时刻**用 System Events `set frontmost` 还回。实测从弹框到还回 Chrome 只在前台停留约 0.7s，之后整个连接与 ~28s 采集期间焦点都停在原 App，无需等采集结束。
+- **结束兜底**：采集脚本 finally/catch 再调一次 `restoreFrontmost(front)`，防止个别点中时还焦失败。
+- 守卫：只有"本次确实点中了允许（pressed=true）/结束时当前前台确实是 Chrome"才还；无弹窗、或用户中途自己切走，一律不动焦点。
 
 ```js
+// connect_browser 内部已自动完成「点中即还」，调用方只需在生命周期两端加兜底：
 const { connectDailyChrome, newBackgroundPage, captureFrontmost, restoreFrontmost, safeDisconnect } = require('./cdp/connect_browser');
 const front = captureFrontmost();                 // 连接前：记住当前前台 App（如豆包）
 try {
-  const browser = await connectDailyChrome({ ensureRunning: false }); // 弹授权框 → Chrome 短暂置前
-  // ...newBackgroundPage + 采集...
+  const browser = await connectDailyChrome({ ensureRunning: false }); // 弹框→点中即还，Chrome 只闪 ~0.7s
+  // ...newBackgroundPage + 采集（期间焦点一直在原 App）...
   await safeDisconnect(browser);
 } finally {
-  restoreFrontmost(front);                        // 结束：仅当现在前台仍是 Chrome，才 set frontmost 还回原 App
+  restoreFrontmost(front);                        // 兜底
 }
 ```
 
-- `restoreFrontmost` 只在"当前前台确实是 Google Chrome"时才还回（证明是被我们的授权框抢的）；用户中途自己切到别的 App 则不动，尊重用户操作。
-- 实现必须走 System Events `set frontmost of process "<name>"`；`tell application "X" to activate` 在 node 宿主下会被系统静默丢弃、退出码 0 但不真正前置（实测踩过）。
-- 局限：采集进行的那几十秒焦点仍在 Chrome（无法避免），归还保证的是"采集一结束键盘焦点就回到原 App"，不会让用户停在 Chrome。
+硬经验：
+- 还焦必须走 System Events `set frontmost of process "<name>"`；`tell application "X" to activate` 在 node 派生的 osascript 宿主下会被静默丢弃，对 Doubao 实测**反而会把焦点切走**。
+- 代点循环间隔维持 800ms：再短会因多个 osascript 并发访问 System Events 拥塞、反而点不中（血泪教训，见 startPressLoop 注释）。
+- 无弹窗时 `press_allow.applescript` 返回 pressed=false 且绝不切换焦点，可高频安全重复调用。
 
 ### 4.6 Chrome 没开会自动拉起，Profile 怎么选
 

@@ -38,7 +38,7 @@ status: stable
 - 抓包原始报文落 `data/_workspace/<profile>/sniff/`（见 [统一运行时工作区](architecture-runtime-workspace.md)）。
 - **采集不得抢用户输入焦点（两层，都已处理）**：
   - ①建标签层——`browser.newPage()` 底层 `Target.createTarget` 默认激活新标签，取 key 每轮 newPage+close 会反复切走用户前台标签；统一改连接模块 `newBackgroundPage(browser)`（CDP `Target.createTarget({background:true})`，新标签 `hasFocus=false / visibility=hidden`，不支持时兜底 newPage）。静音视频在 hidden 仍播放、Web Worker 不受后台节流，故不影响 hls worker 取 key（已端到端验证连续取到 SD/FHD key）；调用方仍保持「先 `evaluateOnNewDocument` 注入 hook、再 goto」。
-  - ②连接授权层（更隐蔽的抢焦源）——每次新连接 Chrome 都弹官方强制、无法永久关闭的「要允许远程调试吗？」sheet，该 sheet 一出现 **macOS 会自动把 Chrome 置前**（press_allow 只 AXPress 关窗、不还焦点）。用连接模块 `captureFrontmost()`（连接前记前台 App）+ `restoreFrontmost(prev)`（结束时仅当当前前台仍是 Chrome 才用 System Events `set frontmost` 还回；用户中途自切则不抢回）。注意必须走 System Events `set frontmost of process`，`tell app X to activate` 在 node 宿主下会被静默丢弃、不真正前置。capture/fetch_question/refresh_token 三处生命周期已统一包「连接前 capture、finally/异常 restore」。
+  - ②连接授权层（更隐蔽的抢焦源）——每次新连接 Chrome 都弹官方强制、无法永久关闭的「要允许远程调试吗？」sheet，该 sheet 一出现 **macOS 会自动把 Chrome 置前**。**点中即还（首选，延迟最小）**：连接前 `captureFrontmost()` 记前台 App 名并传给代点循环，`press_allow.applescript` 接收该名为 argv，在 AXPress 点中「允许」的**同一时刻**用 System Events `set frontmost` 还回（仅当本次确实点中、且当前前台仍是 Chrome；无弹窗 pressed=false 绝不动焦点），实测 Chrome 只在前台停留约 0.7s、之后整个连接与 ~28s 采集期间焦点都在原 App。外层采集脚本 finally/catch 的 `restoreFrontmost()` 保留作兜底。两条硬经验：必须 System Events `set frontmost of process`，`tell app X to activate` 在 node 宿主下被静默丢弃、对 Doubao 实测反而会把焦点切走；代点循环间隔维持 800ms（再短会因并发访问 System Events 拥塞、点不中，血泪教训）。
 - 详细连接步骤、授权、排障看连接操作手册，不要凭记忆拼端点。
 
 ## 关键方法论（可迁移）

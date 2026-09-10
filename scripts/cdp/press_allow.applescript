@@ -1,5 +1,13 @@
 -- press_allow.applescript
--- 作用：在 macOS「辅助功能」权限下，点掉 Google Chrome「要允许远程调试吗？」原生弹窗里的「允许」。
+-- 作用：在 macOS「辅助功能」权限下，点掉 Google Chrome「要允许远程调试吗？」原生弹窗里的「允许」，
+--       并在「点中允许的同一时刻」立刻把前台焦点还给连接前用户正在用的 App。
+--
+-- 【为什么要还焦】
+--   官方授权 sheet 无法永久关闭，且它一出现 macOS 就会自动把 Google Chrome 置前、抢走用户正在
+--   打字的 App（如豆包）焦点。本脚本由代点循环每 ~800ms 调一次：点中「允许」后若不还焦，焦点会
+--   一直停在 Chrome（直到整个采集 ~28s 结束才由外层兜底归还，太慢）。因此在点中瞬间就地还焦，
+--   用户只感知到 Chrome 一闪。原前台 App 名通过命令行第 1 个参数 argv 传入（由 connect_browser 在
+--   连接前 captureFrontmost 记录）。
 --
 -- 【性能关键 · 血泪教训】
 --   绝不能递归遍历整个 Chrome 窗口的 AX 树：网页内容区(AXWebArea)有成千上万节点，每个节点都是一次
@@ -14,11 +22,13 @@
 --   - 按钮可见文字在 AXDescription（依次为「在'设置'中关闭 / 取消 / 允许」），AXTitle 为空；
 --   - 点中后 sheet 立即关闭，因此「点中即停」，且全程容错：无弹窗 / 进程未就绪 / 元素中途失效，
 --     都安静返回 pressed=false 且退出码为 0，可被高频安全重复调用。
+--   - 还焦必须走 System Events 的 `set frontmost of process ...`；`tell application X to activate`
+--     在被 node 派生的 osascript 宿主下会被系统静默丢弃、不真正前置。
 --
 -- 前置：运行它的宿主需在「系统设置 → 隐私与安全性 → 辅助功能」中授权。
+-- 用法：osascript press_allow.applescript "<连接前前台App名>"
 
 global gPressed
-set gPressed to false
 
 -- 在「很小的一棵子树」（授权 sheet）内找「允许」按钮并 AXPress；绝不进入网页区
 on findAllow(el, depth)
@@ -54,36 +64,61 @@ on findAllow(el, depth)
 	end tell
 end findAllow
 
-set report to ""
-tell application "System Events"
-	if not (exists process "Google Chrome") then
-		return "pressed=false" & linefeed
+on run argv
+	set gPressed to false
+	-- 连接前前台 App 名（要还焦的目标）；缺省为空 = 不还焦
+	set restoreTo to ""
+	if (count of argv) is greater than 0 then
+		try
+			set restoreTo to (item 1 of argv) as string
+		end try
 	end if
-	try
-		tell process "Google Chrome"
-			repeat with w in windows
-				try
-					repeat with sh in sheets of w
-						-- 最快路径：按钮直接挂在 sheet 上
-						try
-							repeat with b in buttons of sh
-								set dd to ""
-								try
-									set dd to (description of b) as string
-								end try
-								set report to report & "BTN-D[" & dd & "] "
-								if dd contains "允许" then
-									perform action "AXPress" of b
-									set gPressed to true
-								end if
-							end repeat
-						end try
-						-- 兜底：按钮若被 group/分裂层包裹，只在这棵很小的 sheet 子树内有限递归
-						if not gPressed then my findAllow(sh, 0)
-					end repeat
-				end try
-			end repeat
+
+	set report to ""
+	tell application "System Events"
+		if not (exists process "Google Chrome") then
+			return "pressed=false" & linefeed
+		end if
+		try
+			tell process "Google Chrome"
+				repeat with w in windows
+					try
+						repeat with sh in sheets of w
+							-- 最快路径：按钮直接挂在 sheet 上
+							try
+								repeat with b in buttons of sh
+									set dd to ""
+									try
+										set dd to (description of b) as string
+									end try
+									set report to report & "BTN-D[" & dd & "] "
+									if dd contains "允许" then
+										perform action "AXPress" of b
+										set gPressed to true
+									end if
+								end repeat
+							end try
+							-- 兜底：按钮若被 group/分裂层包裹，只在这棵很小的 sheet 子树内有限递归
+							if not gPressed then my findAllow(sh, 0)
+						end repeat
+					end try
+				end repeat
+			end tell
+		end try
+	end tell
+
+	-- 点中「允许」后立刻还焦：仅当本次确实点中、且当前前台仍是 Google Chrome（证明确实是被授权框抢走）、
+	-- 且要还回的不是 Chrome 本身时才动作；用户中途自己切走（前台已不是 Chrome）则尊重、不强切。
+	if gPressed and restoreTo is not "" and restoreTo is not "Google Chrome" then
+		tell application "System Events"
+			try
+				set curName to name of first process whose frontmost is true
+				if curName is "Google Chrome" then
+					set frontmost of (first process whose name is restoreTo) to true
+				end if
+			end try
 		end tell
-	end try
-end tell
-return "pressed=" & (gPressed as string) & linefeed & report
+	end if
+
+	return "pressed=" & (gPressed as string) & linefeed & report
+end run
