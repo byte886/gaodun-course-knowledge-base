@@ -57,7 +57,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/gaodun_paper_core.js`；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
 
 ### 总编排器与并发标准件
 
@@ -706,6 +706,22 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **相关文档** | `data/_workspace/_account/ep3-platform-probe.md` 第四/五轮、`ep3/tickets-index.md` EP3-05、`docs/development/tools/video-processing.md`（ep3 小节） |
 
 ---
+
+### `cdp/throttled_ep3_download.sh` — 名师课多科目「节流下载」总调度（白天防风控 + 给前台留资源）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 多科目 ep3 视频批量下载的唯一推荐入口。只起 1 个生产者（`round_robin_prefetch.sh` 串行预取 key、全进程唯一操作 Chrome）+ 最多 `MAX_PARALLEL`(默认3) 路纯 `--consumer` 消费者（只从 keycache 读 key 下载、不碰 Chrome），结束一路自动补一路；全部子进程 `nice -n 20 taskpolicy -c utility` 降后台优先级，避免下载占满网络/磁盘把豆包挤死。任务队列在脚本内 `TASKS`，科目/阶段由 `config/ep3_subjects.json` 驱动，断点续跑 |
+| **用法** | `bash scripts/cdp/throttled_ep3_download.sh`；夜间提速 `MAX_PARALLEL=6 bash scripts/cdp/throttled_ep3_download.sh`。日志 `data/_workspace/_account/ep3/logs/throttled_download.log` + 各 `consumer_*.log` |
+| **关键坑** | 并发计数只能用消费者 PID 数组 + `kill -0`，**不能用 `jobs -rp`**（会把生产者计入、误顶满上限卡死第三路；macOS bash 3.2 无 `wait -n`）；消费者偶发启动卡死（CPU=0/零日志）直接 `kill -9`，调度器自动补位。分片并发分时段（白天12/夜间64）在 `ep3_download_videos.js` 内 |
+| **相关文档** | `docs/development/tools/video-processing.md`「多科目节流调度」小节、`cdp/round_robin_prefetch.sh` |
+
+### `cdp/round_robin_prefetch.sh` — ep3 取 key 生产者（轮询多科目×阶段、per-stage 独立 keycache、按需滚动预取）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 串行轮询指定科目（参数=科目名，缺省全部）的全部阶段，**只给当前有活跃消费者（pgrep 识别 `--stage X --consumer`）的阶段、每轮滚动预取 prefetch_count 个 key**（顺带下无需 key 的 VTT 字幕），不下载视频；与纯消费者解耦，避免多进程同时操作 Chrome 抢播放页。无消费者阶段不预取（防 token 闲置过期）。科目/profile/阶段/老师/缓存路径全部读 `config/ep3_subjects.json`，加科目不改脚本。⚠️ 缓存必须按「profile×阶段」分文件，同一 profile 多阶段共用一个缓存会被先跑阶段的缓存总条数连带饿死后跑阶段（2026-09-10 修复） |
+| **用法** | `bash scripts/cdp/round_robin_prefetch.sh accounting tax strategy econlaw`（一般由 throttled 调度器自动拉起，不单独跑）；per-stage 缓存 `data/_workspace/_account/ep3/keycache/<profile>__<阶段>.json` |
 
 ### `cdp/do_sprint_paper.js` — 冲刺模考 6 卷统一纯接口做卷入口（3 试卷 + 3 机考）
 

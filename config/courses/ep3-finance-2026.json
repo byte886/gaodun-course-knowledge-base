@@ -1,5 +1,5 @@
 {
-  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。财管科目。ID/梯度来自 ep3 接口实测(2026-09-08)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。老师信息待补充。",
+  "_comment": "名师专业课档案卡(ep3/epiphany，saasCourseType=13)。财管科目。ID/梯度来自 ep3 接口实测(2026-09-10)。parentGrad 由 ep3_download_videos 子树递归自动定位、不依赖 attribute 数值。老师信息待补充。",
   "key": "ep3-finance-2026",
   "schemaVersion": 1,
   "platform": "ep3",
@@ -18,9 +18,9 @@
   "companionCourses": [],
   "stages": [
     { "label": "基础必修", "attribute": 3, "gradationId": 73334, "syllabusId": 71343 },
-    { "label": "全面精讲", "attribute": 4, "gradationId": 0, "syllabusId": 0 },
-    { "label": "重点强化", "attribute": 5, "gradationId": 0, "syllabusId": 0 },
-    { "label": "考前冲刺", "attribute": 6, "gradationId": 0, "syllabusId": 0 }
+    { "label": "全面精讲", "attribute": 4, "gradationId": 76235, "syllabusId": 76466 },
+    { "label": "重点强化", "attribute": 5, "gradationId": 78859, "syllabusId": 77001 },
+    { "label": "考前冲刺", "attribute": 6, "gradationId": 79618, "syllabusId": 77002 }
   ],
   "paths": {
     "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-财管",
@@ -28,7 +28,7 @@
   },
   "notes": [
     "老师信息待补充（从ep3接口获取）",
-    "梯度ID待补充（从ep3接口获取，当前仅基础必修有ID）",
+    "梯度ID已补充（2026-09-10从ep3接口获取）",
     "首次运行时可能需要探索课程结构"
   ]
 }
