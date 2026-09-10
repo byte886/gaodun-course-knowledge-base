@@ -11,9 +11,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { connectDailyChrome, listPages, safeDisconnect, newBackgroundPage } = require('./connect_browser');
+const { connectDailyChrome, listPages, safeDisconnect, newBackgroundPage, captureFrontmost, restoreFrontmost } = require('./connect_browser');
 
 const AUTH_DIR = path.join(__dirname, '..', '..', 'data', '_workspace', '_account', 'auth');
+
+// 模块加载即记录前台 App（main 内连接触发的授权弹窗会把 Chrome 置前，退出时归还）
+const __front = captureFrontmost();
 
 async function main() {
   console.log('[1] 连接日常 Chrome...');
@@ -98,6 +101,7 @@ async function main() {
     console.error('❌ 未能捕获 authentication token');
     console.error('   请确认 Chrome 中已登录高顿账号，且页面能正常加载');
     await safeDisconnect(browser);
+    restoreFrontmost(__front);
     process.exit(1);
   }
 
@@ -148,10 +152,12 @@ async function main() {
   }
 
   await safeDisconnect(browser);
+  restoreFrontmost(__front); // 授权弹窗若把 Chrome 置前，归还运行前的前台 App
   console.log('\n✅ Token刷新完成，可以重启做题任务');
 }
 
 main().catch((e) => {
+  restoreFrontmost(__front);
   console.error('❌ 刷新token失败:', e.message);
   console.error(e.stack);
   process.exit(1);

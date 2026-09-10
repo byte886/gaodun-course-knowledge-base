@@ -376,6 +376,69 @@ async function newBackgroundPage(browser) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// 五、前台焦点记忆与归还（缓解官方授权弹窗抢焦）
+// ---------------------------------------------------------------------------
+//
+// 背景：每次新连接 Chrome 都会弹官方强制的「要允许远程调试吗？」sheet（无法永久关闭），
+// 该 sheet 出现时 macOS 会自动把 Google Chrome 置前，抢走用户正在打字的 App（如豆包）焦点；
+// press_allow.applescript 只负责 AXPress 关掉弹窗、并不会把焦点还回去。
+// 策略（best-effort，绝不因焦点逻辑影响采集主流程）：
+//   采集「开始前」用 captureFrontmost() 记住当前前台 App；
+//   采集「结束后」用 restoreFrontmost(prev) —— 仅当此刻前台是 Google Chrome
+//   （说明确实是被我们的授权弹窗抢过去的）才 activate 回原 App；
+//   若用户中途自己切到了别的 App（前台已不是 Chrome），则不强行切、尊重用户操作。
+
+/** 同步跑一段 osascript，短超时、失败安静返回 null（焦点逻辑不得抛错影响主流程） */
+function runOsa(appleScript, timeoutMs = 1500) {
+  try {
+    return execFileSync('osascript', ['-e', appleScript], { timeout: timeoutMs, encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 记录当前前台 App。系统进程（如 loginwindow/锁屏）也能取到 name、bundleId 可能为空。
+ * @returns {{name:string, bundleId:string}|null}
+ */
+function captureFrontmost() {
+  const out = runOsa(
+    'tell application "System Events"\n'
+    + 'set ps to (processes whose frontmost is true)\n'
+    + 'if (count of ps) is 0 then return ""\n'
+    + 'set p to item 1 of ps\n'
+    + 'set n to name of p\n'
+    + 'set b to ""\n'
+    + 'try\nset b to bundle identifier of p\nend try\n'
+    + 'return n & "\\t" & b\n'
+    + 'end tell',
+  );
+  if (!out) return null;
+  const [name, bundleId = ''] = out.split('\t');
+  return name ? { name, bundleId: bundleId || '' } : null;
+}
+
+/**
+ * 若前台焦点确实被 Chrome 抢走，则归还给 prev；否则不动。
+ * @param {{name:string,bundleId:string}|null} prev captureFrontmost() 的结果
+ * @returns {boolean} 是否执行了归还
+ */
+function restoreFrontmost(prev) {
+  if (!prev || !prev.name || prev.name === CHROME_APP_NAME) return false; // 原本就在 Chrome / 无记录：无需还
+  const cur = runOsa('tell application "System Events" to name of first process whose frontmost is true');
+  if (cur !== CHROME_APP_NAME) return false; // 用户中途自己切走了，尊重、不强切
+  // 走 System Events 的 set frontmost（只需 System Events 辅助功能权限，已具备）；
+  // 不用 `tell application X to activate`——node 宿主下该 AppleEvent 会被系统静默丢弃、不真正前置。
+  const name = String(prev.name).replace(/"/g, ''); // 防 AppleScript 注入
+  const script = 'tell application "System Events"\n'
+    + 'try\n'
+    + `set frontmost of (first process whose name is "${name}") to true\n`
+    + 'end try\n'
+    + 'end tell';
+  return runOsa(script, 2000) !== null; // 未抛错即视为已发起；目标进程已退出则 try 内安静失败
+}
+
 // 直接运行本文件 = 环境自检：确保 Chrome 运行 → 连接 → 打印浏览器版本与标签 → 断开
 // 用法：node scripts/cdp/connect_browser.js
 if (require.main === module) {
@@ -413,6 +476,8 @@ module.exports = {
   listPages,
   findPage,
   newBackgroundPage,
+  captureFrontmost,
+  restoreFrontmost,
   safeDisconnect,
   PRESS_SCRIPT,
   USER_DATA_DIR,

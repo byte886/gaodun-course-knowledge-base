@@ -7,7 +7,7 @@
 ## 2026-09-10
 
 - **Update**：`workflow-ep3-vod-decryption` 长跑模型从「单路 supervised 串行」补成「单路兜底 vs 多科目节流调度」双模型：多科目总入口 `throttled_ep3_download.sh`（1 生产者 round_robin 串行预取 key + 最多 MAX_PARALLEL 个纯消费者只读缓存下载、nice/taskpolicy 降后台类、自带 caffeinate 防睡眠）；记录三条勿回退硬经验——key 缓存按 profile×阶段独立（共用会被先跑阶段饿死）、只给活跃消费者阶段滚动预取（废弃缓存总数阈值硬跳过）、长跑生产者不 set -e 且计数字段纯数字兜底。来源：会计重点强化被共享缓存饿死漏片的实战定位与修复（离线正则三验证 + 运行时端到端验证）。AI 编译，未标 verified。
-- **Update**：`workflow-browser-cdp` 补「采集建临时标签必须后台、不抢用户输入焦点」：`browser.newPage()` 默认激活新标签、循环取 key 会反复切走用户前台标签；统一用 connect_browser 新增的 `newBackgroundPage()`（CDP `Target.createTarget{background:true}`，后台标签 hasFocus=false/visibility=hidden，不支持时兜底 newPage），capture/fetch_question/refresh_token 三处统一；实测 hidden 下静音播放+Worker 取 SD/FHD key 连续成功。对应全局 ISSUES I-008、CDP 手册 §4.5。AI 编译，未标 verified。
+- **Update**：`workflow-browser-cdp` 补「采集不抢用户输入焦点」两层结论：①建标签层 newPage 默认激活→改 `newBackgroundPage()`（CDP background:true，hidden 下静音+Worker 取 key 不受影响）；②连接授权层——每次新连接弹官方强制授权 sheet、macOS 自动把 Chrome 置前（无法消除），用 `captureFrontmost/restoreFrontmost` 在采集生命周期记录并归还（仅当现前台仍为 Chrome；必须 System Events `set frontmost`，`tell app activate` 在 node 宿主被静默丢弃）。对应全局 ISSUES I-008、CDP 手册 §4.5。AI 编译，未标 verified。
 
 ## 2026-09-09
 

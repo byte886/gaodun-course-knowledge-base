@@ -11,7 +11,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { connectDailyChrome, safeDisconnect, newBackgroundPage } = require('./connect_browser');
+const { connectDailyChrome, safeDisconnect, newBackgroundPage, captureFrontmost, restoreFrontmost } = require('./connect_browser');
 const { workspaceDir } = require('./load_profile');
 
 const playUrl = process.argv[2];
@@ -75,7 +75,10 @@ const INIT_HOOK = () => {
   window.Worker.prototype = OrigWorker.prototype;
 };
 
+const __front = captureFrontmost();
 (async () => {
+  // 连接前已记住前台 App（__front）：连接触发的授权弹窗会把 Chrome 置前，结束/异常时归还
+  const frontmost = __front;
   const browser = await connectDailyChrome({ ensureRunning: false });
   // 后台建标签（background:true），不抢占用户正在输入的前台标签焦点；静音后台播放仍触发 worker
   const page = await newBackgroundPage(browser);
@@ -176,6 +179,7 @@ const INIT_HOOK = () => {
   } finally {
     try { await page.close(); } catch {}
     await safeDisconnect(browser);
+    restoreFrontmost(frontmost); // 授权弹窗若把 Chrome 置前，归还采集前的前台 App
     process.exit(process.exitCode || 0);
   }
-})().catch((e) => { console.error('[FAIL]', e.stack || e.message); process.exit(1); });
+})().catch((e) => { restoreFrontmost(__front); console.error('[FAIL]', e.stack || e.message); process.exit(1); });

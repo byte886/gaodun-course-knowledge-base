@@ -152,6 +152,26 @@ await safeDisconnect(browser);
 - 为什么后台仍能取 key：静音（muted）视频在 hidden 标签仍可自动播放，hls 解密跑在 Web Worker（独立线程、不受后台标签节流影响），2026-09-10 已端到端验证连续取到 SD/FHD key。
 - 已统一：`capture_video_key.js` / `fetch_question_video_keys.js` / `refresh_auth_token.js`。
 
+#### 还有一层抢焦：官方授权 sheet，用「记录—归还」兜底
+
+`newBackgroundPage` 只解决"建标签不抢焦"，但**每次新连接 Chrome 都会弹官方强制、无法永久关闭的「要允许远程调试吗？」sheet，sheet 出现时 macOS 会自动把 Chrome 置前**（`press_allow.applescript` 只负责 AXPress 关窗，不会把焦点还回去）。这层无法消除，只能在采集生命周期两端把焦点还回：
+
+```js
+const { connectDailyChrome, newBackgroundPage, captureFrontmost, restoreFrontmost, safeDisconnect } = require('./cdp/connect_browser');
+const front = captureFrontmost();                 // 连接前：记住当前前台 App（如豆包）
+try {
+  const browser = await connectDailyChrome({ ensureRunning: false }); // 弹授权框 → Chrome 短暂置前
+  // ...newBackgroundPage + 采集...
+  await safeDisconnect(browser);
+} finally {
+  restoreFrontmost(front);                        // 结束：仅当现在前台仍是 Chrome，才 set frontmost 还回原 App
+}
+```
+
+- `restoreFrontmost` 只在"当前前台确实是 Google Chrome"时才还回（证明是被我们的授权框抢的）；用户中途自己切到别的 App 则不动，尊重用户操作。
+- 实现必须走 System Events `set frontmost of process "<name>"`；`tell application "X" to activate` 在 node 宿主下会被系统静默丢弃、退出码 0 但不真正前置（实测踩过）。
+- 局限：采集进行的那几十秒焦点仍在 Chrome（无法避免），归还保证的是"采集一结束键盘焦点就回到原 App"，不会让用户停在 Chrome。
+
 ### 4.6 Chrome 没开会自动拉起，Profile 怎么选
 
 `connectDailyChrome()` 默认先调 `ensureChromeRunning()`，因此**日常 Chrome 开没开都能连**：

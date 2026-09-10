@@ -19,7 +19,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { connectDailyChrome, safeDisconnect, newBackgroundPage } = require('./connect_browser.js');
+const { connectDailyChrome, safeDisconnect, newBackgroundPage, captureFrontmost, restoreFrontmost } = require('./connect_browser.js');
 const { workspaceDir } = require('./load_profile');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -112,6 +112,7 @@ async function grabOne(page, entry) {
   throw new Error(`${entry} 等待 m3u8/key 超时`);
 }
 
+const __front = captureFrontmost();
 (async () => {
   const result = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT)) : {};
   const browser = await connectDailyChrome({ ensureRunning: false });
@@ -138,8 +139,9 @@ async function grabOne(page, entry) {
     }
   } finally {
     await safeDisconnect(browser);
+    restoreFrontmost(__front); // 授权弹窗若把 Chrome 置前，归还采集前的前台 App
   }
   const ok = Object.keys(result).length;
   console.log(`\n完成，已抓 ${ok}/7，产物 ${OUT}`);
   process.exit(0);
-})().catch((e) => { console.error('FAIL', e.stack.slice(0, 300)); process.exit(1); });
+})().catch((e) => { restoreFrontmost(__front); console.error('FAIL', e.stack.slice(0, 300)); process.exit(1); });
