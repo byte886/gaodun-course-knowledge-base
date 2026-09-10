@@ -155,12 +155,8 @@ def main():
     with open(os.path.join(RAW_DIR, "kp_to_file.json")) as f:
         kp_to_file = json.load(f)
 
-    # 手动映射未匹配的知识点
-    # "增值税征税范围-一般规定" -> "增值税应税交易的范围-一般情形.md"
-    unmatched_file = os.path.join(KD, "02_增值税法", "增值税应税交易的范围-一般情形.md")
-    if os.path.exists(unmatched_file):
-        kp_to_file["增值税征税范围-一般规定"] = unmatched_file
-        print(f"手动映射: 增值税征税范围-一般规定 -> {unmatched_file}")
+    # 知识点→文件映射、按知识点分组均由 build_notes_mapping.py 生成；
+    # "聚合卷/近义名 → 知识详解篇"的个别别名在 build 阶段经 notes-raw/alias.json 处理，本脚本不写死任何课程。
 
     print(f"知识点数: {len(kp_notes)}, 映射数: {len(kp_to_file)}")
 

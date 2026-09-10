@@ -57,7 +57,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
-**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
+**已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/build_notes_mapping.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
 
 ### 总编排器与并发标准件
 
@@ -772,6 +772,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 ## 十一、知识详解生成（5个，位于 `scripts/knowledge/`）
 
 > 按官方知识点聚合生成知识详解 md 的核心生产脚本。流程：collect_point_questions（按知识点收题）→ render_point_qa（渲染题答解析）→ organize_user_notes（整理学员补充）→ assemble_point（组装成篇）。
+> 用户笔记子链：`cdp/collect_user_notes.js`（按 questionId 拉公开笔记到 notes-raw/all_notes.jsonl）→ `knowledge/build_notes_mapping.py`（试卷标题解析知识点、映射到知识详解篇并剥身份字段）→ `knowledge/organize_user_notes.py`（四分类、Top5、写入「四、学员补充」）。
 
 ### `knowledge/course_profile.py` — 课程档案卡读取器（跨课复用基础件）
 
@@ -803,6 +804,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `python3 scripts/knowledge/render_point_qa.py` |
 | **可靠性** | ✅ 高（已根治 0 空小节问题；与 assemble_point.py 的 if groups 逻辑对齐） |
 | **相关文档** | ADR-012、KNOWLEDGE_BASE_TEMPLATE.md |
+
+---
+
+### `knowledge/build_notes_mapping.py` — 用户笔记→知识点篇 映射（通用，替代一次性过程件）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 衔接 collect_user_notes.js 与 organize_user_notes.py：扫真题面（跳过 batch_result 汇总），由试卷标题解析知识点、与知识详解现有篇名精确匹配，产出 organize 所需的 qid_to_kps / kp_to_file / notes_by_knowledge_point / unmatched_kps；映射层即剥除学员身份字段（白名单只留 noteContent/赞数/时间/papers）。聚合卷/近义名经 `notes-raw/alias.json`（过程件）别名到一篇或多篇，代码不写死任何课程 |
+| **用法** | `python3 scripts/knowledge/build_notes_mapping.py --profile <key>`（缺省读 GAODUN_COURSE_PROFILE/税法；笔记取 `data/_workspace/<key>/notes-raw/`，可用 `USER_NOTES_RAW_DIR` 覆盖）。知识详解篇未生成的章节自然落 unmatched，篇章补齐后重跑即可，不丢原始笔记 |
+| **可靠性** | ✅ 会计试跑：现有 66 篇中 60 篇挂上笔记（其余本无公开笔记），unmatched 全为未生成章/章级卷 |
+| **相关文档** | ADR-013、knowledge-detail-build-sop.md、collect_user_notes.js、organize_user_notes.py |
 
 ---
 

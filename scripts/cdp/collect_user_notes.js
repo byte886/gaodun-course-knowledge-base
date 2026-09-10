@@ -47,7 +47,7 @@ const STATS_FILE = path.join(OUT_DIR, 'stats.json');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const args = _argv;
-const concurrency = Number(args.find(a => a.startsWith('--concurrency='))?.split('=')[1]) || 5;
+const concurrency = Number(namedArg('concurrency')) || 5;
 const resume = args.includes('--resume');
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
