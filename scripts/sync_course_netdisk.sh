@@ -35,7 +35,11 @@ mkdir -p "$DONE_DIR"
 
 upload_one() {
   local name="$1" local_base="$2" remote_base="$3"
-  local done_flag="$DONE_DIR/$(echo "$name" | tr '/' '_').done"
+  # done 标记加来源目录前缀（videos__/notes__/...），防止不同子目录同名时互相误判
+  # （历史 bug：notes 与 videos 子目录同名，共用 done 目录导致 videos 被误跳过）
+  local src_tag
+  src_tag="$(basename "$remote_base")"
+  local done_flag="$DONE_DIR/${src_tag}__$(echo "$name" | tr '/' '_').done"
   if [ -f "$done_flag" ]; then
     echo "[跳过] $name（已完成）"
     return 0
@@ -72,8 +76,9 @@ echo " 批次结束: $(date '+%Y-%m-%d %H:%M:%S')"
 DONE_CNT=$(ls "$DONE_DIR" 2>/dev/null | wc -l | tr -d ' ')
 echo " 累计完成标记: $DONE_CNT 讲"
 echo " 失败讲（无done标记且本次匹配）:"
+src_tag="$(basename "$REMOTE_BASE")"
 for d in $(ls "$LOCAL_BASE" | grep -E "$FILTER"); do
-  flag="$DONE_DIR/$(echo "$d" | tr '/' '_').done"
+  flag="$DONE_DIR/${src_tag}__$(echo "$d" | tr '/' '_').done"
   [ -f "$flag" ] || echo "   - $d"
 done
 echo "============================================"
