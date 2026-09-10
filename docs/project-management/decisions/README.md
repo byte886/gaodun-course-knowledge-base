@@ -45,6 +45,7 @@ ADR是一种轻量级的决策记录方式，帮助AI和人理解"为什么这�
 | [ADR-016](./ADR-016-统一运行时工作区与按profile分区.md) | 运行时过程件统一上移到唯一 data/_workspace（账号级 _account + 课程级 \<profile\> 正交分区、分层清退），课程目录回归两层，脚本经 load_profile 收口函数取路径；修订 ADR-012 工作区位置 | 已采纳 | 2026-09-07 |
 | [ADR-017](./ADR-017-采用OKF作为工程记忆格式层.md) | 采用 OKF v0.2 建工程记忆 bundle（docs/project-management/memory，结论+指针、不复制正文），校验器 vendor 进 scripts、接 pre-commit，工程自包含不依赖全局技能；知识详解 frontmatter（Bundle A）后置试点 | 已采纳 | 2026-09-07 |
 | [ADR-018](./ADR-018-名师课ep3取流解密平台路由与平台字幕替代转写.md) | 名师课 ep3(saasType13) 区别于正课 glive(16)：CDP 真实播放 Worker 边界截 AES key（32hex 前16字符 ASCII）、正式 FHD-1080P、平台自带 VTT 字幕免 FunASR 转写、薄编排复用取key/解密组件 | 已采纳 | 2026-09-09 |
+| [ADR-019](./ADR-019-知识成品章号对齐官方code与著录命名口径.md) | 知识章目录号取官方 groups[].code、跳过预科组不重编号（会计 01_总论 改回 03_总论）；讲目录 NN=idx-1（开班00）忠实平台标题；frontmatter 标准档回灌入库脚本、sources.lecture 著录讲目录；只约束未来、不回溯已 finalize 税法 | 已采纳 | 2026-09-10 |
 
 ---
 

@@ -125,6 +125,7 @@ node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --ou
 - **单讲**：`node scripts/cdp/fetch_lecture_video.js <idx> [--profile <key>]`
   - 一轮内连续完成：从 syllabus 取该讲最新回放 token → CDP 抓 HLS（SD/FHD）密钥 → 下 m3u8 解析 IV → 下载分片并解密合并为 `merged.ts`（底层复用 `download_decrypt.js`，20 并发、断点续传）
   - `idx` 为 course_catalog / syllabus children 下标；课程目录、courseId、syllabusId 全部读 `config/courses/<key>.json`（缺省税法，或用 `GAODUN_COURSE_PROFILE` / `--profile` 指定）
+  - **讲目录命名（统一规则，只约束未来下载）**：目录名 `NN_平台讲名`，`NN = String(idx-1)` 两位补零——**idx=1 的开班典礼前缀 `00`、正课从 `01` 起**（`fetch_lecture_video.js` / `download_lecture_notes.js` 同一规则，视频与讲义讲目录一致）；目录名**只替换文件系统非法字符，忠实保留平台标题里的中文 `&`、`、`、（）、·**，不做跨课程分隔符归一化（强改会与平台标题不一致、断链）。历史既成不回溯：税法（蔡俊峻）为早期规则、开班=`01`、正课从 `02`，保持原样。
   - 幂等：目标讲目录已有成品则跳过；m3u8 / authorize token 会过期，故抓流→下载必须同一轮连续完成
 - **整门课批量（首选·动态并行）**：`bash scripts/video_dynamic_pipeline.sh <start> <end>`（下载/压缩/转写三阶段反馈式动态并行，按整机空闲核实时调度，`--dry-run` 只扫描预览不启动）
 - **整门课批量（串行后备）**：`bash scripts/batch_video_pipeline.sh <start> <end>`（断点续跑，已完成讲自动跳过；下载后串行压缩并衔接转写）

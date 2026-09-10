@@ -26,3 +26,7 @@
 - **Creation**：建立工程记忆 bundle（ADR-017），初版编译 10 篇 concept——架构 4、链路 4、治理 1、对照索引 1；结论全部从既有 ADR-002/003/005/007/010/012/013/014/015/016、standards 与接口档案编译，未新增事实。
 - 初版由 AI 编译，`generated.by=doubao/okf-wiki`、**未标 verified（machine-confirmed，待人核）**；人核通过后再逐篇加 `verified: human:`。
 - 校验器 `scripts/okf_validate.py` 自 okf-wiki 技能 vendor 进项目（零第三方依赖），工程自包含、不依赖全局技能。
+
+## 2026-09-10
+
+- **Update（architecture-knowledge-paradigm）**：新增 ADR-019，补「成品编号与著录口径」——知识章目录号取官方 `groups[].code`、跳过预科组不重编号（会计 `01_总论` 已改回 `03_总论`）；讲目录 `NN=idx-1`（开班 00）、忠实平台标题字符、只约束未来不回溯税法；frontmatter type/tags/sources.lecture 著录讲目录的标准档回灌入库脚本与模板。结论由本次会计 vs 税法成品对齐实查得到，AI 初编、未标 verified human。

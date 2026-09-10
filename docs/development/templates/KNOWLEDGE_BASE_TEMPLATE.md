@@ -38,7 +38,8 @@ CPA备考知识库（根）
 ```
 
 - 层级固定 3 层：课程 / 组 / 知识点篇；知识点内部用 H2/H3，不再为子主题建页面。
-- 组编号 `NN_` 按官方教材/课件模块序；知识点文件名用官方知识点原名。
+- 组编号 `NN_` **直接用课程档案卡 `structure.groups[].code`（官方组号）**；知识点文件名用官方知识点原名。
+- **跳过无来源的预科组时保留官方 code、绝不重新连续编号**（教训：会计官方 01 入门/02 衔接是无视频/讲义/题的预科、正式章从 03 总论起；曾把总论重编成 `01_总论`、其后又沿用官方 04，造成 `01→04` 跳号且与脚本按 code 建目录错位，finalize 会重复建章，已于 2026-09-10 改回 `03_总论`）。即"不做的组号留空"，而不是"把后面的组往前挪"。
 - 本地 `知识详解/` 与飞书**同构**：本地目录=飞书父节点，本地 .md=飞书子页面。
 
 ---
@@ -62,11 +63,34 @@ CPA备考知识库（根）
 > 固定四个二级标题：一、知识拆解 / 二、考试指导 / 三、题答解析 / 四、学员补充；三、题答解析之后、四、学员补充之前固定设「## 关联知识点」导航节。**第四节无内容时整节省略**，其余三节为必备。
 
 ```markdown
+---
+type: KnowledgePoint
+title: "{官方知识点名}"
+description: "{NN_组名}知识点：{一句话定位}（{n}题）"
+tags: [cpa, {subject-slug}, 26-season, chapter-{NN}]   # subject-slug：accounting/tax-law/audit/...
+sources:
+  - id: lecture
+    resource: "原始资源/notes/{NN_讲名}/"              # 著录到「讲目录」，不指单个易改名 PDF
+    title: "精讲{NN}-{章} 讲义OCR（{页数}页，成品取目录内 *_OCR.md）"
+  - id: transcript
+    resource: "原始资源/videos/{NN_讲名}/transcript.md"
+    title: "精讲{NN} 视频转写（{字数}字，{老师}老师）"
+  - id: paper-{paperId}
+    resource: "paperId {paperId}"
+    title: "{卷名}"
+generated: { by: process:knowledge-build, at: YYYY-MM-DDTHH:mm:ss+08:00 }
+status: stable
+stale_after: 2027-03-31T23:59:59+08:00
+chapter: {NN_组名}
+exam_season: 2026
+question_count: {n}
+---
+
 # {官方知识点名}
 
 > 所属组：{NN_组名}
 > 来源：讲义 {a} 份 · 转写 {b} 讲 · 题 {c} 道（客观 {x} + 主观大题 {y}）
-> 适用：26 考季 CPA 税法
+> 适用：26 考季 CPA {科目}
 > 更新：YYYY-MM-DD
 
 ---
@@ -129,6 +153,7 @@ CPA备考知识库（根）
 - **计算大题全收不折叠**：以"大题"为不可拆单位全部收录（每道是完整业务情境），不做"典型题＋其余索引"，靠 `#### 大题N` 导航；篇幅长不构成删减理由。
 - 每题标注来源卷与 paperId；剔除自动化作业产生的 AI 错题。
 - 篇内题数（客观数 / 大题数 / 小问数）须与 collect 聚合结果逐项对平（质量门）。
+- **frontmatter 标准档（机器权威，与顶部人读 Context Block 对齐、不重复维护）**：`type` 只用 KnowledgePoint / ChapterIndex / Reference 三词表；`tags` 用英文 slug（`cpa,{subject-slug},26-season,chapter-{NN}`，组号取官方 code）；`sources.lecture.resource` **著录到讲目录 `原始资源/notes/{NN_讲名}/`**（成品为目录内 `*_OCR.md`），不指单个 PDF/PDF 改名即断链；transcript 指 `videos/{NN_讲名}/transcript.md`；题目用 `paper-{id}`+`paperId {id}`。飞书同步由 `resync_wiki_content.py` 自动剥离顶部 frontmatter，读者只看正文。标准字段全表见 AGENTS.md §3.12。
 - 高频度必须由题量脚本聚合，不凭经验标星。
 
 ---

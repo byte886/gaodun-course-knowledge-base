@@ -7,6 +7,9 @@ sources:
   - id: adr-012
     resource: ../../decisions/ADR-012-三层解耦与按知识点聚合.md
     title: ADR-012 三层解耦与按知识点聚合（范式级）
+  - id: adr-019
+    resource: ../../decisions/ADR-019-知识成品章号对齐官方code与著录命名口径.md
+    title: ADR-019 章号取官方 code、讲目录命名与 frontmatter 著录口径
   - id: exam-api
     resource: ../../../development/api/gaodun-exam-api.md
     title: 高顿作业接口档案（知识点取数口）
@@ -43,6 +46,11 @@ status: stable
 - 归并特例要显式登记（如 id=112376 并入「增值税一般计税方法应纳税额的计算」）。
 - 题目结构：客观题取顶层答案；**主观大题 type=5 是容器，必须下钻 `subQuestionList` 里 type=6 小问**（详见 [做题/试卷采集链路](workflow-exam-paper-pipeline.md)）。
 - 主流程四阶段：采集原始资源 → 按知识点聚合加工 → 成本地知识详解 → 校验后同步。
+
+## 成品编号与著录口径（ADR-019，只约束未来、不回溯已 finalize 课程）
+- **知识章目录号 = 档案卡 `structure.groups[].code`**；无来源的预科组（如会计 01 入门/02 衔接）只留空、**不把后面的组前移连续编号**（会计曾误建 `01_总论`、官方实为 03，已改回 `03_总论`）。
+- **讲目录命名**：`NN=idx-1` 两位补零（开班=00、正课从 01），只清文件系统非法字符、忠实保留平台标题里的 `&、（）·`；视频与讲义同规则。税法开班=01 是历史遗留、不回溯。
+- **frontmatter 标准档**：type∈KnowledgePoint/ChapterIndex/Reference（README=ChapterIndex）；tags 用英文 slug `[cpa,{subject-slug},26-season,chapter-{NN}]`；`sources.lecture` 著录到**讲目录**（成品取目录内 `*_OCR.md`），不指单个易改名 PDF；补壳阶段 status=draft、sources 填齐定稿才 stable。标准模板唯一权威是 `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` + AGENTS §3.12。
 
 ## 易踩坑
 - 不要按"第几讲"切成品文件——讲是授课顺序，知识点才是稳定主键。

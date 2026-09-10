@@ -309,21 +309,46 @@ def stage_frontmatter(profile, chapter_code):
         
         # 从文件名提取信息
         name = md_file.stem
-        
-        # 简单的frontmatter模板
-        frontmatter = f"""---
+        is_index = md_file.name == "README.md"  # 章目录页=ChapterIndex，其余=KnowledgePoint
+
+        # frontmatter 标准档壳：字段范式见 docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md
+        # 与 AGENTS.md §3.12；这里只补壳，sources 必须由知识生成环节按「lecture 指讲目录 /
+        # transcript / paperId」口径填齐、内容定稿后 status 再由 draft 改 stable，不得留空交付。
+        pk = profile.get("key", "")
+        subject_slug = pk.replace("cpa-", "", 1)
+        if subject_slug.endswith("-2026"):
+            subject_slug = subject_slug[:-5]
+        subject_slug = subject_slug or "cpa"
+        now_iso = datetime.now().astimezone().isoformat(timespec="seconds")
+        ch_name = chapter.get('name')
+        if is_index:
+            frontmatter = f"""---
+type: ChapterIndex
+title: {ch_code}_{ch_name}
+description: "{ch_code}_{ch_name} 章目录页（知识点清单 + 考试指导入口）"
+tags: [cpa, {subject_slug}, 26-season, chapter-{ch_code}]
+sources: []
+generated: {{ by: process:knowledge-build, at: "{now_iso}" }}
+status: draft
+stale_after: 2027-03-31T23:59:59+08:00
+chapter: "{ch_code}_{ch_name}"
+exam_season: "2026"
+---
+
+"""
+        else:
+            frontmatter = f"""---
 type: KnowledgePoint
 title: "{name}"
-description: "{chapter.get('name')} - {name}"
-tags: ["CPA", "会计", "{chapter.get('name')}", "{name}"]
+description: "{ch_code}_{ch_name}知识点：{name}"
+tags: [cpa, {subject_slug}, 26-season, chapter-{ch_code}]
 sources: []
-generated:
-  process: knowledge-build
-  at: "{datetime.now().isoformat()}"
-status: stable
-stale_after: "2027-03-31T23:59:59+08:00"
-chapter: "{ch_code}_{chapter.get('name')}"
+generated: {{ by: process:knowledge-build, at: "{now_iso}" }}
+status: draft
+stale_after: 2027-03-31T23:59:59+08:00
+chapter: "{ch_code}_{ch_name}"
 exam_season: "2026"
+question_count: 0
 ---
 
 """

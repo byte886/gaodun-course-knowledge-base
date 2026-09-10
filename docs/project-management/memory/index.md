@@ -11,7 +11,7 @@ okf_version: "0.2"
 
 * [四地存储分工与仓库版图](concepts/architecture-storage-layout.md) - Git/本地/网盘/飞书各放什么、data 软链与 gitignore 边界、什么才入库
 * [统一运行时工作区与 profile 分区](concepts/architecture-runtime-workspace.md) - 唯一 data/_workspace、账号级与课程级正交、收口函数取路径、分级清退
-* [课程数据三层解耦与按知识点聚合](concepts/architecture-knowledge-paradigm.md) - 原始资源/知识详解/_workspace 三层、一篇四节、官方 14 组 92 知识点、跨讲聚合
+* [课程数据三层解耦与按知识点聚合](concepts/architecture-knowledge-paradigm.md) - 原始资源/知识详解/_workspace 三层、一篇四节、官方组/知识点现算、跨讲聚合；成品章号取官方 code 不重编号、讲目录与 frontmatter 著录口径（ADR-019）
 * [静态/动态分离与知识库元数据边界](concepts/architecture-metadata-boundary.md) - docs 静态 vs project-management 动态、学员名/点赞数不进成品、不追求刷满分
 
 # 链路（Workflow）
