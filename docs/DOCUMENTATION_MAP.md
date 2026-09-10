@@ -167,7 +167,9 @@
 | ├ 共识小结模板 | `docs/project-management/templates/idea-to-tickets/consensus.md` | clarify模式产出：定了什么、为什么、放弃了什么 |
 | ├ 规范Spec模板 | `docs/project-management/templates/idea-to-tickets/spec.md` | spec模式产出：问题、方案、user stories、不做什么 |
 | ├ 工单Ticket模板 | `docs/project-management/templates/idea-to-tickets/ticket.md` | slice模式产出：垂直切片工单（目标/涉及层/验收/依赖/边界） |
-| └ 工单台账模板 | `docs/project-management/templates/idea-to-tickets/tickets-index.md` | slice模式产出：工单总表、依赖与并行、可并行批次 |
+| ├ 工单台账模板 | `docs/project-management/templates/idea-to-tickets/tickets-index.md` | slice模式产出：工单总表、依赖与并行、可并行批次 |
+| ├ 需求与决策溯源模板 | `docs/project-management/templates/idea-to-tickets/requirements.md` | clarify/spec：需求 + 为什么这么定；实例落 _workspace，稳定结论只放 ADR/OKF 指针 |
+| └ BUG过程台账模板 | `docs/project-management/templates/idea-to-tickets/bug-backlog.md` | 本任务开放缺陷生命周期；机制级问题关单时提炼到全局 ISSUES/OKF |
 
 ### 四、过程记录（Active — 做了什么）
 

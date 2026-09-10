@@ -114,6 +114,7 @@
 | WORKFLOW.md | `docs/` | 总体工作流程（持续更新） |
 | QUALITY_ASSURANCE.md | `docs/project-management/standards/` | 质量保证规范 |
 | PROJECT_MAINTENANCE.md | `docs/project-management/standards/` | 项目维护规则 |
+| memory/（OKF bundle） | `docs/project-management/memory/` | ADR/规范的**稳定结论**变化时同步对应 concept，并在 `log.md` 记一行；提交前 `okf_validate` 硬错误为 0。易变的进度/计数/当天日期/SHA 不进记忆，需要时实时读台账 |
 
 ---
 

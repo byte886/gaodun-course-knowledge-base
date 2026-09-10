@@ -32,6 +32,18 @@
 - 可自动化的检查（大文件、敏感信息）必须用 pre-commit hook 强制执行
 - 新增重要规则时，先问自己：这个规则放在哪一层？只放子文档够吗？
 
+### 1.1 动笔前先定落点（五类分工，避免过程件污染持久文档）
+
+| 内容性质 | 落点 | 生命周期 |
+|----------|------|----------|
+| 跨课活态台账（进度 / 问题） | 根 `project-management/active/`（TASK_STATUS、ISSUES） | 高频改、常驻 |
+| 稳定规范 / 方法论 | `docs/project-management/standards/`、`docs/development/` | 相对静态 |
+| 不可逆决策 | `docs/project-management/decisions/ADR-xxx` | 只增不改 |
+| 跨会话稳定结论 | `docs/project-management/memory/`（OKF，结论 + 相对指针） | 结论变才改、提交前过 `okf_validate` |
+| 单课过程件（工单 / 需求 / BUG / 报告 / 日志 / 草稿 / 一次性施工方案） | `data/_workspace/<course>/`（gitignore、不入库） | 任务完成即清 |
+
+**硬规则**：任务过程件不进 `docs/`、不入库；稳定、不可逆结论单向流入 ADR/OKF，过程件只保留 `→ 见 ADR-xxx / concept xxx` 指针、不复制结论正文（机制详见 AGENTS.md §3.11 工程记忆、§3.13 Idea-to-Tickets）。
+
 ---
 
 ## 二、文档分解原则

@@ -26,22 +26,24 @@ docs/project-management/        # 项目管理方法论（静态内容）
 │   └── DOC_SYNC_CHECKLIST.md    # 文档同步清单
 ├── decisions/                   # 决策记录（ADR，半静态，只增不改）
 │   ├── README.md                # ADR索引
-│   └── ADR-*.md                 # 各决策记录（ADR-001~018）
+│   └── ADR-*.md                 # 各决策记录（ADR-001~019）
 ├── memory/                      # OKF工程记忆bundle（跨会话稳定结论编译层）
 │   ├── index.md                 # 记忆入口（有什么、在哪）
 │   ├── log.md                   # 记忆层自身变更（倒序）
 │   └── concepts/                # 高密度concept（架构4/链路5/治理3/对照1）
 └── templates/                   # 任务工程模板（vendor进项目，不依赖全局技能）
-    └── idea-to-tickets/         # Idea-to-Tickets四模式模板
+    └── idea-to-tickets/         # Idea-to-Tickets 模板（clarify/spec/slice + 过程台账）
         ├── consensus.md         # clarify模式：共识小结
         ├── spec.md              # spec模式：带验收的规范
         ├── ticket.md            # slice模式：垂直切片工单
-        └── tickets-index.md     # slice模式：工单台账与依赖图
+        ├── tickets-index.md     # slice模式：工单台账与依赖图
+        ├── requirements.md      # 需求与决策溯源模板（实例落 _workspace，不入库）
+        └── bug-backlog.md       # BUG 生命周期台账模板（实例落 _workspace，不入库）
 ```
 
 > **动态内容**（任务状态、问题跟踪、测试计划、报告等）已移到项目根目录下的 `project-management/` 目录，详见 [project-management/README.md](../../project-management/README.md)。
 > **具体课程的专项质检/任务产物**放在对应课程目录下（和被验证对象在一起）；验证默认不单独成文、结论并入任务报告。
-> **一次性施工方案**（如 `存量迁移与course-manifest生成方案.md`）执行完成后保留原文作为施工记录，不改写历史。
+> **一次性施工方案 / 迁移脚本等任务过程件不进 docs/**：执行期间落 `data/_workspace/<course>/`，完成后把稳定、可复用的结论提炼进 ADR/OKF，过程件即清理（git 历史可溯），不在持久文档区保留"施工记录"僵尸文件。
 
 ---
 

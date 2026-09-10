@@ -302,6 +302,8 @@
 - 规范 Spec：`docs/project-management/templates/idea-to-tickets/spec.md`
 - 工单 Ticket：`docs/project-management/templates/idea-to-tickets/ticket.md`
 - 工单台账：`docs/project-management/templates/idea-to-tickets/tickets-index.md`
+- 需求与决策溯源：`docs/project-management/templates/idea-to-tickets/requirements.md`（实例落 `_workspace`）
+- BUG 过程台账：`docs/project-management/templates/idea-to-tickets/bug-backlog.md`（实例落 `_workspace`）
 
 ### 与 OKF 的关系（互补，不重复建设）
 
