@@ -61,7 +61,7 @@ docs/project-management/        # 项目管理方法论（静态内容）
 ### 测试驱动原则
 
 - 每个新功能/新流程先做**单样本测试**，验证通过后再批量执行
-- 测试前明确**测试目标、范围、步骤、通过标准**，记录到 `test-plans/测试计划_*.md`
+- 测试前明确**测试目标、范围、步骤、通过标准**，用 [TEST_PLAN_TEMPLATE](../development/templates/TEST_PLAN_TEMPLATE.md) 记录；测试计划是过程件，落 `data/_workspace/<course>/`（不入库），不再设常驻 `test-plans/` 目录
 - 测试过程中发现的问题立即记录，分类处理
 
 ### 缺陷分类与处理

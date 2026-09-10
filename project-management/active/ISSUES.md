@@ -38,16 +38,16 @@
 
 | ID | 问题描述 | 解决时间 | 解决方案 |
 |----|----------|----------|----------|
+| I-008 | CDP 采集脚本用 `browser.newPage()` 建临时播放/取 key 标签，底层默认激活到前台，生产者每轮预取（newPage+close）反复切走用户正在输入的前台标签、丢失输入焦点 | 2026-09-10 | `connect_browser` 新增 `newBackgroundPage()`（CDP `Target.createTarget{background:true}`，后台标签 hasFocus=false/visibility=hidden，不支持时兜底 newPage）；capture_video_key / fetch_question_video_keys / refresh_auth_token 三处统一改用；实测 hidden 下静音播放 + Worker 取 SD/FHD key 连续成功；沉淀进 OKF workflow-browser-cdp 与 CDP 连接手册 |
+| I-007 | 多科目节流调度器 throttled 取代单路 supervised 时漏带 caffeinate，Mac 空闲睡眠/CDP 瞬断仍会零报错静默停摆（能力回退） | 2026-09-10 | throttled 补 `caffeinate -i -w $$` 跟随调度器生命周期、退出自动结束；运行中进程补挂；OKF ep3 concept 标注"防睡眠是长跑必备、换调度器不能丢" |
+| I-006 | EP3 多阶段共享一个 key 缓存会饿死后序阶段：消费者取 key 只读不删、缓存只增不减，旧生产者按 profile 缓存总数阈值硬跳过，先跑阶段把总数顶高后，后跑阶段一个 key 没拿到却被永久跳过、空转到超时漏片 | 2026-09-10 | key 缓存改按「profile×阶段」独立文件 `<profile>__<阶段>.json`；生产者改按需滚动预取（pgrep 锚定活跃消费者、只给在跑阶段每轮供 prefetch_count 个），废弃缓存总数阈值；长跑去 `set -e`、total/offset 纯数字兜底。沉淀进 OKF ep3 concept、video-processing SOP |
 | I-003 | 机考交互方式未确认 | 2026-09-05 | 冲刺侦查证实机考是同题仿真副本（与试卷 questionId 100% 相同、考试说明一致、redo 同样带全答案），无新增题源，不重复采集、仅登记去重；会计做题线后因风控关闭（侦查过程报告存 `data/_workspace/cpa-tax-2026/task-reports/`） |
 | I-001 | 基础必修批量转写结果因脚本bug丢失 | 2026-09-08 | 课程已判定为正课精讲的粗讲先导版、放弃建库（本地副本删除、仅网盘留存），转写无需重跑，问题随课程放弃而关闭 |
 | I-002 | 百度网盘list API权限不足 | 2026-08-29 | 用Playwright操作百度网盘网页版，通过双击导航浏览目录结构和文件列表，验证了`/apps/CPA课程归档/高顿/CPA/课程库/`和`/待整理/`目录结构与规划一致 |
 | I-004 | 剩余文档未添加类型标注（62个中约58个未标） | 2026-08-29 | 57个文档全部补齐类型标注（Governance 6 / Task 11 / Concept 5 / Reference 10 / Active 25 / Knowledge 5） |
-| I-005 | 更多ADR决策记录待补充 | 2026-08-29 | 创建 ADR-001～006 六份决策记录 |
 | I-000 | WORKFLOW.md过大（980行），包含大量详细内容 | 2026-08-29 | 分解为300行精简版，详细内容移到专项文档，新建document-download.md |
 | I-000 | scripts/README.md只说明3个脚本，项目有19个 | 2026-08-29 | 补全为19个脚本完整索引，按8个功能分类 |
 | I-000 | development目录15个文件平铺，无分类 | 2026-08-29 | 分为api/workflow/tools/knowledge 4个子目录 |
-| I-000 | AGENTS.md为规则清单，缺少标准操作型内容 | 2026-08-29 | 重构为13节标准结构，补充Tech Stack/Setup/Code Style/Testing/Things to Avoid |
-| I-000 | 缺少文档地图，AI无法快速定位文档 | 2026-08-29 | 创建DOCUMENTATION_MAP.md，按场景和类型分类 |
 
 ---
 

@@ -4,6 +4,11 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-10
+
+- **Update**：`workflow-ep3-vod-decryption` 长跑模型从「单路 supervised 串行」补成「单路兜底 vs 多科目节流调度」双模型：多科目总入口 `throttled_ep3_download.sh`（1 生产者 round_robin 串行预取 key + 最多 MAX_PARALLEL 个纯消费者只读缓存下载、nice/taskpolicy 降后台类、自带 caffeinate 防睡眠）；记录三条勿回退硬经验——key 缓存按 profile×阶段独立（共用会被先跑阶段饿死）、只给活跃消费者阶段滚动预取（废弃缓存总数阈值硬跳过）、长跑生产者不 set -e 且计数字段纯数字兜底。来源：会计重点强化被共享缓存饿死漏片的实战定位与修复（离线正则三验证 + 运行时端到端验证）。AI 编译，未标 verified。
+- **Update**：`workflow-browser-cdp` 补「采集建临时标签必须后台、不抢用户输入焦点」：`browser.newPage()` 默认激活新标签、循环取 key 会反复切走用户前台标签；统一用 connect_browser 新增的 `newBackgroundPage()`（CDP `Target.createTarget{background:true}`，后台标签 hasFocus=false/visibility=hidden，不支持时兜底 newPage），capture/fetch_question/refresh_token 三处统一；实测 hidden 下静音播放+Worker 取 SD/FHD key 连续成功。对应全局 ISSUES I-008、CDP 手册 §4.5。AI 编译，未标 verified。
+
 ## 2026-09-09
 
 - **Update**：`workflow-ep3-vod-decryption` 补两条 T3 会计全面精讲批量实战结论：①清晰度只能由 m3u8 URL 鲁棒判——两路 CDN 命名 `glive2-video-resource/.../tc/FHD_xxx`（含 FHD 字样）vs `glive-video-cdn/outputm3u8/<uuid>_1080_xxx`（分辨率后缀、无 FHD），播放器默认就起播 1080 时整段只 init 一次 hls，`includes('FHD')` 会把真 1080 误标 SD、key 已截获却报「未取到 FHD key」稳定漏采 16 讲；capture 改 `classifyQuality`（先 FHD|1080、再 HD|720、余 SD），且分类函数必须在 `page.evaluate` 浏览器作用域内。②ep3 视频长跑必须套 `run_ep3_videos_supervised.sh`（`caffeinate -i` 防 Mac 睡眠/CDP 瞬断导致的零报错静默停摆——裸 nohup 曾停约 8h 仅落 36/261；断点续跑 + 连续 3 轮无增长判 ❌），不裸 nohup、同一时刻只跑一条（共用日常 Chrome）。来源 commit 32e8ac7 + 05 讲修复前后端到端对照。AI 编译，未标 verified。

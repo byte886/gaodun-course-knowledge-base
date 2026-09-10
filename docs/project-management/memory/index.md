@@ -4,7 +4,7 @@ okf_version: "0.2"
 # gaodun 工程记忆 bundle（project-memory）
 
 > 这是项目的**跨会话工程记忆入口**：把散落在 ADR / standards / guides 里、跨会话仍有效的稳定结论"编译"成少量高密度 concept。
-> 新会话恢复顺序：根 `AGENTS.md`（schema/规则）→ 本页 index（有什么、在哪）→ `CHANGELOG.md`（最近发生什么）→ 按需沿每篇的「来源与下钻」深读原始文档，不要整库灌入。
+> 新会话恢复顺序：根 `AGENTS.md`（schema/规则）→ 本页 index（有什么、在哪）→ 本目录 `log.md`（记忆层自身最近结构变更）/ 仓库根 `CHANGELOG.md`（业务变更时间线）→ 按需沿每篇的「来源与下钻」深读原始文档，不要整库灌入。
 > 本 bundle 只做"结论 + 指针"，**不复制、不替代** ADR / standards 原文；权威细节以被链接的源文档为准。易变状态（进度、计数、当天日期、SHA）不进本 bundle，需要时实时读台账。
 
 # 架构（Architecture）
