@@ -94,7 +94,8 @@ node scripts/cdp/ep3_download_videos.js --course 17244 --parent-grad 23408 \
 node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --out <目录>
 ```
 
-- 每讲产出 `<NN_讲名>/{video.mp4(1080P),subtitle.vtt,transcript.md,meta.json}`，临时 `_work` 用完即清。
+- 每讲产出 `<NN_讲名>/{video.mp4(1080P),subtitle.vtt,transcript.md,meta.json}`，临时 `_work` 用完即清（成功路径自动清；中断被杀会残留，见下方完整性核对）。
+- **离线完整性核对（每阶段收尾必跑，零网络/零风控）**：`node scripts/cdp/ep3_verify_local.js`（加 `--clean` 删除"成品视频已在"的中断残留 `_work`，加 `--json <f>` 落结构化结果）。判级：完整=视频非空且配 VTT；待下=有 meta/字幕但视频未到（进行态正常）；异常=0 字节视频或有视频缺字幕（退出码 1）。它**不武断报"缺老师"**：双老师科目只见 1 位老师的讲列为"单老师讲·待在线核对"（可能本就是老师独有讲，权威以在线 enum 清单为准，离线无法判定）。`--clean` 绝不删"讲内尚无成品视频"的活跃 `_work`（正在下载）。
 - 取 key 复用 `scripts/cdp/capture_video_key.js`（输出顶层数组 `[{quality,m3u8,keyAscii}]`，按 `videoId:res` 缓存），下载解密复用 `scripts/download_decrypt.js`。
 - 每个视频 CDP 取 key 约 26–30s（后台批量可接受）；双老师资源目录不分老师、文件名加老师前缀用 `--dual-teacher`（姚远_/陈蓓蓓_）。
 - 错误码：553649434=token 失效（须只读回包硬证据，先怀疑自身）；10161000=getVideoInfo 缺参数；40301=离线取 key 死路、必须走 CDP 真实播放。
