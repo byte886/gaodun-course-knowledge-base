@@ -125,8 +125,13 @@ def main():
         items = [it for it in items if args.only in it[1]]
 
     missing, failed, ok = [], [], 0
-    consec_fail = 0  # 连续失败计数：达阈值判定进入服务端写窗口，全局长冷却
-    window_level = 0  # 连续撞窗口的层级：冷却时长递增，成功一篇即归零（深窗口不反复续命）
+    new_written = 0  # 本轮真实新写成功数（不含 done 跳过）
+    # 每轮新写上限：lark-cli 经豆包转发代理访问飞书，单进程累计请求到阈值后代理层
+    # 返回 invalid_response（非飞书账号限流、非内容问题）；全新进程计数从零即可恢复。
+    # 故外层按批换新进程：本轮新写满 MAX_NEW 即主动干净退出，由外层 shell 重启续跑。
+    max_new = int(os.environ.get("RESYNC_MAX_NEW", "0"))  # 0=不限制
+    consec_fail = 0  # 连续失败计数：达阈值判定代理层累计限流，全局长冷却
+    window_level = 0  # 连续撞窗的层级：冷却时长递增，成功一篇即归零（深窗不反复续命）
     print(f"待处理文件 {len(items)} 个（map 共 {len(title2obj)} 个标题）")
     for i, (title, path) in enumerate(items, 1):
         obj = title2obj.get(title)
@@ -152,20 +157,28 @@ def main():
             with open(done_flag, "w", encoding="utf-8") as fh:
                 fh.write(title + "\n")
             print(f"[{i}/{len(items)}] ✓ {title}")
+            new_written += 1
+            if max_new and new_written >= max_new:
+                print(f"  === 本轮新写 {new_written} 篇达 RESYNC_MAX_NEW 上限，主动退出供外层换新进程批次 ===")
+                break
         else:
             failed.append((title, rel, err))
             consec_fail += 1
             print(f"[{i}/{len(items)}] ✗ 写入失败: {title}")
-            # 连续 2 篇失败即判定进入服务端写窗口（invalid_response 持续约 10 分钟），
+            # 连续 2 篇失败即判定转发代理层累计限流（invalid_response，非飞书账号/内容问题），
             # 全局长冷却、不在窗口内空转；冷却后继续，失败篇无 done、下轮断点补
             if consec_fail >= 2:
-                # 冷却递增：浅窗口 300s 够，深窗口反复撞时 300→600→900s 越等越久，
-                # 避免固定短冷却反复试探给窗口"续命"；任一成功即 window_level 归零
+                if max_new:
+                    # 批次模式：进程内不长冷却，连续 2 败即快速退出，交外层换新进程
+                    # （新进程=新代理会话）+ 外层休眠承担等待，避免单进程卡死空转
+                    print("  === 连续 2 篇失败，批次模式快速退出，交外层换新进程重试 ===", flush=True)
+                    break
+                # 单进程模式：冷却递增 300→600→900s，避免固定短冷却反复给限流"续命"
                 window_level += 1
                 base = float(os.environ.get("RESYNC_WINDOW_COOLDOWN", "300"))
                 cap = float(os.environ.get("RESYNC_WINDOW_CAP", "900"))
                 cool = min(base * window_level, cap)
-                print(f"  ~~~ 连续 {consec_fail} 篇失败，判定写窗口(第{window_level}层)，全局冷却 {cool:.0f}s（{time.strftime('%H:%M:%S')}）~~~", flush=True)
+                print(f"  ~~~ 连续 {consec_fail} 篇失败，判定代理限流(第{window_level}层)，全局冷却 {cool:.0f}s（{time.strftime('%H:%M:%S')}）~~~", flush=True)
                 time.sleep(cool)
                 consec_fail = 0
         time.sleep(float(os.environ.get("RESYNC_INTERVAL", "1.5")))
