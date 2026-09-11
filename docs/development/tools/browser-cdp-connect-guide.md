@@ -81,6 +81,8 @@ node scripts/cdp/connect_browser.js  # 环境自检：连接→列标签→断�
 |---|---|
 | `connect_browser.js` | 连接模块：Chrome 没开自动拉起（选上次/首个 Profile）、读端点、串行自动授权、退避重试、找页、安全断开；直接运行=自检 |
 | `press_allow.applescript` | macOS AX 代点「允许」（被连接模块自动调用，一般不用手动跑） |
+| `press_allow_locked.sh` | 代点的**跨进程互斥包装**：全机同一时刻只放一个代点 osascript 过（I-015/B-103），连接模块经它调用，一般不直接用 |
+| `cdp_consent_guard.sh` | **单例授权守护**：长跑下载期间由调度器拉起，1s 探测、发现授权 sheet 就代点+还焦、清掉连接窗口外的残留弹窗（I-015/B-104），pidfile 单例、收工回收 |
 | `refresh_auth_token.js` | token 自愈：连接日常 Chrome→找高顿 tab→`page.on('request')` 监听 `apigateway.gaodun.com` 请求的 `authentication` 头→reload 触发→存 `_account/auth/refresh_<时间>.jsonl`→findJwt 回读验活。做题脚本捕获 553649434 时自动调用，也可手动 `node scripts/cdp/refresh_auth_token.js` |
 
 在自己的业务脚本里这样用：
@@ -120,12 +122,14 @@ await safeDisconnect(browser);                        // 只断开调试，绝�
 ### 4.3 授权竞态与自动重试（稳定性关键）
 
 - 每次**新连接** Chrome 都会弹「要允许远程调试吗？」；WebSocket 在点「允许」前挂起，少数情况下在弹窗出现前直接回 **HTTP 403**（竞态）。
-- 模块做法：连接/重试期间跑一个**串行授权点击循环**（`startPressLoop`）——同一时刻最多一个 osascript、单次硬超时 2.5s、上一次结束再排下一次、结束即清理在途子进程；握手失败（403/超时）退避 1.2s 重试，默认最多 3 次。
+- 模块做法：连接/重试期间跑一个**串行授权点击循环**（`startPressLoop`）——单进程内同一时刻最多一个代点子进程、单次硬超时 4s、上一次结束再排下一次、结束即清理在途子进程；握手失败（403/超时）退避 1.2s 重试，默认最多 3 次。
 - 「允许」**无法在设置里永久关闭**（Chrome 刻意的显式同意设计），自动代点是标准对策，不是绕过安全。
 - **为什么必须「串行 + 只点 sheet」**（本节是踩坑后的定论，原理与数据见 [AX 指南 §5](../guides/macos-accessibility-automation.md)）：
-  1. 授权脚本若递归整张 Chrome 窗口，会遍历网页 `AXWebArea` 上万个节点，单次实测耗时 **9.3s**、必然被 2.5s 超时杀掉，表现为「永远点不中」；改为只查窗口的模态 `sheet` 后降到 **0.31s**；
+  1. 授权脚本若递归整张 Chrome 窗口，会遍历网页 `AXWebArea` 上万个节点，单次实测耗时 **9.3s**、必然被超时杀掉，表现为「永远点不中」；改为只查窗口的模态 `sheet` 后降到 **0.31s**；
   2. 若用 `setInterval` 不等返回就并发派生 osascript，多个 AppleScript 会在 System Events 里拥塞堆积、全部卡死，表现为「时好时坏」；必须串行；
   3. 点中后 sheet 立即关闭，脚本要点中即停、全程容错，否则会因访问失效元素报错。修复后连续 8 次连接全部成功、osascript 残留恒为 0。
+- **跨进程也要串行（I-015 / B-103）**：`inFlight` 只能管住单个 node 进程；多个取 key 进程各自跑 press 循环时，进程之间仍会并发抢 System Events。因此所有代点不直接调 `press_allow.applescript`，而统一经 **`press_allow_locked.sh`**——`mkdir` 原子锁保证全机同一时刻只有一个代点 osascript，持锁进程已死则按 PID 抢占陈旧锁，等锁约 2.5s 拿不到就本轮安静放弃（下轮再试，绝不硬闯）。
+- **代点生命周期要覆盖「连接窗口之外」（I-015 / B-104）**：`startPressLoop` 只在 `connectDailyChrome()` 握手期间存活，连接一 return 就 stop；但 sheet 可能晚到、单次 AXPress 时序不利没关掉、或连接退出后残留，此后再无代点者 → 弹窗一直挂着、焦点不还。长跑下载由调度器额外拉起**单例守护 `cdp_consent_guard.sh`**：每 1s 用一条合并 AppleEvent 探测 sheet，有则在锁保护下代点、没掉下一秒重点、并还焦给最近的非 Chrome 前台，无 sheet 零动作；调度器收工时 kill。握手期 800ms 内循环（快、减 403 重试）与全周期 1s 守护（清残留）共用同一把锁、互不重复。
 
 ### 4.4 只断开、不关页面
 
@@ -175,8 +179,9 @@ try {
 
 硬经验：
 - 还焦必须走 System Events `set frontmost of process "<name>"`；`tell application "X" to activate` 在 node 派生的 osascript 宿主下会被静默丢弃，对 Doubao 实测**反而会把焦点切走**。
-- 代点循环间隔维持 800ms：再短会因多个 osascript 并发访问 System Events 拥塞、反而点不中（血泪教训，见 startPressLoop 注释）。
+- 代点循环间隔维持 800ms：再短会因多个 osascript 并发访问 System Events 拥塞、反而点不中（血泪教训，见 startPressLoop 注释）；跨进程的并发由 `press_allow_locked.sh` 全局锁兜底。
 - 无弹窗时 `press_allow.applescript` 返回 pressed=false 且绝不切换焦点，可高频安全重复调用。
+- **连接结束后仍残留的弹窗**不是连接内循环能管的（它已 stop），长跑任务必须靠单例守护 `cdp_consent_guard.sh` 兜底；手动清一次残留：`osascript scripts/cdp/press_allow.applescript "Doubao"`，若 `pressed=true` 但 sheet 还在（时序竞态），再点一次即可。
 
 ### 4.6 Chrome 没开会自动拉起，Profile 怎么选
 
@@ -205,7 +210,7 @@ Profile 选择规则（`pickProfile()`，可传 `{profile:'Profile 1'}` 强制�
 | 访问 `127.0.0.1:9222/json/...` 返回 404 | 运行时通道本就无 HTTP 发现接口 | 正常现象，改读 `DevToolsActivePort` 拼带 UUID 的 ws 端点 |
 | WebSocket 连上却一直超时、等不到消息 | 用了不带 UUID 的端点，或用 Playwright `connectOverCDP`（当前版本兼容差） | 用带 UUID 端点 + `puppeteer-core`；见 ADR-010 |
 | 握手偶发 `Unexpected server response: 403` | 连接与授权弹窗竞态 | 模块已内置退避重试；若仍失败，确认辅助功能权限已授予 |
-| 授权弹窗在、却时好时坏甚至一直点不掉 | ①递归进网页 AXWebArea 单次遍历 9s+ 被超时杀；②并发 osascript 在 System Events 拥塞堆积 | 已修复为「只查 sheet + 串行点击循环」；详见 §4.3 与 [AX 指南 §5](../guides/macos-accessibility-automation.md) |
+| 授权弹窗在、却时好时坏甚至一直点不掉 | ①递归进网页 AXWebArea 单次遍历 9s+ 被超时杀；②单进程/跨进程并发 osascript 在 System Events 拥塞堆积；③连接进程已退出、代点循环随之 stop，残留/晚到 sheet 无人点 | ①只查 sheet + 串行点击循环；②代点全走 `press_allow_locked.sh` 全局锁；③长跑由单例 `cdp_consent_guard.sh` 全周期兜底；详见 §4.3、§4.5 与 [AX 指南 §5](../guides/macos-accessibility-automation.md) |
 | 弹窗在、但脚本没点掉 | 终端/宿主未获「辅助功能」权限；或想靠坐标点击（对该安全 sheet 无效） | 授予辅助功能权限，用元素级 AXPress（见 [AX 指南](../guides/macos-accessibility-automation.md)） |
 | `require('puppeteer-core')` 报 MODULE_NOT_FOUND | 没装依赖 / 用了全局安装却没配 NODE_PATH | 仓库根 `npm install`（见 §2） |
 | 页面请求报 `net::ERR_FAILED`、浏览器整体打不开网页但系统网络正常 | 长期运行的 Chrome 代理状态可能卡死（与 CDP 无关） | 重启 Chrome；用 `curl` 对照确认系统网络正常 |

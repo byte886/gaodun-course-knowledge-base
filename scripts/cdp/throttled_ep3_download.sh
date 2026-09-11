@@ -82,6 +82,12 @@ low bash scripts/cdp/round_robin_prefetch.sh accounting tax strategy econlaw aud
 PRODUCER_PID=$!
 echo "生产者已启动 PID=${PRODUCER_PID}（轮询预取 key）"
 
+# 单例「远程调试授权」守护：整个下载周期持续兜底代点 Chrome「允许远程调试」sheet、没点掉就重点、并还焦，
+# 补上 connect 内 press 循环只覆盖握手窗口的缺口（B-104）；脚本自带 pidfile 单例，重复启动安全退出。
+low bash scripts/cdp/cdp_consent_guard.sh >> "$LOG_DIR/consent_guard.log" 2>&1 &
+GUARD_PID=$!
+echo "授权守护已启动 PID=${GUARD_PID}（单例兜底代点 + 还焦）"
+
 # 2) 一个阶段缺多少个视频文件（本地完整性，唯一完成判据；只 exists 不读内容，毫秒级）
 stage_missing() {
   local profile="$1" stage="$2"
@@ -186,9 +192,11 @@ while true; do
   fi
 done
 
-# 4) 收尾：停掉生产者（while-true 轮询）与残留消费者
+# 4) 收尾：停掉生产者（while-true 轮询）、授权守护与残留消费者
 kill "$PRODUCER_PID" 2>/dev/null || true
+kill "$GUARD_PID" 2>/dev/null || true
 pkill -f round_robin_prefetch 2>/dev/null || true
+pkill -f cdp_consent_guard 2>/dev/null || true
 rm -f "$RUN_DIR"/*.pid 2>/dev/null || true
 echo "=========================================="
 echo "EP3 节流下载调度器  全部完成 $(date '+%F %T')"

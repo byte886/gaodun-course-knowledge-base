@@ -21,7 +21,7 @@
 | 环境与工具 | 9 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
 | 检查与验证 | 8 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检、OKF 工程记忆校验 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
-| 浏览器CDP连接 | 3 | 日常Chrome连接、授权自动点、网络抓包骨架（scripts/cdp/） |
+| 浏览器CDP连接 | 5 | 日常Chrome连接、授权自动点（含跨进程锁包装、单例授权守护）、网络抓包骨架（scripts/cdp/） |
 | 高顿做题接口链路 | 12 | 只读侦查、抓大纲/取题、UI对照、纯接口做卷与批量补做、papers 原料只读补采、冲刺 6 卷统一入口（scripts/cdp/） |
 | 飞书知识库同步 | 4 | 新结构(14组→92知识点)同步、批量同步建节点、节点内容更新两版 |
 | 侦查/PoC 网络采集 | 3 | 持久化浏览器 PoC、Playwright 网络钩子注入与导出（备用/备查路线） |
@@ -550,7 +550,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 八、浏览器 CDP 连接（2个，位于 `scripts/cdp/`）
+## 八、浏览器 CDP 连接（4个，位于 `scripts/cdp/`）
 
 > 用 puppeteer-core 经 Chrome 144+ 运行时调试通道连接用户**正在使用的日常 Chrome**（默认 Profile、复用登录态、免重启免重登）。选型见 ADR-010，手册见 `docs/development/tools/browser-cdp-connect-guide.md`。依赖在仓库根 `npm install`（node_modules 不入库）。
 
@@ -573,6 +573,22 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | 一般由 connect_browser.js 自动调用；手工调试：`osascript scripts/cdp/press_allow.applescript` |
 | **可靠性** | ✅ 高（需在系统设置授予「辅助功能」权限） |
 | **相关文档** | `docs/development/guides/macos-accessibility-automation.md` |
+
+### `cdp/press_allow_locked.sh` — 代点「允许」的跨进程互斥包装
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 透明代理 `press_allow.applescript`，用 mkdir 原子锁保证**全机同一时刻只跑一个代点 osascript**，根治多取 key 进程并发访问 System Events 拥塞点不中（I-015/B-103）；陈旧锁按持锁 PID 存活性抢占，等锁约 2.5s 超时则本轮安静放弃 |
+| **用法** | 一般由 connect_browser.js 自动调用；手工：`bash scripts/cdp/press_allow_locked.sh ["还焦App名"]` |
+| **可靠性** | ✅ 高，已测锁等待/陈旧锁抢占 |
+
+### `cdp/cdp_consent_guard.sh` — 单例「远程调试授权」守护
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 长跑下载期间常驻：每 1s 一条合并 AppleEvent 探测 Chrome 授权 sheet，发现即经锁包装代点、没掉下一秒重点、并还焦给最近的非 Chrome 前台 App，无 sheet 零动作不抢焦；补上连接内 press 循环只覆盖握手窗口、残留/晚到弹窗无人点的缺口（I-015/B-104） |
+| **用法** | 由 `throttled_ep3_download.sh` 拉起/收工 kill（pidfile 单例，重复启动安全退出）；手工：`bash scripts/cdp/cdp_consent_guard.sh` |
+| **可靠性** | ✅ 高，已测单例 + `autoPress:false` 只靠守护真实连接 1.8s 通过 |
 
 ---
 

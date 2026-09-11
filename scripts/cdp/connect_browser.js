@@ -36,6 +36,9 @@ const path = require('path');
 const { execFile, execFileSync } = require('child_process');
 
 const PRESS_SCRIPT = path.join(__dirname, 'press_allow.applescript');
+// 跨进程串行化包装（B-103）：所有代点「允许」都经它拿全机互斥锁后再调 PRESS_SCRIPT，
+// 避免多个取 key 进程各自的 press 循环并发访问 System Events 互相拥塞、谁都点不中。
+const PRESS_LOCKED = path.join(__dirname, 'press_allow_locked.sh');
 const USER_DATA_DIR = process.env.CHROME_USER_DATA_DIR
   || path.join(os.homedir(), 'Library/Application Support/Google/Chrome');
 // DevToolsActivePort 位于 user-data-dir 根（不随具体 Profile 变化）
@@ -177,7 +180,8 @@ async function ensureChromeRunning(opt = {}) {
  */
 function pressConsentOnce(restoreTo = '') {
   return new Promise((resolve) => {
-    execFile('osascript', [PRESS_SCRIPT, restoreTo || ''], { timeout: 2500 }, (err, stdout) => {
+    // 经跨进程锁包装（不再直接调 osascript），超时含等锁预算故放宽到 4s
+    execFile('bash', [PRESS_LOCKED, restoreTo || ''], { timeout: 4000 }, (err, stdout) => {
       if (err) return resolve({ pressed: false, detail: err.message });
       const out = (stdout || '').trim();
       resolve({ pressed: /pressed=true/.test(out), detail: out });
@@ -193,14 +197,15 @@ function pressConsentOnce(restoreTo = '') {
  * 改为「上一次结束或超时后再排下一次」，并对单次点按设硬超时，绝不堆积。
  * @returns {() => void} stop()：停止循环
  */
-function startPressLoop({ intervalMs = 800, pressTimeoutMs = 2500, debug = !!process.env.DEBUG_CDP, restoreTo = '' } = {}) {
+function startPressLoop({ intervalMs = 800, pressTimeoutMs = 4000, debug = !!process.env.DEBUG_CDP, restoreTo = '' } = {}) {
   let stopped = false;
   let inFlight = false;
   let timer = null;
   let currentChild = null;
   const runOnce = () => new Promise((resolve) => {
     const t0 = Date.now();
-    currentChild = execFile('osascript', [PRESS_SCRIPT, restoreTo || ''], { timeout: pressTimeoutMs }, (err, stdout, stderr) => {
+    // 经跨进程锁包装：全机同一时刻只允许一个代点 osascript（B-103），超时含等锁预算
+    currentChild = execFile('bash', [PRESS_LOCKED, restoreTo || ''], { timeout: pressTimeoutMs }, (err, stdout, stderr) => {
       currentChild = null;
       const out = (stdout || '').trim();
       resolve({
