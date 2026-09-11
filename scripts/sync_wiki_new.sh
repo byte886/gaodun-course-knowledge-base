@@ -15,12 +15,16 @@ TAX="$COURSE_LOCAL_ROOT"
 #   会计：COURSE_PROFILE=cpa-accounting-2026 WIKI_PARENT=TazhwSJ4mi58StkDT2ccahMGnlb bash scripts/sync_wiki_new.sh
 SPACE_ID="${WIKI_SPACE_ID:-7678261729456852192}"
 PARENT="${WIKI_PARENT:-UM6bwW23tiYkCVk3nXtc3TpBnGe}"
+# 节点创建步进间隔（秒）：默认沿用历史值；遇飞书限流（internal error/查询4次失败）时调大，如 WIKI_STEP_PAUSE=2.2 WIKI_GROUP_PAUSE=2.5
+STEP_PAUSE="${WIKI_STEP_PAUSE:-0.7}"
+GROUP_PAUSE="${WIKI_GROUP_PAUSE:-0.8}"
 _WP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-cpa-tax-2026}}"
 WS="$PROJECT_DIR/data/_workspace/$_WP"
 DONE_DIR="$WS/logs/wiki_done"
 MAP_FILE="$WS/logs/wiki_node_map.tsv"
 mkdir -p "$DONE_DIR"
 touch "$MAP_FILE"
+CREATED_COUNT=0
 
 # 创建节点并写入内容，返回 node_token（通过stdout最后一行）
 create_and_fill() {
@@ -99,6 +103,13 @@ for n in d.get('data',{}).get('nodes',[]):
   echo "$node_token $obj_token" > "$done_flag"
   echo -e "$title\t$node_token\t$obj_token\t$parent" >> "$MAP_FILE"
   echo "[OK] $title (node=$node_token)" >&2
+  # 批次节流：每真正处理 WIKI_BATCH 个节点（跳过的不计）主动长休，规避飞书滑动窗口限流
+  CREATED_COUNT=$((CREATED_COUNT+1))
+  if [ "${WIKI_BATCH:-100000}" -gt 0 ] && [ "$CREATED_COUNT" -ge "${WIKI_BATCH:-100000}" ]; then
+    echo "[批次节流] 已处理 $CREATED_COUNT 个真实节点，休眠 ${WIKI_BATCH_SLEEP:-0}s 规避限流..." >&2
+    sleep "${WIKI_BATCH_SLEEP:-0}"
+    CREATED_COUNT=0
+  fi
   echo "$node_token"
 }
 export -f create_and_fill
@@ -113,9 +124,9 @@ echo "============================================"
 # 1. 课程全局篇（课程根下）
 echo "--- 课程全局篇 ---"
 create_and_fill "$PARENT" "课程做题思路解析" "$TAX/知识详解/课程做题思路解析.md"
-sleep 0.8
+sleep "$GROUP_PAUSE"
 create_and_fill "$PARENT" "考试指导速查手册" "$TAX/知识详解/考试指导速查手册.md"
-sleep 0.8
+sleep "$GROUP_PAUSE"
 
 # 2. 14个组
 TOTAL_GROUPS=0; TOTAL_POINTS=0
@@ -127,7 +138,7 @@ for group_dir in "$TAX/知识详解"/*/; do
   echo "--- 组: $group_name ---"
   group_node=$(create_and_fill "$PARENT" "$group_name" "$readme")
   TOTAL_GROUPS=$((TOTAL_GROUPS+1))
-  sleep 0.8
+  sleep "$GROUP_PAUSE"
 
   # 组下知识点文档（排除README）
   for md in "$group_dir"/*.md; do
@@ -137,7 +148,7 @@ for group_dir in "$TAX/知识详解"/*/; do
     point_title="${fname%.md}"
     create_and_fill "$group_node" "$point_title" "$md" > /dev/null
     TOTAL_POINTS=$((TOTAL_POINTS+1))
-    sleep 0.7
+    sleep "$STEP_PAUSE"
   done
 done
 
