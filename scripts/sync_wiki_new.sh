@@ -10,9 +10,11 @@ cd "$PROJECT_DIR"
 # shellcheck source=course_config.sh
 source "$SCRIPT_DIR/course_config.sh"
 TAX="$COURSE_LOCAL_ROOT"
-# TODO 跨课：下列飞书空间/根节点为税法空间真实值，会计建空间后迁入 profile.feishu，暂不臆造
-PARENT="UM6bwW23tiYkCVk3nXtc3TpBnGe"
-SPACE_ID="7678261729456852192"
+# 飞书空间/课程根节点：默认税法真实值，跨课时用环境变量 WIKI_SPACE_ID / WIKI_PARENT 覆盖
+# （课程目录由 COURSE_PROFILE/GAODUN_COURSE_PROFILE 经 course_config.sh 切换，勿写死）
+#   会计：COURSE_PROFILE=cpa-accounting-2026 WIKI_PARENT=TazhwSJ4mi58StkDT2ccahMGnlb bash scripts/sync_wiki_new.sh
+SPACE_ID="${WIKI_SPACE_ID:-7678261729456852192}"
+PARENT="${WIKI_PARENT:-UM6bwW23tiYkCVk3nXtc3TpBnGe}"
 _WP="${COURSE_PROFILE:-${GAODUN_COURSE_PROFILE:-cpa-tax-2026}}"
 WS="$PROJECT_DIR/data/_workspace/$_WP"
 DONE_DIR="$WS/logs/wiki_done"
@@ -82,7 +84,7 @@ for n in d.get('data',{}).get('nodes',[]):
   # 写入 markdown 内容（通过 stdin 管道，避免 @file allowlist 限制），失败重试 3 次
   local upd=""
   for attempt in 1 2 3; do
-    upd=$(cat "$file" | python3 "$SCRIPT_DIR/wiki_link_resolve.py" | lark-cli docs +update --doc "$obj_token" --command overwrite --doc-format markdown --content - --as user --format json 2>&1)
+    upd=$(cat "$file" | WIKI_MAP="$MAP_FILE" python3 "$SCRIPT_DIR/wiki_link_resolve.py" | lark-cli docs +update --doc "$obj_token" --command overwrite --doc-format markdown --content - --as user --format json 2>&1)
     if echo "$upd" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin).get('ok') else 1)" 2>/dev/null; then
       break
     fi

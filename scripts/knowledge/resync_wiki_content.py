@@ -24,9 +24,14 @@ import time
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "scripts", "knowledge"))
 from course_profile import load_profile  # noqa: E402
-MAP_FILE = os.path.join(REPO, "data", "_workspace", "cpa-tax-2026", "logs", "wiki_node_map.tsv")
+_profile = load_profile()
+# 标题→obj_token 映射随 profile 走（建树脚本 sync_wiki_new.sh 产出），可用 WIKI_MAP 覆盖
+MAP_FILE = os.environ.get(
+    "WIKI_MAP",
+    os.path.join(REPO, "data", "_workspace", _profile["key"], "logs", "wiki_node_map.tsv"),
+)
 RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
-COURSE_DIR = os.path.join(REPO, load_profile()["paths"]["localRoot"], "知识详解")
+COURSE_DIR = os.path.join(REPO, _profile["paths"]["localRoot"], "知识详解")
 
 
 def strip_frontmatter(text):
