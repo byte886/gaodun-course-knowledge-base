@@ -92,11 +92,15 @@ def update_one(title, path, obj):
         last = proc.stdout + proc.stderr
         if '"ok":true' in last.replace(" ", "") or '"ok": true' in last:
             return True, ""
+        # 递增退避：前两次扛瞬时抖动(3/8s)，后三次扛账号级写限流滑动窗口(30/45/60s)
+        # 实测 docs +update 连续快速写约 36-40 次后进入拒绝窗口，停写休息约 1 分钟即恢复，
+        # 短等(2s)重试扛不过窗口、会把可恢复的限流误计为失败
+        backoff = [3, 8, 30, 45, 60][attempt] if attempt < 5 else 60
         # token 失效类错误需要更长等待让 lark-cli 刷新
         if "temporary token" in last or "Authorization" in last or "invalid_response" in last:
-            time.sleep(10)
+            time.sleep(max(backoff, 10))
         else:
-            time.sleep(2)
+            time.sleep(backoff)
     return False, last[:300]
 
 
