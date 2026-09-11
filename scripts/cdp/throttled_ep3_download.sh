@@ -41,14 +41,15 @@ if command -v caffeinate >/dev/null 2>&1; then
 fi
 
 # 消费者任务队列：profile|阶段(中文,与缓存命名一致)|tag(ASCII,用于PID/日志)
-# 顺序即补位优先级；正课会计四阶段优先，其余名师课科目交错：审计/财管大头（基础必修+全面精讲）
-# 排中游，避免被会计全程压在队尾；量小的重点强化/考前冲刺垫后（2026-09-10 纳管审计/财管）
+# 顺序即补位优先级；正课会计四阶段优先，其余名师课科目「基础必修+全面精讲」大头排中游交错，
+# 量小的重点强化/考前冲刺统一垫后（2026-09-10 纳管审计/财管；2026-09-11 补齐税法四阶段、战略/经济法三阶段）
 TASKS=(
   "ep3-accounting-2026|全面精讲|ac_quanjing"
   "ep3-accounting-2026|基础必修|ac_jichu"
   "ep3-accounting-2026|重点强化|ac_zhongdian"
   "ep3-accounting-2026|考前冲刺|ac_kaoqian"
   "ep3-tax-2026|全面精讲|tax_quanjing"
+  "ep3-tax-2026|基础必修|tax_jichu"
   "ep3-audit-2026|基础必修|audit_jichu"
   "ep3-audit-2026|全面精讲|audit_quanjing"
   "ep3-strategy-2026|全面精讲|strategy_quanjing"
@@ -59,6 +60,12 @@ TASKS=(
   "ep3-audit-2026|考前冲刺|audit_kaoqian"
   "ep3-finance-2026|重点强化|fin_zhongdian"
   "ep3-finance-2026|考前冲刺|fin_kaoqian"
+  "ep3-tax-2026|重点强化|tax_zhongdian"
+  "ep3-tax-2026|考前冲刺|tax_kaoqian"
+  "ep3-strategy-2026|重点强化|strategy_zhongdian"
+  "ep3-strategy-2026|考前冲刺|strategy_kaoqian"
+  "ep3-econlaw-2026|重点强化|econlaw_zhongdian"
+  "ep3-econlaw-2026|考前冲刺|econlaw_kaoqian"
 )
 
 # 后台降级包装：CPU nice 最低 + macOS utility 调度类（IO/CPU 均让位于前台）
@@ -89,8 +96,10 @@ total_meta=0
 if c.exists():
     for lec in c.iterdir():
         if not lec.is_dir() or lec.name.startswith("."): continue
+        # 只认双老师改造后的 <老师>_meta.json（消费者 --dual-teacher 落盘格式）。
+        # 裸 meta.json 是单老师时代历史遗留，其视频已由带老师前缀文件覆盖；不计入完整性，
+        # 否则已完整阶段会被误报缺量、消费者反复空转占槽（2026-09-11 会计/税法全面精讲各误报30/29）。
         metas=list(lec.glob("*_meta.json"))
-        if (lec/"meta.json").exists(): metas.append(lec/"meta.json")
         for m in metas:
             total_meta+=1
             stem=m.name[:-len("_meta.json")] if m.name.endswith("_meta.json") else ""

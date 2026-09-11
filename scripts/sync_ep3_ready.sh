@@ -40,8 +40,9 @@ stage=pathlib.Path(sys.argv[1]); out=[]
 for lec in sorted(stage.iterdir()):
     if not lec.is_dir() or lec.name.startswith("."):
         continue
+    # 只认双老师改造后的 <老师>_meta.json；裸 meta.json 为单老师时代遗留（视频已在带前缀文件中），
+    # 若计入会因找不到裸 video.mp4 而把整讲误判为不完整、漏传网盘（2026-09-11 对齐 throttled 口径）
     metas=list(lec.glob("*_meta.json"))
-    if (lec/"meta.json").exists(): metas.append(lec/"meta.json")
     if not metas:
         continue  # 非视频讲保守不传
     ok=True

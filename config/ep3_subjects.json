@@ -1,7 +1,7 @@
 {
   "description": "EP3平台名师课科目配置 - 支持n个科目，适应后面的多个课程同时变化",
-  "version": "2.0.0",
-  "updated": "2026-09-10",
+  "version": "2.1.0",
+  "updated": "2026-09-11",
   "global_cache": "data/_workspace/_account/ep3/global_keycache.json",
   "log_dir": "data/_workspace/_account/ep3/logs",
   "cache_dir": "data/_workspace/_account/ep3/keycache",
@@ -29,7 +29,10 @@
       "name": "tax",
       "profile": "ep3-tax-2026",
       "stages": [
-        "全面精讲"
+        "基础必修",
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
       ],
       "teachers": [
         "杨志国",
@@ -42,7 +45,9 @@
       "name": "strategy",
       "profile": "ep3-strategy-2026",
       "stages": [
-        "全面精讲"
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
       ],
       "teachers": [
         "吴奕"
@@ -54,7 +59,9 @@
       "name": "econlaw",
       "profile": "ep3-econlaw-2026",
       "stages": [
-        "全面精讲"
+        "全面精讲",
+        "重点强化",
+        "考前冲刺"
       ],
       "teachers": [
         "沈甜甜",
