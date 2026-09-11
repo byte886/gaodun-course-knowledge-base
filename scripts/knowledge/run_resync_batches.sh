@@ -38,6 +38,10 @@ while :; do
   nd=$(ls "$DONE_DIR" 2>/dev/null | wc -l | tr -d ' ')
   gain=$((nd - d))
   echo "--------- 轮次 $round 止 done=$nd/$TOTAL 本轮新增$gain $(date '+%T') ---------" >> "$LOG"
+  if [ "$nd" -ge "$TOTAL" ]; then
+    echo "######### 全部 $TOTAL 篇完成，批次循环结束 $(date '+%T') #########" >> "$LOG"
+    break
+  fi
   # 按本轮新增量决定休眠：写满=健康短休；没写满=中途限流加倍休；
   # 连续零新增=深限流，休眠指数递增(PAUSE*2^empty)封顶 EMPTY_CAP，有任意新增即归零
   if [ "$gain" -ge "$MAX_NEW" ]; then

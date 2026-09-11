@@ -86,13 +86,20 @@ def collect_files():
 def update_one(title, path, obj):
     raw = open(path, encoding="utf-8").read()
     raw = strip_frontmatter(raw)
+    # 必须显式把本 profile 的 map 传给 resolver：resolver 默认回退到仓库根 logs/（不存在），
+    # 不传 WIKI_MAP 会导致其映射表为空、所有相对链接都转不成 cite（2026-09-12 会计课踩过，
+    # 第二遍 169 篇内链全部退化成纯文本，不得不第三遍重刷）
     resolved = subprocess.run(
-        ["python3", RESOLVER], input=raw, capture_output=True, text=True, cwd=REPO
+        ["python3", RESOLVER], input=raw, capture_output=True, text=True, cwd=REPO,
+        env={**os.environ, "WIKI_MAP": MAP_FILE},
     ).stdout
     # 守卫：resolver 输出空时不发空写请求（否则 lark-cli 报 requires --content，
     # 属 validation 错误、重试 5 次纯浪费），直接返回真因
     if not resolved.strip():
         return False, "wiki_link_resolve 输出为空（resolver 异常），未发写请求"
+    # fail-loud：同目录 ./xxx.md 链接本应全部转成 cite，残留说明 WIKI_MAP 没生效
+    if "](" + "./" in resolved:
+        print(f"    [警告] {title} resolver 后仍残留 ./ 相对链接（cite 未生效，检查 WIKI_MAP 是否传对）", flush=True)
     last = ""
     # 单篇只做 3 次快速重试（3/8/15s，共约 26s）扛瞬时网关抖动；
     # 持续 invalid_response / 账号写窗口由 main 的「连续失败全局冷却」处理，

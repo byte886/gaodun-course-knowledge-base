@@ -16,7 +16,9 @@ cite 与完整 URL 一样，点击后都在【新标签页】打开——飞书�
 - 本地源文件保留 ./ 相对链接不动，仅在写入飞书的管道里做转换；
 - cite 渲染文字固定为目标文档标题，故要求链接文字等于目标文件名（已全量核验一致）；
 - 找不到映射的链接保持原样并向 stderr 告警，绝不臆造 token；
-- obj_token 取自 data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv 第 3 列（该表已去重，标题唯一）。
+- obj_token 取自 WIKI_MAP 环境变量指向的 wiki_node_map.tsv 第 3 列（该表已去重，标题唯一）。
+  ⚠️ 调用方（如 resync_wiki_content.py）必须显式 export WIKI_MAP=data/_workspace/<profile>/logs/wiki_node_map.tsv；
+  未设时仅回退仓库根 logs/（通常不存在），映射为空会让所有链接静默保留原样——这是严重隐患。
 """
 import os
 import re
@@ -34,6 +36,12 @@ if os.path.isfile(MAP_FILE):
         cols = line.rstrip("\n").split("\t")
         if len(cols) >= 3 and cols[0]:
             title2obj[cols[0]] = cols[2]
+if not title2obj:
+    print(
+        f"[wiki_link_resolve][严重] 映射表为空或不存在: {MAP_FILE}；"
+        f"所有相对链接都无法转成 cite。请显式 export WIKI_MAP=data/_workspace/<profile>/logs/wiki_node_map.tsv",
+        file=sys.stderr, flush=True,
+    )
 
 text = sys.stdin.read()
 _missing = set()
