@@ -82,6 +82,10 @@ def update_one(title, path, obj):
     resolved = subprocess.run(
         ["python3", RESOLVER], input=raw, capture_output=True, text=True, cwd=REPO
     ).stdout
+    # 守卫：resolver 输出空时不发空写请求（否则 lark-cli 报 requires --content，
+    # 属 validation 错误、重试 5 次纯浪费），直接返回真因
+    if not resolved.strip():
+        return False, "wiki_link_resolve 输出为空（resolver 异常），未发写请求"
     last = ""
     for attempt in range(5):
         proc = subprocess.run(
