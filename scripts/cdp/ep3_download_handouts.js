@@ -26,7 +26,7 @@ const safe = (s) => String(s || '未命名').replace(/[\/\\:]/g, '-').trim();
 
 // B 方案落位规则（用户 2026-09-09）：目录不按老师分层（沿用内容结构，两位老师同目录），
 // 老师只进文件名前缀；最终知识详解两源 Fan-In 成一套。
-const TEACHERS = ['陈蓓蓓', '姚远', '罗翔', '郁刚', '王潇粒'];
+const TEACHERS = ['陈蓓蓓', '姚远', '罗翔', '郁刚', '王潇粒', '王依然', '李晶'];
 const teacherOf = (h) => {
   const s = `${h.category || ''} ${h.name || ''}`;
   return TEACHERS.find((t) => s.includes(t)) || '其他';

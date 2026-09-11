@@ -391,8 +391,18 @@ async function downloadOne(leaf, ctx) {
   } else {
     const wanted = streams[res];
     if (!wanted || !wanted.keyAscii) throw new Error(`capture 未取到 ${res} key（${dirName}）`);
+    // 消费者模式：key长期有效，但缓存的 m3u8 URL 里 token 会过期(403)。实时刷新 m3u8、复用缓存 key
+    let m3u8Url = wanted.m3u8;
+    if (consumer) {
+      try {
+        const fresh = await getLiveResource(videoId, res);
+        m3u8Url = fresh.m3u8Url;
+      } catch (e) {
+        log(`  ⚠ 实时刷新m3u8失败，回退缓存URL: ${e.message}`);
+      }
+    }
     log(`  下载解密 ${res} key=${wanted.keyAscii}: ${dirName}`);
-    decryptToMp4(wanted.m3u8, wanted.keyAscii, mp4, path.join(lessonDir, '_work'), concurrency);
+    decryptToMp4(m3u8Url, wanted.keyAscii, mp4, path.join(lessonDir, '_work'), concurrency);
     fs.rmSync(path.join(lessonDir, '_work'), { recursive: true, force: true });
     log(`  ✓ 视频完成: ${dirName} (${(fs.statSync(mp4).size / 1e6).toFixed(1)}MB)`);
   }
