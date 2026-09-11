@@ -236,6 +236,13 @@ lark-cli wiki +node-delete --node-token "<URL>" --yes
 
 **操作要点**：续跑前先 `ps` 确认无同类脚本残留（严防双开抢同一写窗口）；每轮跑完看进程是否自然退出（日志"同步完成"），再用"本地成品标题 vs done_flag"的正确口径列缺失（组节点按章目录名、知识点按 md 文件名去 .md，别用 README 当标题），冷却 60-90s 后只对缺失组续跑。
 
+**纯 `docs +update` 正文批量覆盖（resync）的实测补充（2026-09-11 晚会计课 169 篇第二遍覆盖）**：
+
+- **阈值更低**：纯写（无查询间隔）连续约 **15 篇**即触发，比建树 node-create 混合查询的 36-40 次更早（纯写密度高）。净写速率必须压到窗口恢复速率以下，稳态参数 `RESYNC_BATCH_SIZE=4 RESYNC_BATCH_PAUSE=120 RESYNC_INTERVAL=5`（每 4 篇休 120s、篇间 5s）。
+- **失败真实形态**：`{"ok":false,"error":{"type":"internal","subtype":"invalid_response","message":"API returned an invalid JSON response: response parse error: invalid character 'e' looking for beginning of value"}}`，进程 rc=5——飞书网关在窗口内返回**非 JSON 文本**（以字母 e 开头）。仍不是 token/权限/内容问题，不要让用户重新登录。
+- **恢复时长随累计深度递增**：浅窗口停写约 5 分钟；整晚密集写叠加失败重试会累积成深窗口，需**彻底静默约 15 分钟**。窗口内继续发请求会给窗口"续命"，固定短冷却反复试探反而恢复更慢。
+- **标准解法（已固化进 `scripts/knowledge/resync_wiki_content.py`）**：①每篇成功落 `logs/resync_done/<safe标题>.done`，重跑零 API 跳过、多轮只补未成功、不重复消耗写配额（`--force` 全量重刷）；②单篇只做 3 次快速重试（3/8/15s）扛瞬时网关抖动，不在单篇内长退避空转；③主循环连续 2 篇失败即判定进入窗口、全局**递增**冷却 300→600→900s（`RESYNC_WINDOW_COOLDOWN`/`RESYNC_WINDOW_CAP`），任一成功即归零，深窗口自动越等越久；④每次失败打印 rc 与原始返回，便于区分限流 / 参数 / resolver 输出空。收敛判据：`ls logs/resync_done | wc -l` = 总数、汇总"成功 N 无映射 0 失败 0"、进程自然退出。
+
 ---
 
 > 本文档记录飞书 API 使用中的技术问题和解决方案。遇到新问题时，按"问题→错误示例→正确示例→原因→最佳实践"的格式补充到本文档。

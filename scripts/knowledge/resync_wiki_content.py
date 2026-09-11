@@ -126,6 +126,7 @@ def main():
 
     missing, failed, ok = [], [], 0
     consec_fail = 0  # 连续失败计数：达阈值判定进入服务端写窗口，全局长冷却
+    window_level = 0  # 连续撞窗口的层级：冷却时长递增，成功一篇即归零（深窗口不反复续命）
     print(f"待处理文件 {len(items)} 个（map 共 {len(title2obj)} 个标题）")
     for i, (title, path) in enumerate(items, 1):
         obj = title2obj.get(title)
@@ -146,6 +147,7 @@ def main():
         if success:
             ok += 1
             consec_fail = 0
+            window_level = 0
             os.makedirs(DONE_DIR, exist_ok=True)
             with open(done_flag, "w", encoding="utf-8") as fh:
                 fh.write(title + "\n")
@@ -157,8 +159,13 @@ def main():
             # 连续 2 篇失败即判定进入服务端写窗口（invalid_response 持续约 10 分钟），
             # 全局长冷却、不在窗口内空转；冷却后继续，失败篇无 done、下轮断点补
             if consec_fail >= 2:
-                cool = float(os.environ.get("RESYNC_WINDOW_COOLDOWN", "300"))
-                print(f"  ~~~ 连续 {consec_fail} 篇失败，判定写窗口，全局冷却 {cool}s（{time.strftime('%H:%M:%S')}）~~~", flush=True)
+                # 冷却递增：浅窗口 300s 够，深窗口反复撞时 300→600→900s 越等越久，
+                # 避免固定短冷却反复试探给窗口"续命"；任一成功即 window_level 归零
+                window_level += 1
+                base = float(os.environ.get("RESYNC_WINDOW_COOLDOWN", "300"))
+                cap = float(os.environ.get("RESYNC_WINDOW_CAP", "900"))
+                cool = min(base * window_level, cap)
+                print(f"  ~~~ 连续 {consec_fail} 篇失败，判定写窗口(第{window_level}层)，全局冷却 {cool:.0f}s（{time.strftime('%H:%M:%S')}）~~~", flush=True)
                 time.sleep(cool)
                 consec_fail = 0
         time.sleep(float(os.environ.get("RESYNC_INTERVAL", "1.5")))
