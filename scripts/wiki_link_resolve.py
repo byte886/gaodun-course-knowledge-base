@@ -15,7 +15,8 @@ cite 与完整 URL 一样，点击后都在【新标签页】打开——飞书�
 历史：早期版本输出完整 wiki URL（https://<域名>/wiki/<node_token>），2026-09-07 起改为 cite。
 - 本地源文件保留 ./ 相对链接不动，仅在写入飞书的管道里做转换；
 - cite 渲染文字固定为目标文档标题，故要求链接文字等于目标文件名（已全量核验一致）；
-- 找不到映射的链接保持原样并向 stderr 告警，绝不臆造 token；
+- 找不到映射的同目录链接降级为纯文本 label（不在飞书留残缺 .md 坏链）并向 stderr 告警，绝不臆造 token；
+  本地源文件保持不动，将来补建目标篇后重跑 resync 即自动恢复成 cite；
 - obj_token 取自 WIKI_MAP 环境变量指向的 wiki_node_map.tsv 第 3 列（该表已去重，标题唯一）。
   ⚠️ 调用方（如 resync_wiki_content.py）必须显式 export WIKI_MAP=data/_workspace/<profile>/logs/wiki_node_map.tsv；
   未设时仅回退仓库根 logs/（通常不存在），映射为空会让所有链接静默保留原样——这是严重隐患。
@@ -53,14 +54,16 @@ def _resolve(m):
     obj = title2obj.get(target)
     if obj:
         return f'<cite type="doc" doc-id="{obj}"/>'
+    # 目标节点在本课程不存在（如未单独成篇、无知识来源不凭空造）：飞书端保留相对 .md 只会是
+    # 残缺坏链，故降级为纯文本 label；本地源文件不动，将来补建该篇后重跑 resync 会自动恢复成 cite。
     _missing.add(target)
-    return m.group(0)
+    return label
 
 
 # 仅替换同目录相对链接 ./xxx.md（跨组 ../ 与外链不动）
 out = _link_pat.sub(_resolve, text)
 
 for t in sorted(_missing):
-    print(f"[wiki_link_resolve] 未找到节点映射，保留原链接: {t}", file=sys.stderr)
+    print(f"[wiki_link_resolve] 未找到节点映射，降级为纯文本（无此节点）: {t}", file=sys.stderr)
 
 sys.stdout.write(out)
