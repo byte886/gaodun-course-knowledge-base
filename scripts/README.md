@@ -612,6 +612,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
+### `cdp/auth_token_guard.js` — token 失效自动续命共享件（跨进程 single-flight，I-013）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 统一收口「本地 JWT 7 天过期返回 553649434」的自动刷新，替代各脚本内联实现。导出 `isTokenExpired()`（只认 553649434，做题风控码 10462221 等不误判）与 `refreshJwtWithLock()`：第一个命中的进程持文件锁 `.refresh.lock`、spawn `refresh_auth_token.js` 连已登录日常 Chrome 抓新 token；并行的其它进程（下载是 3 消费者+1 生产者多进程）发现锁则等待复用，**不会重复连 Chrome / 抢焦点**；陈旧锁（持有者崩溃/超 120s）自动抢占 |
+| **接入方** | `ep3_download_videos.js` 在统一请求入口 `apiGet` 拦截 553649434→刷新→重试 1 次（覆盖 syllabus/getVideoInfo/getLiveResource，生产者消费者都受益）；`batch_redo_papers.js` 做题循环捕获失效码后改用本模块（同一卷最多刷新 2 次） |
+| **边界** | 只在硬证据 553649434 时触发；刷新失败（日常 Chrome 未开/未登录）抛明确错误交调用方，不无限重试；JWT/Cookie 不入库 |
+| **相关文档** | gaodun-exam-api.md §1.2 token 自愈、video-processing.md 故障码、ISSUES I-013 |
+
+---
+
 ### `cdp/api_do_paper.js` — 通用纯接口做卷（单卷，推荐入口）
 
 | 项目 | 说明 |

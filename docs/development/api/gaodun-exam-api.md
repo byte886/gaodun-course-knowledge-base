@@ -50,7 +50,7 @@ vcourse/pc(盘点账号下全部课程，拿各门 saasCourseId —— 见 2.11)
 - 请求体均为**明文 JSON**，`content-type: application/json;charset=UTF-8`；**全链路未见 sign / nonce / 时间戳 / 加密 body**（无需逆向前端加密）。
 - 导出与选取：连接日常 Chrome 后从任意业务请求头读取，存 `data/_workspace/_account/auth/*.jsonl`；`findJwt()` **按文件 mtime 升序、倒序提取最新文件**（不按文件名排序，否则新抓的 token 可能因文件名靠前后被旧文件遮蔽）。JWT/Cookie 禁止入库。
 - **JWT 的 `exp` 未到 ≠ 服务端仍认**【实测】：高顿服务端可提前使会话失效，此时 HTTP 层仍 200、业务层返回 `status=553649434, info="登录超时,请重新登录", result="Unable to verify token"`（minerva 所有接口统一表现）。不能只解码 exp 判断有效性，必须以一次真实只读请求（如 student/paper/record）验活。
-- **token 自愈**【实测】：`scripts/cdp/refresh_auth_token.js` 连接已登录的日常 Chrome、reload 高顿页监听 `apigateway.gaodun.com` 请求头，自动抓新 token 落 auth 目录；`batch_redo_papers.js` 捕获 553649434 后自动调用它刷新并重试同一试卷（最多 2 次）。前提是日常 Chrome 仍保持登录；Chrome 也未登录时才交用户。
+- **token 自愈**【实测】：底层 `scripts/cdp/refresh_auth_token.js` 连接已登录的日常 Chrome、reload 高顿页监听 `apigateway.gaodun.com` 请求头，自动抓新 token 落 auth 目录。上层统一收口到共享件 `scripts/cdp/auth_token_guard.js`（I-013）：导出 `isTokenExpired()`（只认 553649434，做题风控码 10462221 等不误触发）与 `refreshJwtWithLock()`，用 `.refresh.lock` 文件锁做**跨进程 single-flight**——下载是 3 消费者+1 生产者并行，只让第一个命中的进程连 Chrome 刷新，其余等待复用同一新 token，不重复连 Chrome/抢焦点，陈旧锁自动抢占。接入方：①做题 `batch_redo_papers.js` 捕获失效码后刷新并重试同一试卷（最多 2 次）；②下载 `ep3_download_videos.js` 在统一请求入口 `apiGet` 拦截→刷新→重试 1 次，覆盖 syllabus/getVideoInfo/getLiveResource，**修复了「JWT 过期→消费者枚举即 FATAL 秒退→调度器空转静默停摆」**。前提是日常 Chrome 仍保持登录；Chrome 也未登录时刷新抛错、才交用户。
 - 建议带全：`accept`、`accept-language: zh`、与浏览器一致的 `user-agent`、来源域 `origin/referer`（见 1.4）。跨子域 POST 会先发一次 `OPTIONS` 预检（正常现象）。
 
 ### 1.3 关键 ID 与固定常量【实测】

@@ -19,21 +19,11 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
 const { findJwt, doPaperViaApi, dwellSec } = require('./gaodun_paper_core');
+const tokenGuard = require('./auth_token_guard');
 const { loadProfile, workspaceDirFor, argvProfileKey } = require('./load_profile');
-const ROOT = path.resolve(__dirname, '..', '..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const TOKEN_EXPIRED_CODE = '553649434';  // 高顿"登录超时,请重新登录"
-
-/** 通过 CDP 从用户已登录的日常 Chrome 重新抓取 authentication token */
-function refreshJwt() {
-  console.log('  [token] 检测到登录超时，正在通过 Chrome CDP 自动刷新 token...');
-  execFileSync('node', [path.join(__dirname, 'refresh_auth_token.js')], {
-    cwd: ROOT, stdio: 'inherit', timeout: 90000,
-  });
-  return findJwt();
-}
+// token 失效(553649434)自动续命统一走 auth_token_guard（跨进程 single-flight，I-013），本脚本不再内联刷新逻辑。
 const GO = process.argv.includes('--go');
 const DO_AI = !process.argv.includes('--no-ai');
 const idArgs = process.argv.slice(2).filter((a) => /^\d+$/.test(a)).map(Number);
@@ -111,11 +101,11 @@ function chapterKey(ch) {
         if (!out.fullScore) dbg.forEach((m) => console.log('     ' + m));
         done = true;
       } catch (e) {
-        const isTokenExpired = e.message && e.message.includes(TOKEN_EXPIRED_CODE);
+        const isTokenExpired = e.message && tokenGuard.isTokenExpired(e.message);
         if (isTokenExpired && tokenRefreshed < 2) {
           tokenRefreshed += 1;
           console.log(`[${idx + 1}/${todo.length}] ${p.paperId} token失效，第${tokenRefreshed}次自动刷新后重试...`);
-          try { jwt = refreshJwt(); } catch (refreshErr) {
+          try { jwt = await tokenGuard.refreshJwtWithLock({ log: (m) => console.log('  ' + m) }); } catch (refreshErr) {
             console.log(`  [token] 自动刷新失败: ${refreshErr.message}`);
             rec.ok = false; rec.error = e.message;
             console.log(`[${idx + 1}/${todo.length}] ${p.paperId} -> ❌异常 ${e.message}`);

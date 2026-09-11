@@ -38,6 +38,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const core = require('./gaodun_paper_core');
+const tokenGuard = require('./auth_token_guard');
 
 const GATEWAY = 'https://apigateway.gaodun.com';
 const TEACHER_NAME = {
@@ -74,9 +75,18 @@ if (!ARGS.out && !ARGS.list && !ARGS.profile) { console.error('需要 --out <输
 function ep3Headers() {
   return core.platformHeaders(core.findJwt(), 'ep3');
 }
-async function apiGet(p) {
+async function apiGet(p, _attempt) {
+  const attempt = _attempt || 0;
   const r = await fetch(GATEWAY + p, { headers: ep3Headers() });
-  return r.json();
+  const j = await r.json();
+  // token 自动续命（I-013）：本地 JWT 7 天过期返回 553649434，跨进程 single-flight 刷新后重试 1 次；
+  // 统一在此拦截，fetchSyllabus/getVideoInfo/getLiveResource 全部覆盖，生产者/消费者都受益。
+  if (tokenGuard.isTokenExpired(j.status) && attempt < 1) {
+    log(`[token] ${j.status} 登录超时，自动刷新后重试：${p.slice(0, 70)}`);
+    await tokenGuard.refreshJwtWithLock({ log });
+    return apiGet(p, attempt + 1);
+  }
+  return j;
 }
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 function log(...x) { console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...x); }
