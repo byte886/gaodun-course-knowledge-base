@@ -32,6 +32,13 @@ MAP_FILE = os.environ.get(
 )
 RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
 COURSE_DIR = os.path.join(REPO, _profile["paths"]["localRoot"], "知识详解")
+# 断点续跑：每篇成功落 done，重跑时零 API 跳过（与建树 wiki_done 同范式），
+# 多轮保守批次只补未成功篇、不重复消耗账号写配额；--force 可全量重刷
+DONE_DIR = os.path.join(os.path.dirname(MAP_FILE), "resync_done")
+
+
+def safe_name(title):
+    return title.replace("/", "_").replace(" ", "_")
 
 
 def strip_frontmatter(text):
@@ -87,7 +94,10 @@ def update_one(title, path, obj):
     if not resolved.strip():
         return False, "wiki_link_resolve 输出为空（resolver 异常），未发写请求"
     last = ""
-    for attempt in range(5):
+    # 单篇只做 3 次快速重试（3/8/15s，共约 26s）扛瞬时网关抖动；
+    # 持续 invalid_response / 账号写窗口由 main 的「连续失败全局冷却」处理，
+    # 不在单篇内长退避空转（持续撞窗口反而给窗口"续命"、延缓恢复）
+    for attempt in range(3):
         proc = subprocess.run(
             ["lark-cli", "docs", "+update", "--doc", obj, "--command", "overwrite",
              "--doc-format", "markdown", "--content", "-", "--as", "user", "--format", "json"],
@@ -96,15 +106,9 @@ def update_one(title, path, obj):
         last = proc.stdout + proc.stderr
         if '"ok":true' in last.replace(" ", "") or '"ok": true' in last:
             return True, ""
-        # 递增退避：前两次扛瞬时抖动(3/8s)，后三次扛账号级写限流滑动窗口(30/45/60s)
-        # 实测 docs +update 连续快速写约 36-40 次后进入拒绝窗口，停写休息约 1 分钟即恢复，
-        # 短等(2s)重试扛不过窗口、会把可恢复的限流误计为失败
-        backoff = [3, 8, 30, 45, 60][attempt] if attempt < 5 else 60
-        # token 失效类错误需要更长等待让 lark-cli 刷新
-        if "temporary token" in last or "Authorization" in last or "invalid_response" in last:
-            time.sleep(max(backoff, 10))
-        else:
-            time.sleep(backoff)
+        # 诊断：每次失败立即把原始返回打到日志，便于区分限流/参数/编码
+        print(f"    [attempt {attempt+1}/3 未成功 rc={proc.returncode}] {last[:240]!r}", flush=True)
+        time.sleep([3, 8, 15][attempt])
     return False, last[:300]
 
 
@@ -112,6 +116,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="只同步路径中包含该片段的文件")
     ap.add_argument("--dry-run", action="store_true", help="只列文件，不写飞书")
+    ap.add_argument("--force", action="store_true", help="忽略 done 标记全量重刷")
     args = ap.parse_args()
 
     title2obj = load_title2obj()
@@ -120,6 +125,7 @@ def main():
         items = [it for it in items if args.only in it[1]]
 
     missing, failed, ok = [], [], 0
+    consec_fail = 0  # 连续失败计数：达阈值判定进入服务端写窗口，全局长冷却
     print(f"待处理文件 {len(items)} 个（map 共 {len(title2obj)} 个标题）")
     for i, (title, path) in enumerate(items, 1):
         obj = title2obj.get(title)
@@ -128,16 +134,33 @@ def main():
             missing.append((title, rel))
             print(f"[{i}/{len(items)}] ✗ 无obj映射: {title}")
             continue
+        done_flag = os.path.join(DONE_DIR, safe_name(title) + ".done")
+        if not args.force and os.path.exists(done_flag):
+            ok += 1
+            print(f"[{i}/{len(items)}] · 已同步跳过: {title}")
+            continue
         if args.dry_run:
             print(f"[{i}/{len(items)}] (dry) {title} -> {obj[:10]}")
             continue
         success, err = update_one(title, path, obj)
         if success:
             ok += 1
+            consec_fail = 0
+            os.makedirs(DONE_DIR, exist_ok=True)
+            with open(done_flag, "w", encoding="utf-8") as fh:
+                fh.write(title + "\n")
             print(f"[{i}/{len(items)}] ✓ {title}")
         else:
             failed.append((title, rel, err))
+            consec_fail += 1
             print(f"[{i}/{len(items)}] ✗ 写入失败: {title}")
+            # 连续 2 篇失败即判定进入服务端写窗口（invalid_response 持续约 10 分钟），
+            # 全局长冷却、不在窗口内空转；冷却后继续，失败篇无 done、下轮断点补
+            if consec_fail >= 2:
+                cool = float(os.environ.get("RESYNC_WINDOW_COOLDOWN", "300"))
+                print(f"  ~~~ 连续 {consec_fail} 篇失败，判定写窗口，全局冷却 {cool}s（{time.strftime('%H:%M:%S')}）~~~", flush=True)
+                time.sleep(cool)
+                consec_fail = 0
         time.sleep(float(os.environ.get("RESYNC_INTERVAL", "1.5")))
         # 每 N 篇额外暂停，避免连续调用导致 lark-cli 临时 token 失效
         batch_size = int(os.environ.get("RESYNC_BATCH_SIZE", "15"))
