@@ -36,9 +36,9 @@ export COURSE_NAME="${COURSE_NAME:-【26考季】VIPCPA系列-税法（蔡俊峻
 
 # 以下路径总是根据 COURSE_NAME 重新派生（避免切换课程时残留旧路径）
 # 如需自定义路径，在 source 此文件后再覆盖
-export COURSE_LOCAL_ROOT="data/高顿/CPA/课程库/$COURSE_NAME"
-export COURSE_REMOTE_ROOT="/apps/CPA课程归档/高顿/CPA/课程库/$COURSE_NAME"
-export COURSE_DESKTOP_ROOT="$HOME/Desktop/高顿/CPA/课程库/$COURSE_NAME"
+export COURSE_LOCAL_ROOT="data/高顿/CPA/$COURSE_NAME"
+export COURSE_REMOTE_ROOT="/apps/CPA课程归档/会计知识库/高顿/CPA/$COURSE_NAME"
+export COURSE_DESKTOP_ROOT="$HOME/Desktop/高顿/CPA/$COURSE_NAME"
 
 # 百度网盘加密密码
 export BAIDU_ENC_PASS="${BAIDU_ENC_PASS:-lover123}"

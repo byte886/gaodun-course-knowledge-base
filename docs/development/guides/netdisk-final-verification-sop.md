@@ -26,8 +26,8 @@ python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根>
 ```bash
 export BAIDU_ENC_PASS=lover123
 python3 scripts/verify_netdisk_final.py \
-    "data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
-    "/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
+    "data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
+    "/apps/CPA课程归档/会计知识库/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
 ```
 
 **脚本功能**：递归扫描本地和网盘目录，对比目录结构、文件集合、文件大小，输出差异清单和修复建议。

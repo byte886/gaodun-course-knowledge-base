@@ -23,8 +23,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # 不用set -e，避免iTerm环境下某个命令失败导致整个脚本退出
 
 # 默认配置（不提供参数时使用）
-DEFAULT_PDF_PATH="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/01_税法全面精讲01-税法总论/docs/01-课件_税法总论.pdf"
-DEFAULT_OUTPUT_DIR="$HOME/Desktop/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/01_税法全面精讲01-税法总论/docs"
+DEFAULT_PDF_PATH="$HOME/Desktop/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）/01_税法全面精讲01-税法总论/docs/01-课件_税法总论.pdf"
+DEFAULT_OUTPUT_DIR="$HOME/Desktop/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）/01_税法全面精讲01-税法总论/docs"
 
 # 参数处理
 if [ $# -ge 1 ]; then

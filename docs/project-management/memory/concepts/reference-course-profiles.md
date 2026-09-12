@@ -60,7 +60,7 @@ status: stable
 - 正课 glivepro：vcourseId **96834** / saasCourseId **42660** / syllabusId **75181** / gradationId null / learnStatus **3（已完结）**。
 - 名师 epiphany：vcourseId 50122 / saasCourseId 17247。
 - 结构：**官方 14 组 / 92 知识点**（profile 内 code01–14 组名齐全）。
-- 本地根 `data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）`；网盘根 `/apps/CPA课程归档/高顿/CPA/课程库/同名`。
+- 本地根 `data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）`；网盘根 `/apps/CPA课程归档/会计知识库/高顿/CPA/同名`。
 
 ## 会计 cpa-accounting-2026（在建，结构待回填）
 - 老师 罗翔。正课 glivepro：vcourseId **96760** / saasCourseId **42656** / syllabusId **75086** / gradationId **74570** / learnStatus 3；名师 epiphany：vcourseId 50126 / saasCourseId 17244。

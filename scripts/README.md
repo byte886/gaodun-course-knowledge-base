@@ -52,9 +52,9 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `COURSE_NAME` | 税法课（蔡俊峻） | 课程名称，用于拼接路径（显式设置优先级高于 profile） |
-| `COURSE_LOCAL_ROOT` | `data/高顿/CPA/课程库/$COURSE_NAME` | 仓库内课程根目录 |
-| `COURSE_REMOTE_ROOT` | `/apps/CPA课程归档/高顿/CPA/课程库/$COURSE_NAME` | 网盘课程根目录 |
-| `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/课程库/$COURSE_NAME` | Desktop 源头课程目录 |
+| `COURSE_LOCAL_ROOT` | `data/高顿/CPA/$COURSE_NAME` | 仓库内课程根目录 |
+| `COURSE_REMOTE_ROOT` | `/apps/CPA课程归档/会计知识库/高顿/CPA/$COURSE_NAME` | 网盘课程根目录 |
+| `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/$COURSE_NAME` | Desktop 源头课程目录 |
 | `BAIDU_ENC_PASS` | `lover123` | 百度网盘加密密码 |
 
 **已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`sync_ep3_ready.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/build_notes_mapping.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
@@ -499,7 +499,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 检查本地课程目录结构是否符合规范（高顿/CPA/课程库/课程名/章节名/） |
+| **用途** | 检查本地课程目录结构是否符合规范（高顿/CPA/课程名/章节名/） |
 | **用法** | `bash scripts/check_directory_structure.sh <data_dir>` |
 | **可靠性** | ✅ 中高（基于命名规范检查） |
 | **相关文档** | `docs/project-management/standards/NAMING_CONVENTION.md` |

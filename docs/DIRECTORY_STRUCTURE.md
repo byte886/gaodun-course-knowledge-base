@@ -79,7 +79,7 @@ data/
 单个**课程目录**只保留成品与永久原料两层，不再内嵌 `_workspace`：
 
 ```
-data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
+data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
 ├── README.md                          # 课程目录说明：结构图 + 各文件来源/作用 + 对应关系
 ├── 原始资源/                          # 第一层：按资源类型分桶的原始原料（永久、传网盘）
 │   ├── videos/
@@ -102,7 +102,7 @@ data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）
 │   └── 考试指导速查手册.md            # 课程全局篇（只通用，冲刺后定稿）
 ```
 
-课程库层（跨课）另有一份：`data/高顿/CPA/课程库/通用做题思路解析.md`。
+CPA 层（跨课）另有一份：`data/高顿/CPA/通用做题思路解析.md`。
 
 ### 2.2 统一运行时工作区 data/_workspace（ADR-016）
 
@@ -150,12 +150,12 @@ data/_workspace/
 
 ## 三、百度网盘（备份：镜像原始资源 + 知识详解）
 
-- 网盘根：`/apps/CPA课程归档/高顿/CPA/`，与本地**同构镜像"原始资源 + 知识详解"两层**；
+- 网盘根：`/apps/CPA课程归档/会计知识库/高顿/CPA/`，与本地**同构镜像"原始资源 + 知识详解"两层**；
 - **不传 `data/_workspace/`**（过程件可由接口/脚本重建），不传 `transcript.json`、tmp、logs；
 - 上传凭证与命令见 [netdisk-setup.md](development/api/netdisk-setup.md)；上传后做本地↔网盘文件数/大小核对。
 
 ```
-/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
+/apps/CPA课程归档/会计知识库/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）/
 ├── 原始资源/
 │   ├── videos/      # 每讲 video.mp4 + transcript.md（不传 transcript.json）
 │   ├── notes/       # 官方讲义 PDF + OCR.md

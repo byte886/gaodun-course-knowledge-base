@@ -46,8 +46,8 @@
     }
   ],
   "paths": {
-    "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-经济法",
-    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-经济法"
+    "localRoot": "data/高顿/CPA/【VIPCPA专享】名师专业课-经济法",
+    "remoteRoot": "/apps/CPA课程归档/会计知识库/高顿/CPA/【VIPCPA专享】名师专业课-经济法"
   },
   "structure": {
     "officialGroupCount": 12,

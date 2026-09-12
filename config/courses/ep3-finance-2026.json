@@ -23,8 +23,8 @@
     { "label": "考前冲刺", "attribute": 6, "gradationId": 79618, "syllabusId": 77002 }
   ],
   "paths": {
-    "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-财管",
-    "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-财管"
+    "localRoot": "data/高顿/CPA/【VIPCPA专享】名师专业课-财管",
+    "remoteRoot": "/apps/CPA课程归档/会计知识库/高顿/CPA/【VIPCPA专享】名师专业课-财管"
   },
   "notes": [
     "26考季主老师李晶(11134)；另一套周越26考季未挂视频，出现 id 再补",

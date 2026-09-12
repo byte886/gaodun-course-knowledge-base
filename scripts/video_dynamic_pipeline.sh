@@ -31,7 +31,7 @@ set -uo pipefail
 PROFILE="cpa-accounting-2026"
 PROJECT_DIR="/Users/wenjiechen/Doubao/chats/2026-08-26/new-chat/gaodun-course-knowledge-base"
 WS="$PROJECT_DIR/data/_workspace/$PROFILE"
-COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）"
+COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/【26考季】VIPCPA系列-会计（罗翔老师）"
 VIDEOS="$COURSE_ROOT/原始资源/videos"
 LOGD="$WS/logs"; RUND="$WS/run/dyn"; TMPBASE="$WS/dl-tmp"
 VENV_PY="$PROJECT_DIR/transcription/venv/bin/python"

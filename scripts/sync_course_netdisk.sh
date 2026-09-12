@@ -6,8 +6,8 @@
 #
 # 示例:
 #   bash scripts/sync_course_netdisk.sh \
-#     "data/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
-#     "/apps/CPA课程归档/高顿/CPA/课程库/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
+#     "data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
+#     "/apps/CPA课程归档/会计知识库/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
 #     3 '^(0[4-9]|[12][0-9]|3[0-8])_'
 #
 # 特性:

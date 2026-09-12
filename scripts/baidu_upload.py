@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""百度网盘文件管理脚本 - 上传、列出、重命名、删除、创建目录
+"""百度网盘文件管理脚本 - 上传、列出、重命名、移动、删除、创建目录
 
 用法:
   BAIDU_ENC_PASS=lover123 python3 baidu_upload.py upload <本地文件> <网盘路径>
   BAIDU_ENC_PASS=lover123 python3 baidu_upload.py list <网盘目录>
   BAIDU_ENC_PASS=lover123 python3 baidu_upload.py rename <网盘路径> <新名称>
+  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py move <网盘源路径> <目标父目录> [新名称]
   BAIDU_ENC_PASS=lover123 python3 baidu_upload.py delete <网盘路径>
   BAIDU_ENC_PASS=lover123 python3 baidu_upload.py mkdir <网盘目录>
 
 兼容旧用法: python3 baidu_upload.py <本地文件> <网盘路径> [token]
 
-网盘路径必须以 /apps/CPA课程归档/ 开头。
+网盘路径必须以 /apps/CPA课程归档/ 开头（该沙箱根名与应用授权绑定、不可改名；2026-09-12 起课程统一在 /apps/CPA课程归档/会计知识库/高顿/CPA/ 下，见 ADR-020）。
 直连百度服务器（国内服务，不走代理）。
 """
 
@@ -213,6 +214,30 @@ def rename_file(remote_path, new_name, token):
     return result
 
 
+def move_file(src_path, dest_dir, token, new_name=None):
+    """移动网盘文件或目录到目标父目录（filemanager opera=move，服务端秒移、不重传）。
+
+    dest_dir 为目标「父目录」；可选 new_name 同时改名。支持整目录移动。
+    """
+    entry = {"path": src_path, "dest": dest_dir}
+    if new_name:
+        entry["newname"] = new_name
+    filelist = json.dumps([entry])
+    result = curl_api(API_BASE, {
+        "method": "filemanager",
+        "access_token": token,
+        "opera": "move",
+    }, {
+        "filelist": filelist,
+    })
+    target = f"{dest_dir}/{new_name or os.path.basename(src_path)}"
+    if result.get("errno") == 0:
+        print(f"  Moved: {src_path} -> {target}")
+    else:
+        print(f"  Move failed: {result}", file=sys.stderr)
+    return result
+
+
 def delete_file(remote_path, token):
     """删除网盘文件或目录（使用 filemanager API）"""
     filelist = json.dumps([remote_path])
@@ -239,7 +264,7 @@ if __name__ == "__main__":
     token = get_token()
 
     # 兼容旧用法: python3 baidu_upload.py <本地文件> <网盘路径>
-    if command not in ("upload", "list", "rename", "delete", "mkdir"):
+    if command not in ("upload", "list", "rename", "move", "delete", "mkdir"):
         local_file = sys.argv[1]
         remote_file = sys.argv[2]
         if not os.path.isfile(local_file):
@@ -278,6 +303,13 @@ if __name__ == "__main__":
             print("用法: baidu_upload.py rename <网盘路径> <新名称>", file=sys.stderr)
             sys.exit(1)
         rename_file(sys.argv[2], sys.argv[3], token)
+
+    elif command == "move":
+        if len(sys.argv) < 4:
+            print("用法: baidu_upload.py move <网盘源路径> <目标父目录> [新名称]", file=sys.stderr)
+            sys.exit(1)
+        new_name = sys.argv[4] if len(sys.argv) >= 5 else None
+        move_file(sys.argv[2], sys.argv[3], token, new_name)
 
     elif command == "delete":
         if len(sys.argv) < 3:

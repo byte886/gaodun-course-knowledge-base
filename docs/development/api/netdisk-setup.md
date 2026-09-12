@@ -133,15 +133,16 @@ curl -X POST "https://openapi.baidu.com/oauth/2.0/token" \
 完整命名规范见 [NAMING_CONVENTION.md](../../project-management/standards/NAMING_CONVENTION.md)。
 
 ```
-/apps/CPA课程归档/
-└── 高顿/                           ← 教育公司名
-    └── CPA/                        ← 专业名
-        └── 课程库/                  ← 所有课程统一走完整流程（有知识库）
+/apps/CPA课程归档/                     ← 应用沙箱根，名称与授权绑定、不可改名（见 ADR-020）
+└── 会计知识库/
+    └── 高顿/                           ← 教育公司名
+        └── CPA/                        ← 专业名（课程直接挂这一层，无"课程库"中间层）
             └── 【26考季】VIPCPA系列-税法（蔡俊峻老师）/
                 ├── 原始资源/         ← videos/NN_讲题/{video.mp4,transcript.md}
                 │                    ← notes/NN_模块/{讲义_*.pdf,讲义_*_OCR.md}
                 └── 知识详解/         ← NN_模块组/{官方知识点}.md + 课程全局篇
                                      （不传 data/_workspace / transcript.json / tmp / logs）
+# 同级另有 股票知识库 / 珠宝知识库，与 会计知识库 平级、互不隶属
 ```
 
 ### 2.3 常用 API

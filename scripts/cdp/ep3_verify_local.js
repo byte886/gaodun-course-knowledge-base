@@ -37,7 +37,7 @@ const ARGS = Object.fromEntries(process.argv.slice(2).map((a, i, arr) => {
   return [null, null];
 }).filter(([k]) => k));
 
-const ROOT = ARGS.root || path.join(os.homedir(), 'Desktop', '高顿', 'CPA', '课程库');
+const ROOT = ARGS.root || path.join(os.homedir(), 'Desktop', '高顿', 'CPA');
 const DO_CLEAN = !!ARGS.clean;
 const COURSE_GLOB = /【VIPCPA专享】名师专业课-(.+)$/;
 const FILE_RE = /^(.+?)_(video\.mp4|subtitle\.vtt|meta\.json|transcript\.md)$/;

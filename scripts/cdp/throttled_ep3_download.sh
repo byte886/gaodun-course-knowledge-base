@@ -96,7 +96,7 @@ import sys
 from pathlib import Path
 name={"ep3-accounting-2026":"会计","ep3-tax-2026":"税法","ep3-strategy-2026":"战略","ep3-econlaw-2026":"经济法","ep3-audit-2026":"审计","ep3-finance-2026":"财管"}
 p,stage=sys.argv[1],sys.argv[2]
-c=Path("data/高顿/CPA/课程库")/f"【VIPCPA专享】名师专业课-{name[p]}"/"原始资源"/"videos"/stage
+c=Path("data/高顿/CPA")/f"【VIPCPA专享】名师专业课-{name[p]}"/"原始资源"/"videos"/stage
 miss=0
 total_meta=0
 if c.exists():

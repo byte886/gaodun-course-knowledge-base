@@ -12,7 +12,7 @@ mkdir -p "$LOG_DIR"
 
 START_IDX=${1:-2}
 END_IDX=${2:-44}
-COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/课程库/【26考季】VIPCPA系列-会计（罗翔老师）"
+COURSE_ROOT="$PROJECT_DIR/data/高顿/CPA/【26考季】VIPCPA系列-会计（罗翔老师）"
 # 下载/压缩过程件（.vfetch 分片/merged）统一落工作区，课程库根不留讲目录（成品才进 原始资源/videos）
 TMPBASE="$PROJECT_DIR/data/_workspace/$PROFILE/dl-tmp"
 mkdir -p "$TMPBASE"
