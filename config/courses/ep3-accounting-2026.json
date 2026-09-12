@@ -3,10 +3,19 @@
   "key": "ep3-accounting-2026",
   "schemaVersion": 1,
   "platform": "ep3",
-  "project": { "id": 8, "name": "CPA" },
-  "subject": { "id": 37, "name": "会计" },
+  "project": {
+    "id": 8,
+    "name": "CPA"
+  },
+  "subject": {
+    "id": 37,
+    "name": "会计"
+  },
   "season": "2026考季",
-  "teachers": ["姚远", "陈蓓蓓"],
+  "teachers": [
+    "姚远",
+    "陈蓓蓓"
+  ],
   "primaryCourse": {
     "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
     "name": "【VIPCPA专享】名师专业课-会计",
@@ -17,13 +26,161 @@
   },
   "companionCourses": [],
   "stages": [
-    { "label": "基础必修", "attribute": 1, "gradationId": 72897, "syllabusId": 71235 },
-    { "label": "全面精讲", "attribute": 4, "gradationId": 76232, "syllabusId": 76456 },
-    { "label": "重点强化", "attribute": 5, "gradationId": 78856, "syllabusId": 76996 },
-    { "label": "考前冲刺", "attribute": 3, "gradationId": 79616, "syllabusId": 76997 }
+    {
+      "label": "基础必修",
+      "attribute": 1,
+      "gradationId": 72897,
+      "syllabusId": 71235
+    },
+    {
+      "label": "全面精讲",
+      "attribute": 4,
+      "gradationId": 76232,
+      "syllabusId": 76456
+    },
+    {
+      "label": "重点强化",
+      "attribute": 5,
+      "gradationId": 78856,
+      "syllabusId": 76996
+    },
+    {
+      "label": "考前冲刺",
+      "attribute": 3,
+      "gradationId": 79616,
+      "syllabusId": 76997
+    }
   ],
   "paths": {
     "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-会计",
     "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-会计"
+  },
+  "structure": {
+    "officialGroupCount": 30,
+    "pointCount": 144,
+    "mainStage": "全面精讲",
+    "groups": [
+      {
+        "code": "03",
+        "name": "总论"
+      },
+      {
+        "code": "04",
+        "name": "存货"
+      },
+      {
+        "code": "05",
+        "name": "固定资产"
+      },
+      {
+        "code": "06",
+        "name": "无形资产"
+      },
+      {
+        "code": "07",
+        "name": "投资性房地产"
+      },
+      {
+        "code": "08",
+        "name": "资产减值"
+      },
+      {
+        "code": "09",
+        "name": "负债"
+      },
+      {
+        "code": "10",
+        "name": "职工薪酬"
+      },
+      {
+        "code": "11",
+        "name": "股份支付"
+      },
+      {
+        "code": "12",
+        "name": "借款费用"
+      },
+      {
+        "code": "13",
+        "name": "或有事项"
+      },
+      {
+        "code": "14",
+        "name": "金融工具"
+      },
+      {
+        "code": "15",
+        "name": "长期股权投资与合营安排"
+      },
+      {
+        "code": "16",
+        "name": "租赁"
+      },
+      {
+        "code": "17",
+        "name": "持有待售的非流动资产、处置组和终止经营"
+      },
+      {
+        "code": "18",
+        "name": "所有者权益"
+      },
+      {
+        "code": "19",
+        "name": "收入"
+      },
+      {
+        "code": "20",
+        "name": "政府补助"
+      },
+      {
+        "code": "21",
+        "name": "所得税"
+      },
+      {
+        "code": "22",
+        "name": "非货币性资产交换"
+      },
+      {
+        "code": "23",
+        "name": "债务重组"
+      },
+      {
+        "code": "24",
+        "name": "外币折算"
+      },
+      {
+        "code": "25",
+        "name": "财务报告"
+      },
+      {
+        "code": "26",
+        "name": "会计政策、会计估计及其变更和差错更正"
+      },
+      {
+        "code": "27",
+        "name": "资产负债表日后事项"
+      },
+      {
+        "code": "28",
+        "name": "企业合并"
+      },
+      {
+        "code": "29",
+        "name": "合并财务报表"
+      },
+      {
+        "code": "30",
+        "name": "每股收益"
+      },
+      {
+        "code": "31",
+        "name": "公允价值计量"
+      },
+      {
+        "code": "32",
+        "name": "政府及民间非营利组织会计"
+      }
+    ],
+    "historyHint": "名师课(ep3)风控期无 papers.knowledgePointList，章取 outline 全面精讲章树、知识点由讲次目录去分P聚合（ep3_build_manifest.py）；章 code 对齐同科目正课 profile。重点强化跨章专题/考前冲刺不单独建组，跨讲聚合融入对应章/全局篇。"
   }
 }
