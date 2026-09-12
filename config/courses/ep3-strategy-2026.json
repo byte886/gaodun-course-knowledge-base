@@ -3,10 +3,19 @@
   "key": "ep3-strategy-2026",
   "schemaVersion": 1,
   "platform": "ep3",
-  "project": { "id": 8, "name": "CPA" },
-  "subject": { "id": 46, "name": "战略" },
+  "project": {
+    "id": 8,
+    "name": "CPA"
+  },
+  "subject": {
+    "id": 46,
+    "name": "战略"
+  },
   "season": "2026考季",
-  "teachers": ["吴奕", "陈岩"],
+  "teachers": [
+    "吴奕",
+    "陈岩"
+  ],
   "primaryCourse": {
     "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
     "name": "【VIPCPA专享】名师专业课-战略",
@@ -17,12 +26,67 @@
   },
   "companionCourses": [],
   "stages": [
-    { "label": "全面精讲", "attribute": 4, "gradationId": 76239, "syllabusId": 76474 },
-    { "label": "重点强化", "attribute": 5, "gradationId": 78862, "syllabusId": 77008 },
-    { "label": "考前冲刺", "attribute": 6, "gradationId": 79621, "syllabusId": 77009 }
+    {
+      "label": "全面精讲",
+      "attribute": 4,
+      "gradationId": 76239,
+      "syllabusId": 76474
+    },
+    {
+      "label": "重点强化",
+      "attribute": 5,
+      "gradationId": 78862,
+      "syllabusId": 77008
+    },
+    {
+      "label": "考前冲刺",
+      "attribute": 6,
+      "gradationId": 79621,
+      "syllabusId": 77009
+    }
   ],
   "paths": {
     "localRoot": "data/高顿/CPA/课程库/【VIPCPA专享】名师专业课-战略",
     "remoteRoot": "/apps/CPA课程归档/高顿/CPA/课程库/【VIPCPA专享】名师专业课-战略"
+  },
+  "structure": {
+    "officialGroupCount": 8,
+    "pointCount": 67,
+    "mainStage": "全面精讲",
+    "groups": [
+      {
+        "code": "01",
+        "name": "战略与战略管理"
+      },
+      {
+        "code": "02",
+        "name": "战略分析"
+      },
+      {
+        "code": "03",
+        "name": "战略选择"
+      },
+      {
+        "code": "04",
+        "name": "战略实施"
+      },
+      {
+        "code": "05",
+        "name": "公司治理"
+      },
+      {
+        "code": "06",
+        "name": "风险与风险管理概述"
+      },
+      {
+        "code": "07",
+        "name": "风险管理的流程、体系与方法"
+      },
+      {
+        "code": "08",
+        "name": "企业面对的主要风险与应对"
+      }
+    ],
+    "historyHint": "名师课(ep3)风控期无 papers.knowledgePointList，章取 outline 全面精讲章树、知识点由讲次目录去分P聚合（ep3_build_manifest.py）；章 code 对齐同科目正课 profile。重点强化跨章专题/考前冲刺不单独建组，跨讲聚合融入对应章/全局篇。"
   }
 }
