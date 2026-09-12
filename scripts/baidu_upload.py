@@ -18,6 +18,7 @@
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -57,6 +58,11 @@ def curl_api(url, params=None, data=None, file_path=None, file_field="file", tim
     cmd = ["curl", "-s", "--connect-timeout", "10"]
 
     if file_path:
+        # 上传分片可经环境变量限速（如 BAIDU_UPLOAD_RATE=1500k / 2m），
+        # 避免占满上行带宽影响其它 App；只限速上传分片，list/mkdir 等小请求不受影响。
+        rate = os.environ.get("BAIDU_UPLOAD_RATE", "").strip()
+        if rate:
+            cmd += ["--limit-rate", rate]
         cmd += ["-F", f"{file_field}=@{file_path}"]
     if data:
         for k, v in data.items():
@@ -137,7 +143,9 @@ def upload_file(local_path, remote_path, token):
                 print(f"FAILED: {result}")
                 sys.exit(1)
     finally:
-        os.rmdir(tmp_dir)
+        # 容错清理：分片残留/系统占用导致目录非空时不能抛错，
+        # 否则会在下方 create 合并前中断、造成云端缺件（曾现 Errno 66）。
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
     # 4. create (合并)
     print("[3/3] Merging chunks...")
