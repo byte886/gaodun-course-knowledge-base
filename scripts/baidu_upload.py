@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 
 CHUNK_SIZE = 4 * 1024 * 1024  # 4MB
 API_BASE = "https://pan.baidu.com/rest/2.0/xpan/file"
@@ -53,7 +54,10 @@ def get_token():
 def curl_api(url, params=None, data=None, file_path=None, file_field="file", timeout=300):
     """通过 curl 直连调用 API（不走代理）"""
     if params:
-        url += "?" + "&".join(f"{k}={v}" for k, v in params.items())
+        # query 参数必须百分号编码：远端 path 含空格/中文【】时，裸字符会让
+        # superfile2 分片上传的 URL 非法（curl 退出码非 0、stderr 为空，表现为 "curl failed:"）。
+        # precreate/create 走 POST --data-urlencode 已编码，唯独分片上传的 query 曾漏编码。
+        url += "?" + "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in params.items())
 
     cmd = ["curl", "-s", "--connect-timeout", "10"]
 
