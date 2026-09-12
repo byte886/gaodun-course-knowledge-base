@@ -3,10 +3,18 @@
   "key": "ep3-finance-2026",
   "schemaVersion": 1,
   "platform": "ep3",
-  "project": { "id": 8, "name": "CPA" },
-  "subject": { "id": 48, "name": "财管" },
+  "project": {
+    "id": 8,
+    "name": "CPA"
+  },
+  "subject": {
+    "id": 48,
+    "name": "财管"
+  },
   "season": "2026考季",
-  "teachers": ["李晶"],
+  "teachers": [
+    "李晶"
+  ],
   "primaryCourse": {
     "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
     "name": "【VIPCPA专享】名师专业课-财管",
@@ -17,10 +25,30 @@
   },
   "companionCourses": [],
   "stages": [
-    { "label": "基础必修", "attribute": 3, "gradationId": 73334, "syllabusId": 71343 },
-    { "label": "全面精讲", "attribute": 4, "gradationId": 76235, "syllabusId": 76466 },
-    { "label": "重点强化", "attribute": 5, "gradationId": 78859, "syllabusId": 77001 },
-    { "label": "考前冲刺", "attribute": 6, "gradationId": 79618, "syllabusId": 77002 }
+    {
+      "label": "基础必修",
+      "attribute": 3,
+      "gradationId": 73334,
+      "syllabusId": 71343
+    },
+    {
+      "label": "全面精讲",
+      "attribute": 4,
+      "gradationId": 76235,
+      "syllabusId": 76466
+    },
+    {
+      "label": "重点强化",
+      "attribute": 5,
+      "gradationId": 78859,
+      "syllabusId": 77001
+    },
+    {
+      "label": "考前冲刺",
+      "attribute": 6,
+      "gradationId": 79618,
+      "syllabusId": 77002
+    }
   ],
   "paths": {
     "localRoot": "data/高顿/CPA/【VIPCPA专享】名师专业课-财管",
@@ -30,5 +58,93 @@
     "26考季主老师李晶(11134)；另一套周越26考季未挂视频，出现 id 再补",
     "四阶段梯度ID 2026-09-10 从 ep-study/gradation 实测（analysis/chapter 因未走学习引导返回空，改用 ep-study 接口绕过）",
     "视频自带VTT字幕(免FunASR)，每讲 related_resource 挂讲义PDF；试卷 redo-paper 受做题风控10462221锁定，解除后再采"
-  ]
+  ],
+  "structure": {
+    "officialGroupCount": 20,
+    "pointCount": 122,
+    "mainStage": "全面精讲",
+    "groups": [
+      {
+        "code": "01",
+        "name": "财务管理概述"
+      },
+      {
+        "code": "02",
+        "name": "财务报表分析和财务预测"
+      },
+      {
+        "code": "03",
+        "name": "价值评估基础"
+      },
+      {
+        "code": "04",
+        "name": "资本成本"
+      },
+      {
+        "code": "05",
+        "name": "投资项目资本预算"
+      },
+      {
+        "code": "06",
+        "name": "期权价值评估"
+      },
+      {
+        "code": "07",
+        "name": "企业价值评估"
+      },
+      {
+        "code": "08",
+        "name": "资本结构"
+      },
+      {
+        "code": "09",
+        "name": "长期筹资"
+      },
+      {
+        "code": "10",
+        "name": "股利分配、股票分割与股票回购"
+      },
+      {
+        "code": "11",
+        "name": "营运资本管理"
+      },
+      {
+        "code": "12",
+        "name": "成本管理会计的基础概念和基本理论"
+      },
+      {
+        "code": "13",
+        "name": "产品成本计算"
+      },
+      {
+        "code": "14",
+        "name": "标准成本法"
+      },
+      {
+        "code": "15",
+        "name": "作业成本法和生命周期成本法"
+      },
+      {
+        "code": "16",
+        "name": "本量利分析"
+      },
+      {
+        "code": "17",
+        "name": "短期经营决策"
+      },
+      {
+        "code": "18",
+        "name": "全面预算"
+      },
+      {
+        "code": "19",
+        "name": "责任会计"
+      },
+      {
+        "code": "20",
+        "name": "业绩评价"
+      }
+    ],
+    "historyHint": "名师课(ep3)风控期无 papers.knowledgePointList，章取 outline 全面精讲章树、知识点由讲次目录去分P聚合（ep3_build_manifest.py）；章 code 对齐同科目正课 profile。重点强化跨章专题/考前冲刺不单独建组，跨讲聚合融入对应章/全局篇。"
+  }
 }

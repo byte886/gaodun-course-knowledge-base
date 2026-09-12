@@ -18,7 +18,7 @@
 | 平台 / URL | glivepro.gaodun.com，`/course/{id}/...` | epiphany.gaodun.com，`/ep3/course/{id}` |
 | 课程名规律 | 【26考季】VIPCPA系列-XX（某老师），如税法42660/会计42656 | 【VIPCPA专享】名师专业课-XX，会计17244/审计17245/财管17246/税法17247/经济法17248/战略17249 |
 | 主控脚本 | `fetch_lecture_video.js`→`download_decrypt.js`→`compress.sh`→FunASR | `cdp/ep3_download_videos.js` 一体 |
-| 压缩 / 文字稿 | H.265 CRF30 **重压** + **FunASR 转写**（本文步骤2/3） | FHD-1080P **ffmpeg copy 不重压** + **平台 VTT 字幕免转写**（见下方"名师课 ep3"小节） |
+| 压缩 / 文字稿 | H.265 CRF30 **重压** + **FunASR 转写**（本文步骤2/3） | 采集时 **copy 封装**、采集后用 `compress_ep3_videos.py` **批量 H.265 CRF30 重压** + **平台 VTT 字幕免转写**（见下方"名师课 ep3"小节） |
 
 判别优先级：**saasCourseType（权威）＞ 域名 URL ＞ 课程名 ＞ 取流响应有无 `result.subtitle`**。判为 ep3 直接跳下方"名师课 ep3（saasCourseType=13）"小节，不要走 H.265 压缩与 FunASR。详见记忆层 `docs/project-management/memory/concepts/reference-course-profiles.md`。
 
@@ -77,7 +77,7 @@
    - getVideoInfo：`/ep-study/api/v1/front/resource/<rid>?courseId=<cid>&csItemId=<cs>&syllabusId=<sid>&is_show_live=0&isRelatedResource=1`，**四个上下文参数缺一不可**（缺报 10161000）。
    - videoId 取 `result.resource.video_id`（= `sewise.source_id`）；**顶层 `sewise_source_id` 恒为 null 是废弃字段，禁用**；`discriminator==='video'` 判定视频讲次。
    - 只读/取流只需 `makeHeaders(jwt)` + `Referer=https://epiphany.gaodun.com/`，不需要 x_gdssid/cookie。
-6. **FHD 分片本就是 h264/aac，ffmpeg `-c copy` 直接封装 mp4，不再重压**（正课的 H.265 CRF30 压缩环节对 ep3 不适用）。
+6. **采集时 FHD 分片本就是 h264/aac，ffmpeg `-c copy` 直接封装 mp4（下载阶段不重压，保证取流速度）**。但 copy 产出的是**未压缩 H.264**，单讲常达数百 MB~1GB；**采集完成后另有独立的批量重压环节**（见下方「名师课采集后批量 H.265 重压」）——2026-09-13 用户决策：名师视频也要压缩到"能基本看清课件文字"，**不走抽音频方案**。
 
 ### 采集命令（薄编排，复用取 key/解密组件）
 
@@ -99,6 +99,17 @@ node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --ou
 - 取 key 复用 `scripts/cdp/capture_video_key.js`（输出顶层数组 `[{quality,m3u8,keyAscii}]`，按 `videoId:res` 缓存），下载解密复用 `scripts/download_decrypt.js`。
 - 每个视频 CDP 取 key 约 26–30s（后台批量可接受）；双老师资源目录不分老师、文件名加老师前缀用 `--dual-teacher`（姚远_/陈蓓蓓_）。
 - 错误码：553649434=token 失效（须只读回包硬证据，先怀疑自身）；10161000=getVideoInfo 缺参数；40301=离线取 key 死路、必须走 CDP 真实播放。**553649434 已在消费者 `apiGet` 层自动续命**（`auth_token_guard.js` 跨进程 single-flight 刷新后重试，I-013），正常情况下无需人工处理；只有日常 Chrome 未登录导致刷新失败时才需介入。
+
+### 名师课采集后批量 H.265 重压（2026-09-13 新增）
+
+名师 copy 成片是未压缩 H.264 1080P（六科 2062 个 mp4、约 1.04TB、总时长约 1281h）。采集齐后用专用驱动离线重压为 H.265，参数与正课 `compress.sh` 完全一致（libx265 / CRF30 / preset fast / AAC 96k / hvc1 / faststart）。
+
+- 驱动：`scripts/compress_ep3_videos.py`。**幂等**——压前 ffprobe 读 v:0 编码，已是 hevc 跳过、只压 h264，可任意重跑；压到同目录 `.compress_tmp__` 临时文件，验证（hevc/分辨率不变/时长容差 max(3s,0.1%)/可解析）通过才**同名替换** `<老师>_video.mp4`（meta/vtt/网盘判重不受影响），失败删临时文件、保留原片、记 failed 不中断。
+- **全局单实例**：脚本内 fcntl.flock 占 `data/_workspace/_account/ep3/compress.lock`；x265 内部已吃满逻辑核，**不要再开第二个 ffmpeg**（多开不线性提速反互相抢核）。
+- 后台长跑（非交互）：`nohup python3 scripts/compress_ep3_videos.py > data/_workspace/_account/ep3/logs/compress_run.nohup.log 2>&1 & disown`（脚本内部置 COMPRESS_NONINTERACTIVE=1，符合 compress.sh 的非交互豁免）。先 `--dry-run` 看待压清单、`--limit N` 试跑、`--report` 看进度；断点结果在 `compress_state.jsonl`。
+- 顺序默认 战略→审计→经济法→财管→税法→会计（小到大，早出整课）；`--course 战略 --crf 28` 可指定课/调质量。
+- 实测样本（财管·关键绩效指标法 37min）：938MB/3540kbps → 73MB/179kbps（**约 1/13**），1080P 与时长零损失，课件印刷字/红蓝重点/手写批注清晰，达标"能看清视频中文字"。单实例 speed≈6.3x，1281h 内容约需 8 天连续，属超长后台任务，**期间可与知识详解生成（LLM/网络）、非视频网盘上传（IO）并行**（资源不重叠）。
+- 与网盘衔接：阶段④只传**重压后**视频；某课全部 hevc 后再对该课 `sync_ep3_ready.sh ... videos`。
 
 ### 多科目节流调度（白天防风控 + 给前台/豆包留资源，2026-09-10）
 
@@ -342,7 +353,7 @@ ls -lh "原始资源/notes/NN_模块/讲义_名称.pdf"
 | CDP 密钥捕获 | `scripts/cdp/capture_video_key.js` | CDP 连日常 Chrome、注入 Worker hook，抓 m3u8(SD/FHD) 与 AES key；支持正课 glive 与名师课 ep3（ep3 用 gp.play() 真播+点1080P，输出顶层数组） |
 | 下载解密 | `scripts/download_decrypt.js` | HLS分片下载解密合并脚本（glive/ep3 零改动复用） |
 | **名师课 ep3 采集编排** | `scripts/cdp/ep3_download_videos.js` | ep3(saasType13) 讲次枚举→getVideoInfo→FHD m3u8+VTT→取key→解密→ffmpeg copy→subtitle.vtt/transcript.md；`--list`/`--learning-url`/批量，断点续跑、双老师前缀 |
-| 压缩脚本 | `scripts/compress.sh` | ffmpeg H.265压缩脚本（**仅正课 glive**；ep3 FHD 用 `-c copy` 不重压） |
+| 压缩脚本 | `scripts/compress.sh`（正课单讲）、`scripts/compress_ep3_videos.py`（名师批量） | 正课 glive 用 compress.sh；名师 ep3 采集时 copy、采集后用 compress_ep3_videos.py 批量 H.265 CRF30 重压（幂等/单实例/断点，见「名师课采集后批量 H.265 重压」） |
 | 知识库结构检查 | `scripts/check_kb_structure.sh` | 自动检测重复节点、空节点、链接问题 |
 
 ## 参考文档

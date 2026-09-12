@@ -3,10 +3,18 @@
   "key": "ep3-audit-2026",
   "schemaVersion": 1,
   "platform": "ep3",
-  "project": { "id": 8, "name": "CPA" },
-  "subject": { "id": 47, "name": "审计" },
+  "project": {
+    "id": 8,
+    "name": "CPA"
+  },
+  "subject": {
+    "id": 47,
+    "name": "审计"
+  },
   "season": "2026考季",
-  "teachers": ["王依然"],
+  "teachers": [
+    "王依然"
+  ],
   "primaryCourse": {
     "role": "名师专业课主采集源（epiphany 智能学习平台，saasCourseType=13，链路见 ADR-018）",
     "name": "【VIPCPA专享】名师专业课-审计",
@@ -17,10 +25,30 @@
   },
   "companionCourses": [],
   "stages": [
-    { "label": "基础必修", "attribute": 3, "gradationId": 72916, "syllabusId": 71334 },
-    { "label": "全面精讲", "attribute": 4, "gradationId": 76234, "syllabusId": 76464 },
-    { "label": "重点强化", "attribute": 5, "gradationId": 78858, "syllabusId": 76999 },
-    { "label": "考前冲刺", "attribute": 6, "gradationId": 79617, "syllabusId": 77000 }
+    {
+      "label": "基础必修",
+      "attribute": 3,
+      "gradationId": 72916,
+      "syllabusId": 71334
+    },
+    {
+      "label": "全面精讲",
+      "attribute": 4,
+      "gradationId": 76234,
+      "syllabusId": 76464
+    },
+    {
+      "label": "重点强化",
+      "attribute": 5,
+      "gradationId": 78858,
+      "syllabusId": 76999
+    },
+    {
+      "label": "考前冲刺",
+      "attribute": 6,
+      "gradationId": 79617,
+      "syllabusId": 77000
+    }
   ],
   "paths": {
     "localRoot": "data/高顿/CPA/【VIPCPA专享】名师专业课-审计",
@@ -30,5 +58,109 @@
     "26考季主老师王依然(15251)；陈岩(15463)为25考季老师，按只取26考季原则不采",
     "四阶段梯度ID 2026-09-10 从 ep-study/gradation 实测（analysis/chapter 因未走学习引导返回空，改用 ep-study 接口绕过）",
     "视频自带VTT字幕(免FunASR)，每讲 related_resource 挂讲义PDF；试卷 redo-paper 受做题风控10462221锁定，解除后再采"
-  ]
+  ],
+  "structure": {
+    "officialGroupCount": 24,
+    "pointCount": 106,
+    "mainStage": "全面精讲",
+    "groups": [
+      {
+        "code": "01",
+        "name": "审计概述"
+      },
+      {
+        "code": "02",
+        "name": "审计计划"
+      },
+      {
+        "code": "03",
+        "name": "审计证据"
+      },
+      {
+        "code": "04",
+        "name": "审计抽样方法"
+      },
+      {
+        "code": "05",
+        "name": "信息技术对审计的影响"
+      },
+      {
+        "code": "06",
+        "name": "审计工作底稿"
+      },
+      {
+        "code": "07",
+        "name": "风险评估"
+      },
+      {
+        "code": "08",
+        "name": "风险应对"
+      },
+      {
+        "code": "09",
+        "name": "销售与收款循环的审计"
+      },
+      {
+        "code": "10",
+        "name": "采购与付款循环的审计"
+      },
+      {
+        "code": "11",
+        "name": "生产与存货循环的审计"
+      },
+      {
+        "code": "12",
+        "name": "货币资金的审计"
+      },
+      {
+        "code": "13",
+        "name": "对舞弊和法律法规的考虑"
+      },
+      {
+        "code": "14",
+        "name": "审计沟通"
+      },
+      {
+        "code": "15",
+        "name": "注册会计师利用他人工作"
+      },
+      {
+        "code": "16",
+        "name": "对集团财务报表审计的特殊考虑"
+      },
+      {
+        "code": "17",
+        "name": "其他特殊项目的审计"
+      },
+      {
+        "code": "18",
+        "name": "完成审计工作"
+      },
+      {
+        "code": "19",
+        "name": "审计报告"
+      },
+      {
+        "code": "20",
+        "name": "企业内部控制审计"
+      },
+      {
+        "code": "21",
+        "name": "会计师事务所业务质量管理"
+      },
+      {
+        "code": "22",
+        "name": "职业道德基本原则和解决职业道德问题的基本思路"
+      },
+      {
+        "code": "23",
+        "name": "审计业务对独立性的要求"
+      },
+      {
+        "code": "24",
+        "name": "企业可持续信息鉴证"
+      }
+    ],
+    "historyHint": "名师课(ep3)风控期无 papers.knowledgePointList，章取 outline 全面精讲章树、知识点由讲次目录去分P聚合（ep3_build_manifest.py）；章 code 对齐同科目正课 profile。重点强化跨章专题/考前冲刺不单独建组，跨讲聚合融入对应章/全局篇。"
+  }
 }
