@@ -16,8 +16,8 @@
   - 稳定、跨课复用的决策与方法在 `docs/project-management/decisions/`（ADR）与 `docs/project-management/memory/`（OKF），不在此展开。
 - 易变值（进度数字、当天日期、SHA、剩余量）不固化进本文件，需要时实时读 workspace 台账。
 
-> 最后更新：2026-09-13 13:10。**当前阶段＝名师课三线并行（视频 H.265 压缩 / 百度网盘 / 知识详解本地生成）；视频下载已 1483/1483 全齐收尾、不再下载、明确不走抽音频。**
-> - **知识线（AI 主线）**：名师专业课 **206/596**（会计 86、战略 67 全齐，审计完成第 1-12 章 53 点），下一步审计第 13 章「对舞弊和法律法规的考虑」。逐章进度、实时计数与三线总账唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄易变计数。
+> 最后更新：2026-09-13 14:50。**当前阶段＝名师课三线并行（视频 H.265 压缩 / 百度网盘 / 知识详解本地生成）；视频下载已 1483/1483 全齐收尾、不再下载、明确不走抽音频。**
+> - **知识线（AI 主线）**：名师专业课 **210/596**（会计 86、战略 67 全齐，审计完成第 1-13 章 57 点），下一步审计第 14 章「审计沟通」。逐章进度、实时计数与三线总账唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄易变计数。
 > - **压缩线**：`scripts/compress_ep3_videos.py` nohup 后台（CRF30/libx265、断点续跑、顺序 战略→审计→经济法→财管→税法→会计），done 计数看 `data/_workspace/_account/ep3/compress_state.jsonl`，进程断了按 SOP nohup 续跑（hevc 自动跳过）。
 > - **网盘线**：6 科 notes 已「ALL6 NOTES RESYNC DONE」收口；videos 待各课全部压完只传压缩版，旧已传 465 讲未压缩视频保留不折腾（方案甲）。
 > - **做题/试卷线**：账号风控 10462221 冻结，不试探、不申诉、等用户通知；按用户决策"风控拿不到的来源可忽略"不阻塞知识线，解封后只读回补题答并 draft→stable。
@@ -85,7 +85,7 @@
 
 ## 全局下一步（按优先级）
 
-1. **知识详解本地生成（AI 主线，进行中）**：按知识生成 SOP §2.12 逐章闭环（manifest 钉点→主干精讲 OCR 分段读→成稿+手写章 README→`okf_validate` E=0→find 现算计数→回写 three_tracks→单章 commit/push）。当前审计第 13 章，其后审计 14–24、再财管/税法/经济法；总账与实时计数唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄计数。
+1. **知识详解本地生成（AI 主线，进行中）**：按知识生成 SOP §2.12 逐章闭环（manifest 钉点→主干精讲 OCR 分段读→成稿+手写章 README→`okf_validate` E=0→find 现算计数→回写 three_tracks→单章 commit/push）。当前审计第 14 章，其后审计 15–24、再财管/税法/经济法；总账与实时计数唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄计数。
 2. **视频 H.265 压缩（后台 nohup）**：`scripts/compress_ep3_videos.py` 断点续跑（CRF30/libx265、顺序 战略→审计→经济法→财管→税法→会计）；某课全部 hevc 后才传该课压缩版 videos。存活/done 看 `compress_state.jsonl` 与日志，断了按 video-processing SOP 用 `nohup ... & disown` 续跑（hevc 自动跳过）。
 3. **百度网盘**：6 科 notes 已收口；只在某课压缩全完后传该课压缩版 videos、知识详解成品生成后同步；旧 465 讲未压缩视频保留不折腾（方案甲）。
 4. **做题/试卷（挂起等用户通知）**：名师 282 套（基础卷 264＋冲刺 18）与正课会计做题线均因账号风控冻结，**不试探、不申诉、不重做**；等用户通知解除后只做没做过的，再只读回补题面/答案/解析、把 draft 升 stable。
