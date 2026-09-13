@@ -16,18 +16,12 @@
   - 稳定、跨课复用的决策与方法在 `docs/project-management/decisions/`（ADR）与 `docs/project-management/memory/`（OKF），不在此展开。
 - 易变值（进度数字、当天日期、SHA、剩余量）不固化进本文件，需要时实时读 workspace 台账。
 
-> 最后更新：2026-09-13 13:10（**知识线：审计第 12 章「货币资金审计」整章 2 知识点 + 章 README 全齐、整章 OKF E=0，审计累计完成 12 章 53 点**。核心为出纳职责边界与支付/账户/印章内控、17 项警觉情形与 11 项舞弊迹象、银行函证含零余额和本期注销账户、余额调节表逐笔测试、定期存款已质押/未质押证据、货币资金三类舞弊应对。知识线名师专业课已写 **206/596 知识点**（会计 86、战略 67 全齐、审计 53，含 38 个章 README），剩余审计53/财管122/税法91/经济法66＝390 篇待写，下一步审计第 13 章「对舞弊和法律法规的考虑」（4 点跨 9 讲、上册正文 15684 起、大章）。压缩线 nohup done=79（战略 80 讲 1335MB 大文件压缩中）。网盘线：**6 科 notes 05:10:49「ALL6 NOTES RESYNC DONE」全部收口**，下一网盘动作＝各课压完传压缩版 videos、知识详解成品同步。实时计数唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`）
-> 2026-09-13（**三线并行启动（视频压缩 / 网盘 / 知识详解）；用户拍板名师视频改 H.265 压缩、明确不走抽音频**：①**压缩**——名师 6 科 2062 个 h264 mp4/约 1.04TB/总 1281h，新驱动 `scripts/compress_ep3_videos.py`（幂等 hevc 跳过、压完验证同名替换、flock 全局单实例、state 断点），CRF30 样本 938M→73M（约 1/13）、1080P 与时长零损失、课件文字清晰，nohup 全量已启动（顺序 战略→审计→经济法→财管→税法→会计，单实例约 8 天）；正课两门已是 hevc 跳过；经排查从未实际抽过音轨（无音频可删）。②**知识详解**——补齐审计/财管/税法提纲，六科钉死 **596 知识点、已写 86（全在会计）、待写 510**；题答 papers/笔记 notes 因 redo 风控 10462221 冻结、按用户"风控拿不到可忽略"处理，沿用会计 86 篇成熟范式（三节留风控占位、status:draft）；1d 增量 zip 来源已写入主生成 SOP 强制纳入。③**网盘**——notes（讲义/OCR/VTT）先传、视频待该课压完传压缩版、旧已传 465 讲未压缩不折腾。明细与实时进度见 `data/_workspace/_account/ep3/three_tracks_status.md`；SOP 同步改 video-processing.md、knowledge-detail-build-sop.md）
-> 2026-09-13（**①名师增量讲义入库（任务①完成）**：7 个真增量 zip 下载→解压（zip 已删）→转文稿，共 36 PDF + 70 张思维导图 PNG。周越财管 18 份是图片型 PDF（曾被"都带文本层"假设误抽出近空壳，已删空壳改 macOS Vision 重 OCR，每份 5.9k–40k 字）；齐萌经济法 10 / 陈岩战略 8 带文本层、直接抽取（文稿头部如实标注"非 OCR"）；高蒙税法 70 张思维导图 Vision 合并为一份稿。全库讲义 PDF **224→260**、文稿 261、缺文稿 PDF=0；SOP `knowledge-base-sources.md` 新增来源 **1d / §1.2 名师讲义 zip 补遗**并要求知识详解一并纳入。**②作业基线刷新、风控仍锁（任务②挂起）**：新增只读枚举器 `scripts/cdp/refresh_ep3_inventory.js`（补 ep3 缺工具，遍历 stages 收 paper 叶子+只读 record/analysis 审计、不 redo 不触发风控），6 门名师 26 考季最新待做＝基础卷 **264**（会计48/审计15/财管27/税法13/经济法83/战略78，全部"从未做过"、非满分与未提交均 0、无一张需重做）＋冲刺模考 **18**（6 门各 3），合计 **282 套**；02:31 `--probe` 实测 redo-paper 仍回 **10462221 风控未解**，做题/冲刺线继续挂起等用户通知，不反复试探。明细见 `data/_workspace/_account/ep3/video_gap_verified.md` 第九/十节）
-> 2026-09-12（**会计正课飞书知识库第三遍 resync 全量完成 169/169**：前向关联链接全部解析为 `<cite>` 可点击内链，修复 resolver 漏传 WIKI_MAP 致第二遍内链全退化的 bug；6 篇金融工具悬空链接（保险合同概述，本课程无此篇）降级为纯文本；飞书端抽检通过（无 YAML、cite 内链、学员补充齐全）。摸清飞书写入限流真根因为豆包转发代理层单进程累计限流，每个全新 shell 健康窗口约 3 轮/24 篇，须连外层一起周期换新；已固化进 SOP feishu-api.md §4.4 与 run_resync_batches.sh（MAX_ROUNDS 默认 3）。会计课知识库建设核心任务全部完成，工单 06 可关闭）
->
-> 2026-09-11（**会计正课飞书知识库第一遍建树完成 169/169**：2 全局篇 + 30 章组节点 + 137 知识点全部建成并写入正文，wiki_node_map.tsv 169 行齐全。攻克飞书**账号级滑动窗口限流**（node-list 查询约 70 次、node-create 写约 36–40 次后进入拒绝窗口，与 token 失效无关）：sync_wiki_new.sh 增①组级缓存 prefetch_children（node-list 169→约 31 次、查重走本地 awk）②node-create 三次指数退避重试③组节点空值守卫④整组已完成零网络跳过，配合小批次长冷却（8 节点×90s）多轮断点续跑从零收敛，已 commit 266da94。**第二遍 resync 全量覆盖进行中**（map 完整后把前向关联链接解析为 `<cite>`、确保含笔记 Fan-In 最新版，保守 8×90s 批次）；百度网盘知识详解 169 篇已全部传完。下一步：resync 收尾 → 飞书抽检 cite/正文 → 会计课工单 06 关闭）
->
-> 2026-09-11（**会计正课知识详解本地成品全齐**：137 知识点篇 + 30 章 README + 2 全局 Reference = 169 篇、知识点题量合计 1006；笔记 Fan-In 经通用 build_notes_mapping→organize_user_notes 给 128 篇注入「四、学员补充」共 1035 条——alias 补持有待售/PPP 近义名，章级/专题聚合卷正确留 unmatched 不强行挂载，学员名/点赞等身份字段在 mapping 层全剥离；清 paper-82348 模板污染 52 篇、修 82294 多选 BCD 自相矛盾；全库 OKF 校验 E=0）
->
-> 2026-09-11（名师课补三科阶段配置：税法补全四阶段、战略/经济法补到三阶段，共新增 178 视频约 90G；config v2.1.0、throttled TASKS 15→22 行，新调度器已自动纳管新增阶段。修复单老师时代裸 meta 被完整性判据误读的机制问题 I-014：throttled / sync_ep3_ready 统一只认 `<老师>_meta.json`，可逆清理 304 个孤儿裸件 + 142 空目录（按 videoId 全局核对零真漏，成品零误伤）；**纠正调度器重启方法：禁用 `pkill -f`（新旧同命令行会双开），改按 PPID=1 的 throttled 根 BFS 收集后代 kill -9、确认残留 0 再启动**）
->
-> 2026-09-10（修复下载生产者-消费者结构性缺陷：key 缓存改「profile×阶段」独立文件 + 按需滚动预取，解决会计重点强化被共享缓存总条数饿死漏片；名师课审计/财管做题触发账号风控 10462221、白天冷却夜间续；名师课6科目下载继续，会计课做题线因风控关闭，视频转写已完成；并完成 OKF×I2T 融合治理：AGENTS §3.13 补「过程件写法与融合纪律」、名师课账号级工单三件套按范式重整试跑、ISSUES 登记 I-006/I-007、throttled 补回 caffeinate 防睡眠；会计 vs 税法成品范式对齐 ADR-019：知识章号对齐官方 code（会计 01_总论 改回 03_总论）、讲目录命名与 frontmatter sources 著录口径固化进脚本/模板/SOP，只约束未来、不回溯税法，网盘改名挂 finalize；补齐会计用户笔记：实测 note/question 只读接口未被做题风控连带，已采 1518 题/4473 条，新增通用 build_notes_mapping.py 替代税法一次性过程件、organize 去税法硬编码、采集脚本并发参数 bug 修复；网盘并发备份启动：正课会计整课后台同步，新增 sync_ep3_ready.sh 让名师课在下载进行中只传「完整讲」、不打半成品 done，讲义全量、视频按完整讲滚动同步，上传走百度 API 不增加高顿风控；2026-09-10 晚纠正审计/财管"纯试卷无视频"误判（I-010：未走学习引导致 analysis/chapter 返回空，outline 加 ep-study fallback 根治，下载器本就走 ep-study/syllabus），两科实为四阶段单老师（审计王依然314视频/48讲义、财管李晶389视频/28讲义），profile/ep3_subjects/throttled 六科纳管、TASKS 交错；并修 stage_missing 空目录误判完整的新课漏采缺陷（I-011，未开始返回-1触发补位），审计基础必修已实测开下）
+> 最后更新：2026-09-13 13:10。**当前阶段＝名师课三线并行（视频 H.265 压缩 / 百度网盘 / 知识详解本地生成）；视频下载已 1483/1483 全齐收尾、不再下载、明确不走抽音频。**
+> - **知识线（AI 主线）**：名师专业课 **206/596**（会计 86、战略 67 全齐，审计完成第 1-12 章 53 点），下一步审计第 13 章「对舞弊和法律法规的考虑」。逐章进度、实时计数与三线总账唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄易变计数。
+> - **压缩线**：`scripts/compress_ep3_videos.py` nohup 后台（CRF30/libx265、断点续跑、顺序 战略→审计→经济法→财管→税法→会计），done 计数看 `data/_workspace/_account/ep3/compress_state.jsonl`，进程断了按 SOP nohup 续跑（hevc 自动跳过）。
+> - **网盘线**：6 科 notes 已「ALL6 NOTES RESYNC DONE」收口；videos 待各课全部压完只传压缩版，旧已传 465 讲未压缩视频保留不折腾（方案甲）。
+> - **做题/试卷线**：账号风控 10462221 冻结，不试探、不申诉、等用户通知；按用户决策"风控拿不到的来源可忽略"不阻塞知识线，解封后只读回补题答并 draft→stable。
+> - 更早历史（下载攻坚与节流模型、会计飞书三遍地建树、名师增量 zip 补遗、OKF×I2T 治理等）见 git log / CHANGELOG / three_tracks 进度日志，本活态台账不滚动保留。
 
 ## 任务总览（全局里程碑）
 
@@ -36,18 +30,18 @@
 2. 税法课（蔡俊峻）         ✅ finalize（39讲原料 + 116套作业 + 108篇知识详解，本地/网盘/飞书三地同步）
 3. 项目管理与文档体系       ✅（ADR-001~019、OKF 工程记忆、SOP/规范/模板体系、I2T 任务工程方法论）
 4. 会计课（罗翔）           ✅ 知识库建设完成 / ⏸️ 做题暂停（正课四来源已齐：视频转写46/46、讲义OCR44、题答176卷、笔记4473条；知识详解本地 **169 篇全齐 = 137 知识点 + 30 章 README + 2 全局 Reference**，全库 OKF E=0；**飞书第一遍建树 169/169 + 第三遍 resync 全量重刷完成**，前向关联链接已解析为 `<cite>` 可点击内链（修复 resolver 漏传 WIKI_MAP 致内链退化 bug），6 篇金融工具悬空链接降级为纯文本，飞书端抽检通过；百度网盘知识详解已全传；做题线因风控关闭不追分，等用户通知解除）
-5. 名师课6科目              ✅ 视频全齐 / 🔄 后续＝视频 H.265 压缩（不走抽音频，2026-09-13 改）→网盘传压缩版→六科知识详解已写 170/596、426 篇待写（**战略全 8 章 67 点已全齐**、会计 86、审计第 1-3 章 17 点）（六科归并 **1483 讲**、老师视频条 2062；2026-09-13 只读核对并补齐 5 讲残缺后本地 **1483/1483 全齐、0 缺 0 多余、全片解码 0 错误**；权威结论 `data/_workspace/_account/ep3/video_gap_verified.md`，复核脚本 `scripts/cdp/ep3_diff_online_local.js`）
+5. 名师课6科目              ✅ 视频 1483/1483 全齐 / 🔄 三线并行中（H.265 压缩→网盘传压缩版→知识详解本地生成；**不走抽音频**，2026-09-13 决策）。知识详解实时进度/计数看 `data/_workspace/_account/ep3/three_tracks_status.md`、本里程碑不抄计数；视频核对权威结论 `data/_workspace/_account/ep3/video_gap_verified.md`，复核脚本 `scripts/cdp/ep3_diff_online_local.js`
 ```
 
 状态标记：✅ 完成 | 🔄 进行中 | ⏳ 待启动 | ⏸️ 暂停 | ⚠️ 有阻塞 | ❌ 取消
 
 ---
 
-## 当前阶段：名师课6科目同时下载（ep3平台，profile=`ep3-*-2026`）
+## 当前阶段：名师课6科目三线并行（H.265 压缩 / 网盘 / 知识详解；ep3平台，profile=`ep3-*-2026`）
 
 > 单课工单拆解、实时计数、侦查与日志以 `data/_workspace/_account/ep3/`（`manifest/`、`logs/`、`keycache/`）与各课 `data/_workspace/<profile>/` 为唯一权威；本节只放跨会话必须先知道的**指针与硬约束**，不抄计数。
 
-> **✅ 视频下载线已收尾（2026-09-13）**：六科归并讲 **1483**（审计257/战略129/财管354/会计330/税法224/经济法189），本地 **1483/1483 全齐**。方法定稿＝浏览器桥只读 syllabus 树、用叶子**内嵌 `resource.discriminator/video_id`** 判真视频（不逐个调 front/resource，避免业务码 10161000；node 直连 apigateway 被 Tengine 指纹拦 405，业务接口必须走浏览器页面内 fetch，视频分片走 CDN 可 node 直连）。当年中断的 5 讲残缺（审计全面136/157、财管全面142、财管重点09/12）已用 `data/_workspace/_account/ep3/patch_missing_videos.js` 补成 1080P、四件套齐全、ffmpeg 全片解码 0 错误。**下一步不再下载视频**，转抽原始 AAC 音轨（方案A）。
+> **✅ 视频下载线已收尾（2026-09-13，六科归并 1483 讲全齐、0 缺、全片解码 0 错误）**：方法定稿＝浏览器桥只读 syllabus 树、用叶子**内嵌 `resource.discriminator/video_id`** 判真视频（不逐个调 front/resource，避免业务码 10161000；node 直连 apigateway 被 Tengine 指纹拦 405，业务接口必须走浏览器页面内 fetch，视频分片走 CDN 可 node 直连）。当年中断的 5 讲残缺已用 `data/_workspace/_account/ep3/patch_missing_videos.js` 补成 1080P、四件套齐全。**下载不再进行；2026-09-13 用户拍板后续走 H.265 压缩（CRF30/libx265、能看清课件文字）、明确不走抽音频**；下载节流模型的完整设计与"勿回退"要点见工程记忆 concept `workflow-ep3-vod-decryption` 与 `scripts/cdp/throttled_ep3_download.sh` 头注释。
 
 | 科目 | profile | 状态 | 指针级说明（细节看 workspace） |
 |------|---------|------|-------------------------------|
@@ -58,32 +52,22 @@
 | **审计** | ep3-audit-2026 | ✅视频齐 / ⏸️做题等通知 | **有视频有讲义**（2026-09-10 晚纠正"纯试卷"误判，见 ISSUES I-010）：四阶段、26考季**单老师王依然**（15251；陈岩15463仅25考季不取），共 314 视频/153 试卷资源/48 讲义；视频/讲义接口不受做题风控连带，已纳入 throttled 下载。**做题线**触发账号风控 10462221，剩余队列见该课 `papers_audit.json`（**2026-09-13 只读刷新：仅 15 张基础卷未做、135 张已完成 + 冲刺3**），**AI 不申请/不申诉/不反复试探，等用户通知**；解除后用 batch_ep3_papers 做 audit、fetch_ep3_paper_readonly 只读回补（见 ISSUES I-009） |
 | **财管** | ep3-finance-2026 | ✅视频齐 / ⏸️做题等通知 | **有视频有讲义**（同 I-010）：四阶段、26考季**单老师李晶**（11134；周越26考季未挂视频，但 09-13 经 zip 补遗补入周越基础7+精讲11份讲义 PDF），共 389 视频/174 试卷资源；讲义 PDF 35（17 原有+周越18）。**作业 26 考季仅 27 张基础卷未做、144 已完成 + 冲刺3**（09-13 只读刷新）。做题线同审计、等用户通知；已做卷题面/答案/解析待解除后只读回补 |
 
-> 名师课讲义 OCR：会计16/税法26/战略28/经济法36 已完成；审计48、财管28 讲义 outline manifest 已列出（pdf/zip），随 `ep3_download_handouts.js` 下载后再 OCR。做题用 `batch_ep3_papers.js`，分时段拟人节奏（白天卷间6–15s+定期长休、0–6点快节奏），审计/财管做题线因风控暂停（见 I-009）。
+> 名师课六科讲义/OCR 已全齐（含 zip 补遗，缺文稿 PDF=0）；做题统一走纯接口 `batch_ep3_papers.js`、分时段拟人节奏，现因账号风控全线挂起、等用户通知（见 I-009），不试探、不重做。
 
-### 下载调度：节流模型（2026-09-10 改造，唯一入口 `scripts/cdp/throttled_ep3_download.sh`）
+### 下载调度（已收尾，仅留指针，勿回退）
 
-- **1 个生产者**串行轮询全部「科目×阶段」预取 key（`round_robin_prefetch.sh`，全进程唯一操作 Chrome）；**消费者纯 `--consumer`** 只从 keycache 读 key 下载、不碰 Chrome
-- **key 缓存按「profile×阶段」独立成文件 `<profile>__<阶段>.json`，生产者只给"当前有活跃消费者进程"的阶段、每轮滚动预取 prefetch_count 个**（pgrep 识别 `--stage X --consumer`，生产者自身 --prefetch-only 不误匹配）；无消费者阶段不预取（防 token 闲置过期）。⚠️ 同一 profile 多阶段绝不能共用一个缓存文件：消费者只读不删 key、缓存只增不减，旧版"缓存总数≥阈值就跳过整个 profile"会把后跑阶段（会计重点强化）永久饿死、等 key 30 分钟超时漏片（2026-09-10 修复，勿回退）
-- **同时在跑消费者上限 `MAX_PARALLEL=3`**（夜间可 `MAX_PARALLEL=6` 重跑），结束一路自动补一路；并发计数只用消费者 PID+`kill -0`，**禁用 `jobs -rp`**（会把生产者计入而卡死，bash3.2 无 `wait -n`）
-- **全进程 `nice -n 20 taskpolicy -c utility` 降后台优先级**，给前台/豆包留资源（解决下载占满网络/磁盘导致豆包卡死）
-- **分时段**：分片并发白天12/夜间0–6点64（在 `ep3_download_videos.js`）；`prefetch_count=8`（白天降低 key 接口突发）；科目/阶段/老师统一读 `config/ep3_subjects.json`（**六科四阶段 2026-09-10 全部补齐**，审计/财管单老师）；TASKS 补位队列科目交错（会计优先，审计/财管大头居中、强化冲刺垫后）
-- **新课纳管两道闸（2026-09-10，I-010/I-011，勿回退）**：①大纲先跑 `ep3_course_outline.js`，主接口空会自动走 ep-study fallback，别把"接口空"当"无视频"；②`stage_missing` 对阶段目录不存在/无 meta 的新课返回 -1 触发补位（否则空目录被误判完整、永不下载）
-- **风控判断**：视频分片走 CDN，带宽大小不是风控点；敏感的是业务网关 key/学习接口频率。消费者启动偶发卡死（CPU=0/零日志）直接 kill -9，调度器自动补位
-- **消费者等 key 30 分钟超时**（30×60s）：正常滚动预取下最多等一轮（约 10 分钟）即补到 key；若某阶段真到 30 分钟超时漏片，主体下完后重跑调度器统一补（断点续跑、已存在跳过）
-- **2026-09-10 补位模型修复（重要，勿回退）**：旧版 `for TASKS` 是一次性队列，每阶段只起一次消费者，而消费者把当前缓存下完就退出、调度器不再为该阶段补人，导致后期只剩 1 路（实测仅 0.22 MB/s）、空着并发槽，最终还会误报「全部完成」漏片。新版改为**以本地完整性（每个 `*_meta.json` 都有对应非空 `*_video.mp4`）为唯一完成判据**的持续补位主循环：每 20s 扫描，阶段未完整且无其存活消费者（PID 落 `data/_workspace/_account/ep3/run/<tag>.pid`）、在跑数 < MAX_PARALLEL 就补一个，直到全部完整才收工。修复后 3 路白天档实测 12.3 MB/s。**重启调度器禁用 `pkill -f`**（新旧进程命令行完全相同、TERM 杀不掉 sleep 中的主循环，2026-09-11 曾因此新旧双开、两个生产者同时抢 Chrome，见 I-014）：用 python 读 `ps -ax -o pid,ppid,command` 找 **PPID=1** 且 command 含 `throttled_ep3_download.sh` 的根，BFS 收集后代、按关键词（throttled/round_robin/ep3_download_videos/caffeinate）过滤后 `kill -9`，确认残留 0、`rm -f data/_workspace/_account/ep3/run/*.pid` 再启动。**完整性唯一判据=每个 `<老师>_meta.json` 有对应非空 `<老师>_video.mp4`，不数单老师时代裸 meta**（I-014）
+- 节流模型＝1 生产者 `round_robin_prefetch.sh` 串行预取 key + 最多 `MAX_PARALLEL` 个纯消费者只读缓存下载；key 缓存按「profile×阶段」独立、只给活跃消费者滚动预取；`nice -n 20 taskpolicy -c utility` 降后台、`caffeinate` 防睡眠；完整性唯一判据＝每个带老师前缀 `*_meta.json` 有对应非空 `*_video.mp4`（不数单老师时代裸 meta，I-014）；新课两道闸（outline ep-study fallback、stage_missing 补位，I-010/I-011）；**重启禁用 `pkill -f`，按 PPID=1 根 BFS 收集后代 kill -9、确认残留 0 再启动防双开**。
+- 完整权威：工程记忆 concept `docs/project-management/memory/concepts/workflow-ep3-vod-decryption.md`、`scripts/cdp/throttled_ep3_download.sh` 头注释、ISSUES I-010/I-011/I-014。下载阶段已收尾，通常无需再动。
 
-### 网盘同步（与下载并发，2026-09-10 启动；准备好就传、不等全部）
+### 网盘同步（当前策略＝方案甲）
 
-- **正课会计**：整课（知识详解→讲义→题面→视频）后台顺序同步，日志 `data/_workspace/cpa-accounting-2026/logs/netdisk_sync.log`，完成标志 `NETDISK_ACCOUNTING_ALL_DONE`
-- **名师课**：`scripts/sync_ep3_ready.sh <profile> 2 all`，讲义全量、视频只传「完整讲」、滚动重跑补齐；账号级日志 `data/_workspace/_account/ep3/logs/netdisk_sync.log`；下载未完成的讲绝不打 done
-- 已存在文件走 MD5 秒传，可随时中断/重跑；上传走百度 API、不碰高顿，不增加做题/视频风控；网盘 IO 并发 2、nice 最低，给下载与前台留资源
+- 6 科 notes（讲义/转写/增量补遗文稿）已全量收口；videos 改为**某课全部 H.265 压缩完成后只传压缩版**，旧已传的 465 讲未压缩视频保留不折腾、剩余不再传未压缩视频
+- 上传走百度 API、不碰高顿；已存在文件 MD5 秒传、可中断重跑；脚本与参数见 `docs/development/api/netdisk-setup.md`
 
 ### 硬约束（恢复时第一优先，禁止违反）
 
-- **ep3平台取流**：必须通过CDP hook Worker截获key（AES-128-CBC），禁止静态逆向
-- **双老师视频**：按 teacher_id 分拉并按章节路径归并同讲目录，老师进文件名前缀
-- **平台字幕**：ep3平台提供VTT字幕，优先下载字幕替代转写（ADR-018）
-- **凭证失效（553649434）最后怀疑**：须有只读请求硬证据；排查先怀疑AI自身（端点/参数/文件选取/观测方法）
+- **凭证失效（553649434 等）最后怀疑**：须有只读请求返回登录超时的硬证据；排查先怀疑 AI 自身（端点/参数/ID/文件选取逻辑/最近改动，约九成在此）
+- 下载/取流阶段的平台专属约束（CDP hook 截 key、双老师按 teacher_id 归并、ep3 VTT 字幕优先于转写）已随下载收尾固化进工程记忆 concept `workflow-ep3-vod-decryption`，不再下载时无需读取
 
 ---
 
@@ -95,23 +79,22 @@
 
 ## 暂停课程（等条件满足后恢复）
 
-- **会计（26考季·罗翔）🔄 知识详解生成中，仅做题线暂停**：正课四来源已齐——视频转写46/46、讲义OCR 44/44、题答176卷落盘、用户笔记1518题/4473条已采并建好映射中间件（笔记「学员补充」留到知识点篇写完后 Fan-In 统一注入）；**知识详解连续生成中，已写篇数/剩余清单/章README与全局篇待补项一律以 `data/_workspace/cpa-accounting-2026/tickets/tickets-index.md` 实时为准，本文件不抄计数**；做题线因账号风控10462222关闭、用户拍板不重刷追分（剩余题目解析待风控解除，不阻塞知识详解）。网盘 09-10 已 ALL_DONE，其后新增的知识详解在 05 收尾时增量再同步。
+- **会计（26考季·罗翔）⏸ 仅做题线暂停**：四来源采集、169 篇知识详解、笔记 Fan-In（1035 条）、飞书三遍地同步均已完成（见顶部任务总览第 4 条）；仅做题线因账号风控 10462222 关闭、用户拍板不重刷追分，等通知后只读回补剩余解析，不阻塞其它线。
 
 ---
 
 ## 全局下一步（按优先级）
 
-1. **名师课视频下载**（节流调度器后台续跑，1生产者+最多3消费者、降优先级；2026-09-10 已修复 per-stage 独立缓存+按需滚动预取，会计重点强化不再被饿死、漏片 08/09 会自动补回；**同日晚纳管审计/财管**：四阶段、单老师，审计314/财管389视频，TASKS 交错排队、审计基础必修已实测开下）：会计四阶段（全面精讲/考前冲刺已完，基础必修/重点强化在跑），税/审计/战略/财管/经济法按交错队列补位；断点续跑，主体下完后统一补 fails（税法2、战略1 等零星 m3u8/分片失败）。**审计/财管讲义随后用 `ep3_download_handouts.js`（读 outline manifest）下载并 OCR。每阶段收尾跑离线完整性核对 `node scripts/cdp/ep3_verify_local.js [--clean]`（零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲待在线终核）。**
-2. **名师课做题与试卷详情（审计/财管，纯试卷、无视频）**：账号风控 10462221 期间**不重启提交、不试探、不申诉**，风控由学管师人为解除、**等用户通知**再恢复做题（队列以各自 `papers_audit.json` 为准）。**【09-10 用户决策】不等剩余卷做全：排除因风控拿不到的来源，用现有能拿到的来源（已做卷 + 只读回补的题面/标准答案/解析）一直推到生成知识库，内容太少则暂时搁置该课、后续再补。** 已做卷目前只写了 audit 队列、未落题面/答案/解析，需只读回补（只读 GET、不提交，先小批验证是否被连带风控）。主观题不强行刷满分，质量到位即可。
-3. **名师课三线并行（09-13 起进行中，总账唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄计数）**：线1 视频重压 nohup 后台（`compress_ep3_videos.py`，CRF30/libx265、断点续跑、顺序 战略→审计→经济法→财管→税法→会计，约 8 天；09-13 13:10 done=79、战略 80 讲 1335MB 大文件压缩中）；线2 百度网盘 notes 6 科 05:10 全收口，videos 待各课压完只传压缩版，旧已传 465 讲未压缩视频保留不折腾；线3 知识详解 AI 主线逐篇写（**会计 86、战略 67 全齐；审计已完成第 1-12 章共 53 点，正进第 13 章「对舞弊和法律法规的考虑」**；名师合计 206/596、缺口 390，主干＝精讲 OCR＋转写＋1d 增量 zip 补遗）。题答/笔记被风控 10462221 锁，按用户"风控拿不到的忽略"决策不阻塞，解封后只读回补并 draft→stable。
-4. **正课会计（罗翔，cpa-accounting-2026）做题线仍关闭**：账号风控 10462222，用户已拍板不重刷追分；与名师课 ep3 做题是两条线，勿混。
-5. **项目治理**：课程级过程件一律 `data/_workspace/<course>/` 不入库；稳定结论才提炼进 ADR/OKF/SOP。日常开发按里程碑及时 commit、按需自主 push（2026-09-10 用户已授权，不必每次请示）。
+1. **知识详解本地生成（AI 主线，进行中）**：按知识生成 SOP §2.12 逐章闭环（manifest 钉点→主干精讲 OCR 分段读→成稿+手写章 README→`okf_validate` E=0→find 现算计数→回写 three_tracks→单章 commit/push）。当前审计第 13 章，其后审计 14–24、再财管/税法/经济法；总账与实时计数唯一真相＝`data/_workspace/_account/ep3/three_tracks_status.md`，本文件不抄计数。
+2. **视频 H.265 压缩（后台 nohup）**：`scripts/compress_ep3_videos.py` 断点续跑（CRF30/libx265、顺序 战略→审计→经济法→财管→税法→会计）；某课全部 hevc 后才传该课压缩版 videos。存活/done 看 `compress_state.jsonl` 与日志，断了按 video-processing SOP 用 `nohup ... & disown` 续跑（hevc 自动跳过）。
+3. **百度网盘**：6 科 notes 已收口；只在某课压缩全完后传该课压缩版 videos、知识详解成品生成后同步；旧 465 讲未压缩视频保留不折腾（方案甲）。
+4. **做题/试卷（挂起等用户通知）**：名师 282 套（基础卷 264＋冲刺 18）与正课会计做题线均因账号风控冻结，**不试探、不申诉、不重做**；等用户通知解除后只做没做过的，再只读回补题面/答案/解析、把 draft 升 stable。
+5. **项目治理**：课程级过程件落 `data/_workspace/<course>/` 不入库；稳定结论才提炼进 ADR/OKF/SOP；按里程碑及时 commit、已授权自主 push（提交信息写清、含 TASK_STATUS 更新）。
 
-## 恢复检查清单（异常恢复 / 新会话接续时逐项确认）
+## 恢复检查清单（异常恢复 / 新会话续接时逐项确认）
 
-- [x] 读本文件 + `docs/project-management/memory/index.md`，确认当前阶段（名师课6科目同时下载）
-- [ ] 读 `data/_workspace/_account/ep3/` 下的 manifest 与日志，确认真实进度（不看本文件里的旧数字）
-- [ ] 查后台进程：下载走 `throttled_ep3_download.sh`（内含1生产者 `round_robin_prefetch` + 最多3消费者 `ep3_download_videos --consumer`）；做题 `batch_ep3_papers`（审计/财管）。豆包重启会杀 node 但不杀 nohup bash，重启前先 pgrep 严防双开
-- [x] **正课**会计（罗翔 cpa-accounting-2026）做题线已关闭（2026-09-08 用户拍板，风控10462222）；注意这与**名师课** ep3 审计/财管做题（在跑）是两条线，勿混
-- [ ] 检查各「profile×阶段」独立 key 缓存数量：`data/_workspace/_account/ep3/keycache/<profile>__<阶段>.json`（旧的 `<profile>.json` 共享缓存已废弃、保留不删）
-- [ ] 下载/做题都应是 `nice -n 20 taskpolicy -c utility` 低优先级；白天拟人慢节奏、0:00–6:00 才快节奏（防风控+给豆包留资源）
+- [ ] 按 AGENTS §2 判断冷启动/续接路径；读本文件 + `memory/index.md` + `three_tracks_status.md` 确认三线当前位置（数字一律以 workspace 现算为准，不看本文件或对话里的旧值）
+- [ ] 查压缩后台：`ps aux | grep compress_ep3_videos` 看存活、`grep -c '"status": "done"' data/_workspace/_account/ep3/compress_state.jsonl` 看 done；进程没了就 `nohup+disown` 续跑（hevc 自动跳过；长跑禁用会被回收的 run_in_background、禁 `pkill -f`）
+- [ ] 知识线：从该课 manifest 现读章/点/讲次（`groups[].code` 为整数、`pointIndex[str(pid)]` 取点），按 SOP §2.12 续写下一未完成章，整章 `okf_validate` E=0
+- [ ] 确认做题/试卷线仍风控挂起（不试探）；网盘线是否出现"某课已全 hevc、待传压缩版 videos"
+- [ ] 先 `git status` / `git log -1` 确认本地与 origin 同步、工作区干净再动手

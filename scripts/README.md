@@ -74,7 +74,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 二、视频处理（9个）
+## 二、视频处理（12个）
 
 ### `download_decrypt.js` — HLS视频下载解密合并
 
@@ -100,6 +100,16 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 **参数**：libx265 / CRF 30 / preset fast / AAC 96k / hvc1标签 / faststart。
 **验证**：压缩后自动检查时长误差<2秒、编码格式、可播放性。
+
+---
+
+### `compress_ep3_videos.py` — 名师课(ep3)视频批量 H.265 重压驱动（断点续跑/全局单实例）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | ep3 链路 `-c copy` 原样封装的是 H.264 1080P（单讲常达数百 MB~1GB）；本脚本把仍是 H.264 的 `*_video.mp4` 用与 `compress.sh` 一致参数（libx265/CRF30/preset fast/AAC96k/hvc1/faststart）重压为 H.265，已是 hevc 的自动跳过；断点落 `data/_workspace/_account/ep3/compress_state.jsonl` |
+| **用法** | `nohup python3 scripts/compress_ep3_videos.py > logs/compress_run.nohup.log 2>&1 & disown`（长跑走守护、勿用会被回收的 run_in_background） |
+| **相关文档** | `docs/development/tools/video-processing.md`、`compress.sh` |
 
 ---
 
@@ -205,7 +215,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 三、音频转写（7个）
+## 三、音频转写（6个）
 
 > **如何选用（这些入口对象/粒度不同，不是重复实现，勿误删）**
 >
@@ -385,7 +395,17 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 六、环境与工具（6个）
+### `verify_netdisk_final.py` — 课程 finalize 网盘/本地终态递归对比（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 递归对比本地课程目录与网盘目录的结构、文件数、文件名集合、文件大小，finalize 前三地一致性核验 |
+| **用法** | `BAIDU_ENC_PASS=<加密密码> python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根>` |
+| **相关文档** | `docs/development/guides/netdisk-final-verification-sop.md` |
+
+---
+
+## 六、环境与工具（9个）
 
 
 ---
@@ -493,7 +513,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 七、检查与验证（7个）
+## 七、检查与验证（5个）
 
 ### `check_directory_structure.sh` — 目录结构检查
 
@@ -595,7 +615,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 九、高顿做题接口链路（6个，位于 `scripts/cdp/`）
+## 九、高顿做题接口链路（17个，位于 `scripts/cdp/`）
 
 > 「接口为主、UI 兜底」的纯接口做题脚本，契约见 [高顿作业接口档案](../docs/development/api/gaodun-exam-api.md)。报文落 `data/_workspace/<profile>/sniff/`（不入库）。
 
@@ -761,6 +781,18 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用途** | 串行轮询指定科目（参数=科目名，缺省全部）的全部阶段，**只给当前有活跃消费者（pgrep 识别 `--stage X --consumer`）的阶段、每轮滚动预取 prefetch_count 个 key**（顺带下无需 key 的 VTT 字幕），不下载视频；与纯消费者解耦，避免多进程同时操作 Chrome 抢播放页。无消费者阶段不预取（防 token 闲置过期）。科目/profile/阶段/老师/缓存路径全部读 `config/ep3_subjects.json`，加科目不改脚本。⚠️ 缓存必须按「profile×阶段」分文件，同一 profile 多阶段共用一个缓存会被先跑阶段的缓存总条数连带饿死后跑阶段（2026-09-10 修复） |
 | **用法** | `bash scripts/cdp/round_robin_prefetch.sh accounting tax strategy econlaw`（一般由 throttled 调度器自动拉起，不单独跑）；per-stage 缓存 `data/_workspace/_account/ep3/keycache/<profile>__<阶段>.json` |
 
+---
+
+### `cdp/ep3_diff_online_local.js` — 名师课「在线真视频 vs 本地实物」只读核对器
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 走浏览器桥（connect_browser 页面内 fetch，绕 Tengine 405）只读 GET syllabus，按叶子内嵌 `resource.discriminator/video_id` 判真视频（剔除章测等非视频叶子），与本地实物比对出缺口/残缺；不下载、不取 key、不写课程库、不碰做题风控 |
+| **用法** | `node scripts/cdp/ep3_diff_online_local.js`（参数见脚本头） |
+| **相关文档** | `cdp/ep3_course_outline.js`、工程记忆 `workflow-ep3-vod-decryption` |
+
+---
+
 ### `cdp/do_sprint_paper.js` — 冲刺模考 6 卷统一纯接口做卷入口（3 试卷 + 3 机考）
 
 | 项目 | 说明 |
@@ -782,20 +814,11 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 十、飞书知识库同步（1个）
+## 十、飞书知识库同步（3个）
 
-> 飞书同步现役脚本。同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准。
+> 飞书同步现役脚本。同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准；知识详解批量同步现役为 `knowledge/resync_wiki_content.py`（由 `knowledge/run_resync_batches.sh` 分批驱动）。
 
-
----
-
-
----
-
-
----
-
-### `sync_wiki_new.sh` — 新结构(课程根→14组→92知识点)同步飞书【现役】
+### `sync_wiki_new.sh` — 新结构(课程根→组→知识点)同步飞书【现役】
 
 | 项目 | 说明 |
 |------|------|
@@ -806,8 +829,27 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
+### `wiki_link_resolve.py` — 同步飞书前的内部链接解析过滤器（stdin→stdout）
 
-## 十一、知识详解生成（5个，位于 `scripts/knowledge/`）
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把本地同目录相对链接 `[标题](./标题.md)` 解析为飞书内部文档引用 `<cite type="doc" doc-id="obj_token"/>`（由 obj_token 强绑定目标、可校验坏链）；管道过滤器，被 resync 同步链路调用 |
+| **用法** | `cat 正文.md | python3 scripts/wiki_link_resolve.py`（一般由同步脚本自动调用） |
+| **相关文档** | `docs/development/guides/wiki-link-verification-sop.md` |
+
+---
+
+### `knowledge/run_resync_batches.sh` — 分批换新进程跑 resync_wiki_content.py（绕转发代理限流）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 规避豆包转发代理层两层限流：每轮新 python 进程只新写 MAX_NEW 篇即退出（绕单进程累计阈值），外层 nohup shell 最多跑 MAX_ROUNDS 后需全新登录 shell 重开；知识详解批量同步飞书的现役驱动 |
+| **用法** | `bash scripts/knowledge/run_resync_batches.sh`（MAX_NEW/MAX_ROUNDS 见脚本头） |
+| **相关文档** | `knowledge/resync_wiki_content.py`、`docs/development/api/feishu-api.md` |
+
+---
+
+## 十一、知识详解生成（8个，位于 `scripts/knowledge/`）
 
 > 按官方知识点聚合生成知识详解 md 的核心生产脚本。流程：collect_point_questions（按知识点收题）→ render_point_qa（渲染题答解析）→ organize_user_notes（整理学员补充）→ assemble_point（组装成篇）。
 > 用户笔记子链：`cdp/collect_user_notes.js`（按 questionId 拉公开笔记到 notes-raw/all_notes.jsonl）→ `knowledge/build_notes_mapping.py`（试卷标题解析知识点、映射到知识详解篇并剥身份字段）→ `knowledge/organize_user_notes.py`（四分类、Top5、写入「四、学员补充」）。
@@ -875,6 +917,26 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用法** | `python3 scripts/knowledge/assemble_point.py` |
 | **可靠性** | ✅ 高（92 篇+2 全局篇，已用于税法课全量生成） |
 | **相关文档** | ADR-012、knowledge-detail-build-sop.md |
+
+---
+
+### `knowledge/ep3_build_manifest.py` — 名师课(ep3)知识详解 manifest 骨架构建器
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | ep3 题答受风控、没有 papers 官方标签，走确定性替代：章归属取讲次 meta 的 chapterPath 第一级、知识点由讲次目录名去 `NN_`/分P后缀聚合，产出与正课同构的 course-manifest 骨架 |
+| **用法** | `python3 scripts/knowledge/ep3_build_manifest.py`（参数见脚本头） |
+| **相关文档** | 知识生成 SOP §2.1（manifest 读取口径）、knowledge-detail-build-sop.md |
+
+---
+
+### `knowledge/batch_build_chapter.py` — 章节级知识详解批量构建器
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 一次处理整章：`list`（列知识点与题量）/ `template`（生成带考点的头部模板）/ `assemble`（批量组装题答）/ `frontmatter`（批量加 OKF frontmatter） |
+| **用法** | `python3 scripts/knowledge/batch_build_chapter.py <list\|template\|assemble\|frontmatter> ...` |
+| **相关文档** | knowledge-detail-build-sop.md、知识生成 SOP §2.12 |
 
 ---
 

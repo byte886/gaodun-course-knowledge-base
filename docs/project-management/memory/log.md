@@ -6,6 +6,7 @@
 
 ## 2026-09-13
 
+- **Update（standard-naming-change-control）**：把"不改写历史"从一句模糊例外细化为**适用边界**——只保护编年/记录体（ADR/CHANGELOG/memory-log/git/任务报告原文，只增不改），不保护现行规范/手册/活态台账（过期/被取代/写死旧数字直接删改，可溯靠 git+CHANGELOG），判据看段落性质而非整份文件；同步删 AGENTS 3.8/3.12 与 DOC_MAP 里写死的税法旧数（108/92/14 组）与一次性推广经验，并更正"只 commit 不 push"旧约定（用户已授权按里程碑自主 push）。来源：用户指出该原则被用过头、现行文档过期货应删。AI 编译，未标 verified。
 - **Update**：`architecture-knowledge-paradigm` 易踩坑补「名师课本地 manifest 读取口径 + 风控期 AI 直接成稿作业法」——`ep3-{subject}-2026/manifest/course-manifest.json` 取 `['knowledge']`、`groups[].code` 是整数非零填充串、`pointIndex[str(pid)]` 取点、章目录＝`NN_`+组名原样；一科选一套体系最完整精讲 OCR 作主干（审计＝王依然上下册、陈岩稿补充、独立课件仅 03/17/18 章），大 OCR 用 awk 定行边界后分段读尽再写、一章一闭环。操作细则同步落到知识生成 SOP 新增 §2.12 与 §2.1 末尾（manifest 读取口径）。来源：审计第 7-12 章连续 24 点成稿实战（code 当字符串比较取不到组、行边界需当场复核等坑）。AI 编译，未标 verified。
 
 ## 2026-09-12
@@ -16,6 +17,7 @@
 
 - **Update**：`workflow-ep3-vod-decryption` 长跑模型从「单路 supervised 串行」补成「单路兜底 vs 多科目节流调度」双模型：多科目总入口 `throttled_ep3_download.sh`（1 生产者 round_robin 串行预取 key + 最多 MAX_PARALLEL 个纯消费者只读缓存下载、nice/taskpolicy 降后台类、自带 caffeinate 防睡眠）；记录三条勿回退硬经验——key 缓存按 profile×阶段独立（共用会被先跑阶段饿死）、只给活跃消费者阶段滚动预取（废弃缓存总数阈值硬跳过）、长跑生产者不 set -e 且计数字段纯数字兜底。来源：会计重点强化被共享缓存饿死漏片的实战定位与修复（离线正则三验证 + 运行时端到端验证）。AI 编译，未标 verified。
 - **Update**：`workflow-browser-cdp`「采集不抢用户输入焦点」两层结论再细化：①建标签层 newPage 默认激活→`newBackgroundPage()`（CDP background:true，hidden 下静音+Worker 取 key 不受影响）；②连接授权层——每次新连接弹官方强制授权 sheet、macOS 自动把 Chrome 置前（无法消除），改为**点中即还**：连接前 captureFrontmost 记名传给 `press_allow.applescript`，AXPress 点中「允许」同一刻 System Events `set frontmost` 还回（pressed=false/当前非 Chrome 不动作），实测 Chrome 仅在前台约 0.7s、整个 ~28s 采集期焦点不离开原 App；finally restoreFrontmost 兜底。必须 set frontmost（`tell app activate` 在 node 宿主被静默丢弃、对 Doubao 反切走）；代点间隔维持 800ms 防拥塞。对应 ISSUES I-008、CDP 手册 §4.5。AI 编译，未标 verified。
+- **Update（architecture-knowledge-paradigm）**：新增 ADR-019，补「成品编号与著录口径」——知识章目录号取官方 `groups[].code`、跳过预科组不重编号（会计 `01_总论` 已改回 `03_总论`）；讲目录 `NN=idx-1`（开班 00）、忠实平台标题字符、只约束未来不回溯税法；frontmatter type/tags/sources.lecture 著录讲目录的标准档回灌入库脚本与模板。结论由本次会计 vs 税法成品对齐实查得到，AI 初编、未标 verified human。
 
 ## 2026-09-09
 
@@ -34,7 +36,3 @@
 - **Creation**：建立工程记忆 bundle（ADR-017），初版编译 10 篇 concept——架构 4、链路 4、治理 1、对照索引 1；结论全部从既有 ADR-002/003/005/007/010/012/013/014/015/016、standards 与接口档案编译，未新增事实。
 - 初版由 AI 编译，`generated.by=doubao/okf-wiki`、**未标 verified（machine-confirmed，待人核）**；人核通过后再逐篇加 `verified: human:`。
 - 校验器 `scripts/okf_validate.py` 自 okf-wiki 技能 vendor 进项目（零第三方依赖），工程自包含、不依赖全局技能。
-
-## 2026-09-10
-
-- **Update（architecture-knowledge-paradigm）**：新增 ADR-019，补「成品编号与著录口径」——知识章目录号取官方 `groups[].code`、跳过预科组不重编号（会计 `01_总论` 已改回 `03_总论`）；讲目录 `NN=idx-1`（开班 00）、忠实平台标题字符、只约束未来不回溯税法；frontmatter type/tags/sources.lecture 著录讲目录的标准档回灌入库脚本与模板。结论由本次会计 vs 税法成品对齐实查得到，AI 初编、未标 verified human。

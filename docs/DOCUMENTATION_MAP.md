@@ -13,12 +13,9 @@
 ## 快速入口（按场景）
 
 ### 开始新任务前
-1. `AGENTS.md` — AI操作手册（必读）
-2. `README.md` — 项目概览、存储分工
-3. `docs/project-management/memory/index.md` — 工程记忆 bundle 入口（跨会话稳定结论/硬约束编译，按需沿 concept 下钻 ADR/规范）
-4. `docs/REQUIREMENTS.md` — 项目需求文档（核心诉求、功能需求、验收标准）
-5. `docs/WORKFLOW.md` — 主工作流，找到当前任务所属环节
-6. `project-management/active/TASK_STATUS.md` — 当前任务状态和前置依赖
+- 先判冷启动还是续接，按 `AGENTS.md` 第 2 章「路径 A / 路径 B」读对应文档，续接不重复全读稳定背景
+- 任何路径都读：`AGENTS.md`（核心规则）、`docs/project-management/memory/index.md`（跨会话稳定结论编译入口，按需沿 concept 下钻）
+- 当前到哪/下一步：`project-management/active/TASK_STATUS.md` + `active/ISSUES.md`；单课逐讲/逐卷明细看 `data/_workspace/`
 
 ### 做题验证前
 1. `docs/development/api/gaodun-exam-api.md` — **高顿做题接口契约（接口为主：syllabus 枚举作业→redo-paper 取题与标准答案→submit-paper 交卷→exam-report 回查）**
@@ -46,7 +43,7 @@
 ### 知识系统构建（四阶段）
 1. `docs/WORKFLOW.md` — 四阶段总纲与校验门
 2. 四阶段 SOP（`docs/development/guides/`）：resource-collection-sop（①采集）→ paper-manifest-sop（②做题/manifest）→ knowledge-detail-build-sop（③知识详解，核心）→ finalize-sop（④网盘/飞书/清理）
-3. `docs/development/knowledge/knowledge-base-organization.md` — 三层架构与 14 组/92 点组织原则
+3. `docs/development/knowledge/knowledge-base-organization.md` — 三层架构与"按官方组/知识点聚合"组织原则
 4. `docs/development/knowledge/knowledge-base-sources.md` — 来源清单与优先级
 5. `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` — 知识点单篇 4 节/组父/课程全局模板
 
@@ -62,7 +59,7 @@
 4. `docs/development/guides/macos-accessibility-automation.md` — macOS原生控件/系统弹窗/多屏精准点击
 5. `docs/development/guides/debugging-and-collaboration.md` — 问题排查方法论与人机配合
 6. `docs/development/guides/interaction-workflow.md` — 交互异常处理
-7. `AGENTS.md` 第10节 — 异常处理流程
+7. `AGENTS.md` 第7节 — 异常处理流程
 
 ### 项目维护/文档更新
 1. `docs/project-management/standards/PROJECT_MAINTENANCE.md` — 项目维护规范索引（拆分为三个子文档）
@@ -110,7 +107,7 @@
 | 交互工作流 | `docs/development/guides/interaction-workflow.md` | 通用页面交互、异常恢复、卡住处理 |
 | **做题/交卷任务执行指南** | `docs/development/guides/exam-workflow.md` | 纯接口做题主链路（枚举/批量/单卷/两层回查/异常分流）、UI 兜底最小集、知识反哺、检查清单；接口契约见 gaodun-exam-api.md |
 | **阶段①资源采集 SOP** | `docs/development/guides/resource-collection-sop.md` | 视频/转写、讲义/OCR 采集到课程「原始资源/」、并发调度、阶段校验门 |
-| **阶段②做题/manifest SOP** | `docs/development/guides/paper-manifest-sop.md` | 接口做题交卷、采全 papers、主观题下钻、生成 manifest 与 14 组显式归组 |
+| **阶段②做题/manifest SOP** | `docs/development/guides/paper-manifest-sop.md` | 接口做题交卷、采全 papers、主观题下钻、生成 manifest 与按官方组显式归组 |
 | **阶段③知识详解生成 SOP（核心）** | `docs/development/guides/knowledge-detail-build-sop.md` | 按官方知识点跨讲聚合、一篇 4 节、样板门、全量自检（替代旧 lecture-knowledge-build-sop） |
 | **阶段④收尾 SOP** | `docs/development/guides/finalize-sop.md` | 网盘备份、飞书统一同步、工作区 data/_workspace 按门禁分层清理 |
 | 多角色协作（项目配合部分） | `docs/development/guides/multi-role-collaboration.md` | 角色定义、职责分工、协作关系；完整方法见飞书知识库 |
@@ -124,6 +121,9 @@
 | 项目 DAG 与并发规划 | `docs/development/project-dag.md` | 任务依赖 DAG、各节点实测时长/并发度、阶段事件触发、换课复用 |
 | CPU 并发能力评估 | `docs/development/performance/parallel-processing-guide.md` | CPU 密集任务并发度反向评估四步法、FunASR/x265 实测、xargs 队列 |
 | 任务规划与并行调度方法论 | `docs/development/methodology/task-planning-and-parallel-scheduling.md` | DAG 拆解、时长评估、实时调度、实测并发原则 |
+| 长任务守护与主动通知 | `docs/development/performance/long-task-supervisor-guide.md` | 超 8 分钟长任务用系统级守护进程自动续跑+完成通知，替代会被回收的后台轮询 |
+| AI 判分不确定性应对 | `docs/development/guides/flaky-ai-judging.md` | LLM-as-judge/外部 AI 批改结果不稳时的识别、重试与完成口径（落点主观题 correct-ai 批改） |
+| 课程 finalize 终态检查 SOP | `docs/development/guides/netdisk-final-verification-sop.md` | finalize 后网盘/本地/飞书三地一致性核验、临时与敏感信息清理 |
 
 ### 二、概念说明（Concept — 是什么）
 

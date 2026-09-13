@@ -284,7 +284,6 @@ data/_workspace/
 
 - 判定：回答"怎么做一件事"，含步骤/流程/工具用法/API/最佳实践/交接流程。**无论放在 `guides/api/tools/knowledge/methodology` 还是 `project-management/`，方法性文档一律小写连字符。**
 - 正例：`git-workflow.md`、`video-processing.md`、`feishu-api.md`、`multi-role-collaboration.md`、`knowledge-detail-build-sop.md`。
-- 整改轨迹：`AGENTS_MD_BEST_PRACTICES.md→agents-md-best-practices.md`（最佳实践是方法，小写留 guides）；`CODE_STYLE.md` 一度改小写 code-style.md，复核内容为"必须/禁止"的强制规范（Governance），**改回大写并移至 `standards/CODE_STYLE.md`**；`任务交接文档.md`（task-handover.md）经职责比对确认冗余，**删除**（角色职责在 AGENTS、项目情况按使用者话术读实时台账，不设交接文件，见 9.10）。
 - 方法文档的 **H1 标题仍用中文**（文件名是对应中文标题的英文短名，语义对应即可）。
 - 依据：Google 开发者文档风格指南要求文件/目录名小写（Unix 区分大小写），多词用连字符且为搜索引擎词分隔符。
 
@@ -300,7 +299,7 @@ data/_workspace/
 
 ### 9.10 跨类目录说明（避免误判"同目录不一致"）
 
-- `project-management/active/` 只放**两份跨课全局状态台账**（L1，大写：`TASK_STATUS.md`、`ISSUES.md`）；原 `COURSE_INDEX.md`、`BATCH_TASK_STATUS.md` 等课程级定格件已于 2026-09-08 删除，单课过程件按 L5 落 `data/_workspace/<course>/`。**不设任务交接文件**：角色职责在 AGENTS、项目当前情况由使用者用话术让 AI 读这些实时台账即可，原 `task-handover.md` 已删除。
+- `project-management/active/` 只放**两份跨课全局状态台账**（L1，大写：`TASK_STATUS.md`、`ISSUES.md`）；原 `COURSE_INDEX.md`、`BATCH_TASK_STATUS.md` 等课程级定格件已于 2026-09-08 删除，单课过程件按 L5 落 `data/_workspace/<course>/`。**不设任务交接文件**：角色职责见 multi-role-collaboration 专档（AGENTS 只留速查）、项目当前情况由使用者用话术让 AI 读这些实时台账即可，原 `task-handover.md` 已删除。
 - `docs/development/guides/` 只放方法/最佳实践文档（L2 小写），如 `agents-md-best-practices.md`；`CODE_STYLE.md` 正文是"必须/禁止"的强制编码与文档规范（Governance），已移至 `standards/` 并大写，不放 guides。
 
 ### 9.11 仓库命名检查清单（新增/改名文件时逐项过）
