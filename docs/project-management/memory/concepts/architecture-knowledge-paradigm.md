@@ -54,9 +54,11 @@ status: stable
 
 ## 易踩坑
 - 不要按"第几讲"切成品文件——讲是授课顺序，知识点才是稳定主键。
+- **名师课本地 manifest 读取口径**：`data/_workspace/ep3-{subject}-2026/manifest/course-manifest.json` 先取 `['knowledge']`；`groups[].code` 是**整数**（9/10，不是 `'09'`），`pointIndex[str(pid)]`（键是字符串）取 title/lessonDirs/teachers；章目录＝两位 `NN_`＋组名原样（顿号标点保留）。风控期 AI 直接成稿时，一科选一套体系最完整的精讲 OCR 作主干（审计＝王依然上下册、陈岩稿补充、独立课件仅 03/17/18 章），大 OCR 用 awk 定章节行边界后按 ~200 行分段读尽再写，一章一闭环（成稿→手写章 README→`okf_validate` E=0→find 现算→回写台账→单章 commit/push）。操作细则见知识生成 SOP §2.1/§2.12。
 - 原始资料字段可以全量保留，但**成品只留纯知识**（元数据边界见 [静态/动态分离与元数据边界](architecture-metadata-boundary.md)）。
 - 会计课结构尚未拉取前，组/点数留空、标"以 syllabusId 拉取后回填"，不拿税法的 14/92 套过去。
 
 ## 来源与下钻
 - [ADR-012 三层解耦与按知识点聚合](../../decisions/ADR-012-三层解耦与按知识点聚合.md)（范式权威：三层、四节、92 知识点、四阶段；早期 ADR-004 的按讲组织已被其演进替代）
 - [高顿作业接口档案](../../../development/api/gaodun-exam-api.md)（题面/标准答案/解析取数口、题型结构）
+- [知识库组织规范 §2.1/§2.12](../../../development/knowledge/knowledge-base-organization.md)（名师课 ep3 来源形态变体、manifest 读取口径、精讲 OCR 取材与大文件作业法）
