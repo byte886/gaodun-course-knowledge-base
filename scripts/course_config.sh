@@ -40,8 +40,12 @@ export COURSE_LOCAL_ROOT="data/高顿/CPA/$COURSE_NAME"
 export COURSE_REMOTE_ROOT="/apps/CPA课程归档/会计知识库/高顿/CPA/$COURSE_NAME"
 export COURSE_DESKTOP_ROOT="$HOME/Desktop/高顿/CPA/$COURSE_NAME"
 
-# 百度网盘加密密码
-export BAIDU_ENC_PASS="${BAIDU_ENC_PASS:-lover123}"
+# 百度网盘加密密码：不硬编码。统一走 lib/load_enc_pass.sh
+# （环境变量 BAIDU_ENC_PASS > 本机 600 主密码文件 > 交互输入）
+_CC_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/load_enc_pass.sh
+source "$_CC_LIB_DIR/lib/load_enc_pass.sh"
+unset _CC_LIB_DIR
 
 # 原始资源子目录名
 export RAW_VIDEOS_DIR="${RAW_VIDEOS_DIR:-原始资源/videos}"

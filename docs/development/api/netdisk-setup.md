@@ -174,22 +174,22 @@ curl -s "https://pan.baidu.com/rest/2.0/xpan/file?method=list&access_token=<TOKE
 
 ```bash
 # 上传文件
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py upload <本地文件> <网盘路径>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py upload <本地文件> <网盘路径>
 
 # 列出目录
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py list <网盘目录>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py list <网盘目录>
 
 # 重命名文件/目录
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py rename <网盘路径> <新名称>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py rename <网盘路径> <新名称>
 
 # 删除文件/目录
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py delete <网盘路径>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py delete <网盘路径>
 
 # 创建目录
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py mkdir <网盘目录>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py mkdir <网盘目录>
 
 # 兼容旧用法（等同于 upload）
-BAIDU_ENC_PASS=lover123 python3 scripts/baidu_upload.py <本地文件> <网盘路径>
+BAIDU_ENC_PASS=<主密码> python3 scripts/baidu_upload.py <本地文件> <网盘路径>
 ```
 
 流程：precreate（预创建）→ upload（4MB分片上传）→ create（合并）。支持 MD5 秒传和断点续传。
@@ -252,8 +252,8 @@ curl -s -X POST "https://pan.baidu.com/rest/2.0/xpan/file?method=filemanager&acc
 
 - access_token 有效期 30 天，过期前用 refresh_token 刷新
 - refresh_token 有效期约 10 年，刷新后会返回新的 refresh_token（需更新保存）
-- 凭证加密存储在 `.secrets/baidu_credentials.enc`（AES-256-CBC, 密码 lover123）
-- 解密命令：`openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:lover123 -base64 -in .secrets/baidu_credentials.enc`
+- 凭证加密存储在 `.secrets/baidu_credentials.enc`（AES-256-CBC，主密码由用户保管、不入库）
+- 解密命令：`openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:<主密码> -base64 -in .secrets/baidu_credentials.enc`
 
 ### 3.2 应用管理
 

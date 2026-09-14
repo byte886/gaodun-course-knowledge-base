@@ -373,7 +373,7 @@
 
 ### 3.5 安全性要求
 
-- Token等敏感信息加密存储（使用lover123加密，加密文件也提交到GitHub）
+- Token等敏感信息加密存储（用主密码加密，主密码由用户保管、不写入仓库；加密文件(.enc)可提交到GitHub）
 - 不提交大文件到GitHub（>10MB阻止，pre-commit hook检查）
 - pre-commit hook检查敏感信息
 - GitHub仓库默认公有

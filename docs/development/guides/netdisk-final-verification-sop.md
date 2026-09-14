@@ -24,7 +24,7 @@ python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根>
 
 **示例（税法课）**：
 ```bash
-export BAIDU_ENC_PASS=lover123
+export BAIDU_ENC_PASS=<主密码>
 python3 scripts/verify_netdisk_final.py \
     "data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）" \
     "/apps/CPA课程归档/会计知识库/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）"

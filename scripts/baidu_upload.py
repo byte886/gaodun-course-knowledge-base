@@ -2,12 +2,12 @@
 """百度网盘文件管理脚本 - 上传、列出、重命名、移动、删除、创建目录
 
 用法:
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py upload <本地文件> <网盘路径>
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py list <网盘目录>
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py rename <网盘路径> <新名称>
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py move <网盘源路径> <目标父目录> [新名称]
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py delete <网盘路径>
-  BAIDU_ENC_PASS=lover123 python3 baidu_upload.py mkdir <网盘目录>
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py upload <本地文件> <网盘路径>
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py list <网盘目录>
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py rename <网盘路径> <新名称>
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py move <网盘源路径> <目标父目录> [新名称]
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py delete <网盘路径>
+  BAIDU_ENC_PASS=<主密码> python3 baidu_upload.py mkdir <网盘目录>
 
 兼容旧用法: python3 baidu_upload.py <本地文件> <网盘路径> [token]
 

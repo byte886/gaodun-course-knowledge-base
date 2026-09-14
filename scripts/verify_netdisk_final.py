@@ -7,7 +7,7 @@
 
 示例（路径由 course_config.sh 的 $COURSE_LOCAL_ROOT / $COURSE_REMOTE_ROOT 提供）：
     source scripts/course_config.sh
-    BAIDU_ENC_PASS=lover123 python3 scripts/verify_netdisk_final.py \
+    BAIDU_ENC_PASS=<主密码> python3 scripts/verify_netdisk_final.py \
         "$COURSE_LOCAL_ROOT" "$COURSE_REMOTE_ROOT"
 
 退出码：0=通过，1=有差异，2=参数/环境错误

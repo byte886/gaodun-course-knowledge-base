@@ -23,7 +23,9 @@ set -e
 
 # 配置
 UPLOAD_SCRIPT="$PROJECT_DIR/scripts/baidu_upload.py"
-export BAIDU_ENC_PASS="lover123"
+# 主密码不写死：环境变量 > 本机600主密码文件 > 交互（lib/load_enc_pass.sh）
+# shellcheck source=lib/load_enc_pass.sh
+source "$SCRIPT_DIR/lib/load_enc_pass.sh"
 
 # 参数检查
 if [ $# -lt 2 ]; then

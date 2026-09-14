@@ -23,7 +23,7 @@ set -e
 LOCAL_ROOT="$COURSE_DESKTOP_ROOT"
 REMOTE_ROOT="$COURSE_REMOTE_ROOT"
 CREDENTIALS_FILE="$PROJECT_DIR/.secrets/baidu_credentials.enc"
-ENCRYPT_PASS="lover123"
+# 主密码不写死：已在上方 source course_config.sh 时经 lib/load_enc_pass.sh 导出 BAIDU_ENC_PASS
 
 # 使用python检查目录命名规范
 check_naming_python() {
@@ -167,7 +167,7 @@ get_access_token() {
         return 1
     fi
     
-    openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:$ENCRYPT_PASS -base64 -in "$CREDENTIALS_FILE" 2>/dev/null | \
+    openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:"$BAIDU_ENC_PASS" -base64 -in "$CREDENTIALS_FILE" 2>/dev/null | \
         python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null
 }
 
