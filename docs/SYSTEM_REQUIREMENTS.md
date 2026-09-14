@@ -135,7 +135,7 @@ bash scripts/check_directory_structure.sh
 2. 安装依赖：`brew install ffmpeg node python@3.11`
 3. 搭建转写环境：`bash scripts/setup_transcription_env.sh`
 4. 配置数据目录：`bash scripts/setup_data_symlink.sh`
-5. 解密凭证：`bash scripts/secrets.sh decrypt baidu_credentials`
+5. 解密凭证：`secrets json .secrets/baidu_credentials.enc access_token`（全局命令 `secrets`，新机器先执行一次 `secrets install`）
 6. 验证：运行 `bash scripts/check_directory_structure.sh`
 
 ---

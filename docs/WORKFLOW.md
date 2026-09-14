@@ -308,7 +308,7 @@
 - 课程表 TAB 可能因 ffmpeg 占内存崩溃，需重新加载。
 - 不要在浏览器点"下载"按钮（触发 Chrome 下载弹窗），讲义用 CDN 直链 curl。
 - 代理：GitHub/Homebrew/npm 走 ClashX（127.0.0.1:7890）；高顿课程页、百度 API/网盘直连。
-- 密钥管理见 `scripts/secrets.sh`，加密凭证在 `.secrets/`（留仓库根、不进 工作区）。
+- 密钥管理用全局命令 `secrets`（原 `scripts/secrets.sh` 已抽离为全机唯一工具，规范见 mac-system-toolkit 的 secret-encryption.md），本项目加密凭证在 `.secrets/`（留仓库根、不进工作区）。
 - 业务数据在 `data/`（软链到本地课程库），不入 Git；Git 只版本化规范/模板/SOP/脚本等文本。
 
 ---

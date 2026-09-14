@@ -18,7 +18,7 @@
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 6 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传、名师课下载进行中只传完整讲的就绪同步 |
-| 环境与工具 | 9 | Playwright连接、密钥管理、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
+| 环境与工具 | 8 | Playwright连接、密钥管理(全局命令secrets)、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
 | 检查与验证 | 8 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检、OKF 工程记忆校验 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 5 | 日常Chrome连接、授权自动点（含跨进程锁包装、单例授权守护）、网络抓包骨架（scripts/cdp/） |
@@ -405,19 +405,22 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 六、环境与工具（9个）
+## 六、环境与工具（8个；凭证加解密另用全局命令 `secrets`）
 
 
 ---
 
-### `secrets.sh` — 加密凭证管理
+### `secrets`（全局命令；原 scripts/secrets.sh 已抽离）
+
+> 凭证工具已升级为**全机唯一全局命令** `secrets`（权威源在 `mac-system-toolkit` 技能，软链于 `~/.local/bin/secrets`；新机器执行一次 `secrets install`）。本项目不再保留 `scripts/secrets.sh` 副本，只保留自己的 `.secrets/*.enc` 密文；统一规范见 mac-system-toolkit 的 `references/secret-encryption.md`。
 
 | 项目 | 说明 |
 |------|------|
 | **用途** | 加密/解密敏感凭证（GitHub Token、百度网盘API密钥等） |
-| **用法** | `bash scripts/secrets.sh encrypt <input> <output.enc>` 或 `bash scripts/secrets.sh decrypt <input.enc>` |
-| **可靠性** | ✅ 高（OpenSSL AES-256加密） |
-| **相关文档** | `docs/development/api/encryption.md` |
+| **解密百度凭证字段** | `ENC_PASS=密码 secrets json .secrets/baidu_credentials.enc access_token` |
+| **GitHub PAT 登录** | `secrets decrypt .secrets/gh_token.enc \| gh auth login --with-token` |
+| **加密新凭证** | `secrets encrypt '<明文>' .secrets/xxx.enc` |
+| **可靠性** | ✅ 高（OpenSSL AES-256-CBC+PBKDF2+salt+base64；密码走 ENC_PASS 或交互，不硬编码） |
 
 **规则**：加密文件（*.enc）可以提交到GitHub，明文文件（*.json, *.txt）在.gitignore中忽略。
 

@@ -251,7 +251,7 @@
 敏感凭证使用 openssl AES-256-CBC -pbkdf2 加密存储，加密文件提交到仓库，解密密码由用户保管。
 
 ```bash
-./scripts/secrets.sh decrypt <name>   # 解密查看
+secrets decrypt .secrets/<name>.enc   # 全局命令解密查看（原 scripts/secrets.sh 已抽离为全机唯一工具）
 ```
 
 
