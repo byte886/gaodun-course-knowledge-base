@@ -3,7 +3,7 @@
 # 用途：监听某目录下匹配指定模式的文件数量达到预期值时，写完成标记文件并退出。
 #       替代人工长间隔巡检，消除"任务已完成但总调度未发现"的空窗（空窗≤60秒）。
 # 用法: bash scripts/watch_stage_done.sh <监听目录> <文件名匹配> <预期数量> <标记文件路径> [检查间隔秒]
-# 示例: bash scripts/watch_stage_done.sh "$HOME/Desktop/高顿/.../税法（蔡俊峻老师）" "transcript.md" 39 "transcription/.transcribe_done"
+# 示例: bash scripts/watch_stage_done.sh "data/高顿/.../税法（蔡俊峻老师）" "transcript.md" 39 "transcription/.transcribe_done"
 set -uo pipefail
 WATCH_DIR="${1:?用法: watch_stage_done.sh <目录> <文件名匹配> <预期数量> <标记文件> [间隔秒]}"
 PATTERN="${2:?缺少文件名匹配模式}"

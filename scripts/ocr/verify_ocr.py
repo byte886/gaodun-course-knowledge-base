@@ -11,7 +11,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(os.path.dirname(_HERE))
 sys.path.insert(0, os.path.join(_REPO, "scripts", "knowledge"))
 from course_profile import load_profile  # noqa: E402
-# 课程目录：env COURSE_LOCAL_ROOT 优先，否则读 profile（data 软链 realpath 等价 Desktop 数据盘）
+# 课程目录：env COURSE_LOCAL_ROOT 优先，否则读 profile（data/高顿 为项目内实体目录，ADR-021）
 _rel = os.environ.get("COURSE_LOCAL_ROOT", load_profile()["paths"]["localRoot"])
 COURSE = pathlib.Path(_rel) if os.path.isabs(_rel) else pathlib.Path(_REPO) / _rel
 SEC = re.compile(r"^## 第\d+页", re.M)

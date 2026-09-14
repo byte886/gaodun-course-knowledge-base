@@ -18,7 +18,7 @@
 
 ## 一、结构维护原则
 
-1. **GitHub 仓库只放代码和文档**：Skill 脚本、项目文档、工作流、报告模板、加密凭证。生成结果（视频、PDF、文字稿、音频）不放在项目目录，放本地 `~/Desktop/高顿/` 和百度网盘。
+1. **GitHub 仓库只放代码和文档**：Skill 脚本、项目文档、工作流、报告模板、加密凭证。生成结果（视频、PDF、文字稿、音频）不入库，放项目内 `data/高顿/`（实体目录、gitignore 忽略，ADR-021 去软链）和百度网盘。
 2. **脚本统一放 `scripts/`**：所有可执行脚本（Python、Shell）统一放在 `scripts/` 目录，不分散在各子目录。
 3. **文档按专业领域分类**：`docs/project-management/`（项目管理）、`docs/development/`（开发文档），WORKFLOW.md 只保留总体流程和索引。
 4. **任务文档不放根目录**：任务状态、测试计划、项目计划等统一放 `docs/project-management/`。
@@ -68,7 +68,7 @@
 | 产物类别 | 落点 | 入库？ | 例子 |
 |---|---|---|---|
 | 依赖 / 虚拟环境 | 任意位置 `venv/`、`.venv/`、`env/`、`node_modules/`、`__pycache__/` | ❌ | `transcription/venv`（靠 requirements.txt 重建） |
-| 数据 / 抓包 / 题源 | `data/`（高顿软链 + `_workspace` 工作区） | ❌ | papers JSON、鉴权/侦查等过程件 |
+| 数据 / 抓包 / 题源 | `data/`（高顿课程库实体目录 + `_workspace` 工作区） | ❌ | papers JSON、鉴权/侦查等过程件 |
 | 运行日志 / 完成哨兵 | `logs/`、`*.log`、`*.done` | ❌（进度以 active 正式台账为准） | `netdisk_*.log`、`netdisk_done/*.done` |
 | 临时中转 | 系统 `/tmp` 或模块内 `.tmp_*/`，脚本退出自清 | ❌ | `transcription/.tmp_transcribe` |
 | 成品 | 课程目录 知识详解/（课程成品不入库）；docs/ 只放工程 | 规范/模板/脚本 ✅，课程成品 ❌入库 | {知识点}.md（一篇4节）、脚本源码、规范、模板 |
@@ -87,8 +87,8 @@
 #### 2.2.1 两根三线版图
 
 - **两根物理存储**：
-  1. **项目工作区 `data/`**：「高顿」软链外部数据盘 +「_workspace」唯一运行时工作区，**整体不入库**。做题线原料/台账落 `data/_workspace/<profile>/{papers,manifest}`，鉴权落 `_account/auth`，抓包侦查落 `<profile>/sniff`（验证即删），浏览器运行环境（L0）另置。
-  2. **桌面课程库**（物理 `~/Desktop/高顿/CPA/【26考季】…/讲NN_讲名/`，项目内经 `data/` 软链访问）：**按讲组织、承载成品并同步网盘**。A 视频线（video / transcript）与 C 讲义线（`docs/` PDF、`docs_text/` OCR）落这里。
+  1. **项目工作区 `data/`**：「高顿」课程库实体目录（ADR-021 去软链）+「_workspace」唯一运行时工作区，**整体不入库**。做题线原料/台账落 `data/_workspace/<profile>/{papers,manifest}`，鉴权落 `_account/auth`，抓包侦查落 `<profile>/sniff`（验证即删），浏览器运行环境（L0）另置。
+  2. **课程库**（物理即项目内 `data/高顿/CPA/【26考季】…/讲NN_讲名/`，实体目录、整体不入库）：**按讲组织、承载成品并同步网盘**。A 视频线（video / transcript）与 C 讲义线（`docs/` PDF、`docs_text/` OCR）落这里。
 - **三线汇入 S2**：A 视频线 + B 做题线（papers）+ C 讲义线，再叠加**初始知识库 + 用户笔记**，在 S2 按讲汇聚生成知识成品（知识拆解 / 考试指导），最终进飞书知识库。冲刺模考是做题线的末期分支，不另立存储根。
 
 #### 2.2.2 L0–L4 分层定义

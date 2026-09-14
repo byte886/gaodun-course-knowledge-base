@@ -38,7 +38,9 @@ export COURSE_NAME="${COURSE_NAME:-【26考季】VIPCPA系列-税法（蔡俊峻
 # 如需自定义路径，在 source 此文件后再覆盖
 export COURSE_LOCAL_ROOT="data/高顿/CPA/$COURSE_NAME"
 export COURSE_REMOTE_ROOT="/apps/CPA课程归档/会计知识库/高顿/CPA/$COURSE_NAME"
-export COURSE_DESKTOP_ROOT="$HOME/Desktop/高顿/CPA/$COURSE_NAME"
+# 历史变量名：数据原放 ~/Desktop/高顿 再软链进 data；2026-09-14 起数据实体直接放 data/高顿（去软链，见 ADR-021）。
+# 下游转写/编码/结构检查脚本仍沿用此变量名，值等同 COURSE_LOCAL_ROOT，不再指向桌面。
+export COURSE_DESKTOP_ROOT="$COURSE_LOCAL_ROOT"
 
 # 百度网盘加密密码：不硬编码。统一走 lib/load_enc_pass.sh
 # （环境变量 BAIDU_ENC_PASS > 本机 600 主密码文件 > 交互输入）

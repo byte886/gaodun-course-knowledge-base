@@ -21,6 +21,7 @@
 > - **压缩线**：`scripts/compress_ep3_videos.py` nohup 后台（CRF30/libx265、断点续跑、顺序 战略→审计→经济法→财管→税法→会计），done 计数看 `data/_workspace/_account/ep3/compress_state.jsonl`，进程断了按 SOP nohup 续跑（hevc 自动跳过）。
 > - **网盘线**：6 科 notes 已「ALL6 NOTES RESYNC DONE」收口；videos 待各课全部压完只传压缩版，旧已传 465 讲未压缩视频保留不折腾（方案甲）。
 > - **做题/试卷线**：账号风控 10462221 冻结，不试探、不申诉、等用户通知；按用户决策"风控拿不到的来源可忽略"不阻塞知识线，解封后只读回补题答并 draft→stable。
+> - **存储架构（2026-09-14，ADR-021，去软链）**：`data/高顿` 已由指向 `~/Desktop/高顿` 的软链改为项目内**实体目录**（整体 gitignore、同卷秒换零丢失）；桌面不再有"高顿"文件夹，所有脚本统一相对路径 `data/高顿/...`、`find` 无需 `-L`，换机/克隆把数据放回 `data/高顿/`（网盘镜像拉回）即可；`setup_data_symlink.sh` 退役、`COURSE_DESKTOP_ROOT` 保留变量名但值=COURSE_LOCAL_ROOT；网盘远端与四地分工不变。
 > - 更早历史（下载攻坚与节流模型、会计飞书三遍地建树、名师增量 zip 补遗、OKF×I2T 治理等）见 git log / CHANGELOG / three_tracks 进度日志，本活态台账不滚动保留。
 
 ## 任务总览（全局里程碑）

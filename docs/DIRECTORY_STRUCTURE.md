@@ -53,7 +53,7 @@ gaodun-course-knowledge-base/
 ├── scripts/                       # 可执行脚本（下载/压缩/转写/OCR/上传/做题/校验，snake_case）
 ├── transcription/                 # 转写工具链：requirements.txt 入库，venv/ 忽略
 ├── .secrets/                      # 加密凭证（*.enc；*.json/*.txt 忽略）
-├── data/                          # 本地运行数据，整体 gitignore（见第二章）：「高顿」→外部数据盘软链 +「_workspace」唯一运行时工作区
+├── data/                          # 本地运行数据，整体 gitignore（见第二章）：「高顿」课程库实体目录（ADR-021 去软链）+「_workspace」唯一运行时工作区
 ├── node_modules/                  # 依赖，gitignore（注：仓库根不再产生 logs/，所有运行日志/断点统一进 data/_workspace，见 2.3）
 └── README.md / AGENTS.md / CHANGELOG.md / LICENSE / .gitignore
 ```
@@ -70,7 +70,7 @@ gaodun-course-knowledge-base/
 
 ```
 data/
-├── 高顿 -> ~/Desktop/高顿          # 软链外部数据盘：只放「原始资源 + 知识详解」两层成品/原料（传网盘）
+├── 高顿/                          # 课程库实体目录（原桌面软链已移除，ADR-021）：只放「原始资源 + 知识详解」两层成品/原料（传网盘）
 └── _workspace/                     # 唯一运行时工作区：所有过程件（gitignore·不传网盘·不同步飞书，ADR-016）
 ```
 

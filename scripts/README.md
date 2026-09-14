@@ -18,7 +18,7 @@
 | 音频转写 | 6 | 单文件、批量、队列并发、单讲 worker、环境搭建 |
 | OCR文字提取 | 3 | 单目录批量 OCR、全课程批量、OCR 完整性复核（scripts/ocr/） |
 | 百度网盘上传 | 6 | 单文件上传、批量上传、课程上传、整课程并发同步、原始资源(notes/videos)断点补传、名师课下载进行中只传完整讲的就绪同步 |
-| 环境与工具 | 8 | Playwright连接、密钥管理(全局命令secrets)、数据符号链接、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
+| 环境与工具 | 8 | Playwright连接、密钥管理(全局命令secrets)、数据目录布局、pre-commit、通用阶段完成监听、长任务守护器、一键进度查询、单课总编排器(run_course_pipeline)、并发标准件(lib/parallel.sh) |
 | 检查与验证 | 8 | 目录/知识库结构、命名一致性、Git 卫生、讲次映射校验、papers 按讲视图、课程库逐讲体检、OKF 工程记忆校验 |
 | 数据采集 | 2 | 按键捕获、解析采集 |
 | 浏览器CDP连接 | 5 | 日常Chrome连接、授权自动点（含跨进程锁包装、单例授权守护）、网络抓包骨架（scripts/cdp/） |
@@ -54,7 +54,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | `COURSE_NAME` | 税法课（蔡俊峻） | 课程名称，用于拼接路径（显式设置优先级高于 profile） |
 | `COURSE_LOCAL_ROOT` | `data/高顿/CPA/$COURSE_NAME` | 仓库内课程根目录 |
 | `COURSE_REMOTE_ROOT` | `/apps/CPA课程归档/会计知识库/高顿/CPA/$COURSE_NAME` | 网盘课程根目录 |
-| `COURSE_DESKTOP_ROOT` | `~/Desktop/高顿/CPA/$COURSE_NAME` | Desktop 源头课程目录 |
+| `COURSE_DESKTOP_ROOT` | 等同 `COURSE_LOCAL_ROOT`（历史变量名，ADR-021 去软链后不再指向桌面） | 转写/编码/结构检查脚本沿用，值=`data/高顿/CPA/$COURSE_NAME` |
 | `BAIDU_ENC_PASS` | 主密码，不入库（环境变量 > 本机 `~/.doubao/secrets/master.pass` > 交互） | 百度网盘加密密码 |
 
 **已参数化（读 profile/config 或 env）的脚本**：采集下载线 `cdp/refresh_inventory.js`、`cdp/collect_user_notes.js`、`cdp/fetch_lecture_video.js`、`cdp/download_lecture_notes.js`、`cdp/ep3_course_outline.js`、`cdp/ep3_download_handouts.js`、`cdp/ep3_download_videos.js`、`cdp/ep3_verify_local.js`（ep3 名师课本地成品离线完整性核对，零网络：完整/待下/残缺、清中断残留 `_work`、列单老师讲）、`cdp/gaodun_paper_core.js`、`cdp/batch_ep3_papers.js`（ep3 名师课批量做题，分时段拟人节奏）、`cdp/fetch_ep3_paper_readonly.js`（ep3 试卷只读取题面/答案/解析，只到 redo-paper 绝不 submit，风控期遇 10462221 第 1 张即退出）；加工线 `transcribe_parallel.sh`、`transcribe_qvideos.sh`、`cdp/encode_all.sh`、`ocr/run_ocr_all.sh`、`sync_raw_resources.sh`、`sync_course_netdisk.sh`、`sync_ep3_ready.sh`、`check_directory_structure.sh`、`progress.sh`；知识线 `knowledge/build_course_overview.py`、`knowledge/collect_point_questions.py`、`knowledge/build_notes_mapping.py`、`knowledge/organize_user_notes.py`、`knowledge/resync_wiki_content.py`、`ocr/verify_ocr.py`。刻意保留专属/一次性的例外见 `docs/development/guides/parallel-toolkit-design.md` §3.4 末表。
@@ -423,19 +423,6 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **可靠性** | ✅ 高（OpenSSL AES-256-CBC+PBKDF2+salt+base64；密码走 ENC_PASS 或交互，不硬编码） |
 
 **规则**：加密文件（*.enc）可以提交到GitHub，明文文件（*.json, *.txt）在.gitignore中忽略。
-
----
-
-### `setup_data_symlink.sh` — 数据目录符号链接
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 创建/检查 `data/高顿/` 符号链接，指向外部数据目录（默认 `~/Desktop/高顿/`） |
-| **用法** | `bash scripts/setup_data_symlink.sh`（创建）或 `bash scripts/setup_data_symlink.sh --check`（检查） |
-| **可靠性** | ✅ 高（不同电脑可指向不同路径） |
-| **相关文档** | `README.md` 存储分工部分 |
-
-**注意**：`data/` 目录已在.gitignore中忽略，不会提交到GitHub。
 
 ---
 

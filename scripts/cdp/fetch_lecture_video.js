@@ -25,7 +25,7 @@ function namedArg(name) {
   const eq = process.argv.find((a) => a.startsWith(`--${name}=`));
   return eq ? eq.slice(name.length + 3) : undefined;
 }
-// 课程目录/ID 全部来自 profile（data/高顿 软链到外部数据盘，等价旧的 ~/Desktop 绝对路径）
+// 课程目录/ID 全部来自 profile（data/高顿 为项目内实体目录，ADR-021 去软链；统一相对路径访问）
 const profile = loadProfile(namedArg('profile'));
 const _ids = primaryIds(profile);
 const COURSE = path.join(ROOT, profile.paths.localRoot);

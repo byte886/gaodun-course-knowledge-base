@@ -4,6 +4,10 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-14
+
+- **Update（architecture-storage-layout）**：按新增 ADR-021 去桌面软链——`data/高顿` 由指向 `~/Desktop/高顿` 的符号链接改为项目内**实体目录**（同 APFS 卷 rename 秒换、迁移前后 12401 条目/10448 文件/935G 零丢失、整体 gitignore）；删除"`find data/高顿` 必须带 `-L`、换机用 setup_data_symlink 重建软链"旧结论，改为"实体目录直接遍历无需 `-L`、换机把数据放回 `data/高顿/`（网盘镜像拉回）"；本地大文件目录载体由 `~/Desktop/高顿` 改记 `data/高顿`。配套：`course_config.COURSE_DESKTOP_ROOT` 保留变量名、值=COURSE_LOCAL_ROOT（下游 4 脚本零改动）；`setup_data_symlink.sh` 退役；百度网盘远端结构与四地分工不变。另清退 15 个写死桌面绝对路径、0 现役引用的一次性知识详解清洗脚本（fix_p*/fix_error*/count/assess，移废纸篓），现役 `batch_ocr.sh`/`watch_stage_done.sh` 改 data 相对路径保留。AI 编译，未标 verified。
+
 ## 2026-09-13
 
 - **Update（standard-naming-change-control）**：把"不改写历史"从一句模糊例外细化为**适用边界**——只保护编年/记录体（ADR/CHANGELOG/memory-log/git/任务报告原文，只增不改），不保护现行规范/手册/活态台账（过期/被取代/写死旧数字直接删改，可溯靠 git+CHANGELOG），判据看段落性质而非整份文件；同步删 AGENTS 3.8/3.12 与 DOC_MAP 里写死的税法旧数（108/92/14 组）与一次性推广经验，并更正"只 commit 不 push"旧约定（用户已授权按里程碑自主 push）。来源：用户指出该原则被用过头、现行文档过期货应删。AI 编译，未标 verified。
