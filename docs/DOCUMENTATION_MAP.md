@@ -74,9 +74,10 @@
 
 ### 飞书知识库整理 / 维护
 1. `docs/development/guides/feishu-knowledge-base-maintenance.md` — 盘点分类、结构整理SOP、父节点导航规范与覆盖校验（先读）
-2. `docs/development/guides/wiki-link-verification-sop.md` — 飞书链接三层验证SOP（总览页→章README→知识点详解；站内链接统一 `<cite>` 内部引用、回读比对 doc-id=obj_token；正文点击统一新开标签、单窗口连续阅读走左侧知识库目录树）
-3. `docs/development/guides/wiki-content-verification-sop.md` — 飞书知识库内容验证SOP（同步后验证内容完整性和模板符合性：章节点五要素、知识点四节结构、内容非空、frontmatter剥离；与链接验证SOP分工互补）
-4. `docs/development/api/feishu-api.md` — lark-cli 通用命令踩坑（移动 / 删除 / 传参 / token）
+2. `docs/development/guides/wiki-sync-sop.md` — 飞书知识库同步SOP（建树→内容同步→验证全流程；API限流最佳实践、token失效处理、错误分类与重试策略、断点续传机制、lark-cli命令正确用法）
+3. `docs/development/guides/wiki-link-verification-sop.md` — 飞书链接三层验证SOP（总览页→章README→知识点详解；站内链接统一 `<cite>` 内部引用、回读比对 doc-id=obj_token；正文点击统一新开标签、单窗口连续阅读走左侧知识库目录树）
+4. `docs/development/guides/wiki-content-verification-sop.md` — 飞书知识库内容验证SOP（同步后验证内容完整性和模板符合性：章节点五要素、知识点四节结构、内容非空、frontmatter剥离；与链接验证SOP分工互补）
+5. `docs/development/api/feishu-api.md` — lark-cli 通用命令踩坑（移动 / 删除 / 传参 / token）
 
 ---
 
