@@ -136,7 +136,8 @@ for i, node in enumerate(nodes):
     try:
         data = json.loads(result.stdout)
         if data.get('ok'):
-            content = data.get('data', {}).get('content', '')
+            # 正确路径：data.document.content
+            content = data.get('data', {}).get('document', {}).get('content', '')
             if len(content.strip()) == 0:
                 empty_nodes.append(node['title'])
         else:
@@ -156,7 +157,125 @@ if empty_nodes:
 PY
 ```
 
-### 第二步：章节点模板符合性检查（必做）
+### 第二步：本地对齐检查（必做）
+
+验证飞书端内容与本地源文件的一致性，确保同步完整、无遗漏、无差异。
+
+**检查内容**：
+1. **数量对齐**：飞书端节点数 = 本地文件数 = 台账记录数
+2. **标题对齐**：飞书端节点标题与本地文件名一致
+3. **内容对齐**：飞书端内容（剥离frontmatter后）与本地源文件正文一致
+4. **frontmatter剥离**：飞书端不显示顶部 `---...---` YAML
+
+```bash
+# 本地对齐检查
+python3 - << 'PY'
+import subprocess, json, os, glob, re
+
+profile = 'cpa-accounting-2026'
+map_file = f'data/_workspace/{profile}/logs/wiki_node_map.tsv'
+local_root = 'data/高顿/CPA/【VIPCPA专享】名师专业课-会计/知识详解'
+
+# 1. 读取台账
+wiki_titles = set()
+wiki_map = {}
+with open(map_file, encoding='utf-8') as f:
+    for line in f:
+        parts = line.strip().split('\t')
+        if len(parts) >= 3:
+            wiki_titles.add(parts[0])
+            wiki_map[parts[0]] = {'node_token': parts[1], 'obj_token': parts[2]}
+
+# 2. 读取本地文件
+local_files = {}
+for md in glob.glob(f'{local_root}/**/*.md', recursive=True):
+    title = os.path.splitext(os.path.basename(md))[0]
+    local_files[title] = md
+
+print(f'=== 数量对齐检查 ===')
+print(f'台账节点数: {len(wiki_titles)}')
+print(f'本地文件数: {len(local_files)}')
+print(f'数量一致: {"✅" if len(wiki_titles) == len(local_files) else "❌"}')
+
+# 3. 标题对齐
+only_in_wiki = wiki_titles - set(local_files.keys())
+only_in_local = set(local_files.keys()) - wiki_titles
+print(f'\n=== 标题对齐检查 ===')
+print(f'仅在飞书端（本地缺失）: {len(only_in_wiki)}')
+if only_in_wiki:
+    for t in list(only_in_wiki)[:5]:
+        print(f'  - {t}')
+print(f'仅在本地（飞书端缺失）: {len(only_in_local)}')
+if only_in_local:
+    for t in list(only_in_local)[:5]:
+        print(f'  - {t}')
+
+# 4. 内容对齐（抽检10%，至少10篇）
+import random
+common_titles = list(wiki_titles & set(local_files.keys()))
+sample_size = max(10, int(len(common_titles) * 0.1))
+sampled = random.sample(common_titles, min(sample_size, len(common_titles)))
+
+print(f'\n=== 内容对齐检查（抽检 {len(sampled)} 篇）===')
+mismatch = []
+frontmatter_leak = []
+
+for title in sampled:
+    obj_token = wiki_map[title]['obj_token']
+    local_file = local_files[title]
+
+    # 读取本地文件，剥离frontmatter
+    with open(local_file, encoding='utf-8') as f:
+        local_content = f.read()
+    if local_content.startswith('---'):
+        end = local_content.find('---', 3)
+        if end > 0:
+            local_content = local_content[end+3:].lstrip()
+
+    # 读取飞书内容
+    result = subprocess.run(
+        ['lark-cli', 'docs', '+fetch', '--doc', obj_token, '--doc-format', 'markdown', '--as', 'user', '--format', 'json'],
+        capture_output=True, text=True, timeout=30
+    )
+    try:
+        data = json.loads(result.stdout)
+        if data.get('ok'):
+            wiki_content = data.get('data', {}).get('document', {}).get('content', '')
+        else:
+            print(f'  读取失败: {title}')
+            continue
+    except Exception as e:
+        print(f'  解析失败: {title}: {e}')
+        continue
+
+    # 检查frontmatter是否泄漏
+    if wiki_content.strip().startswith('---'):
+        frontmatter_leak.append(title)
+
+    # 简单内容相似度检查（去除空白后比较前500字符）
+    local_norm = re.sub(r'\s+', '', local_content)[:500]
+    wiki_norm = re.sub(r'\s+', '', wiki_content)[:500]
+
+    if local_norm != wiki_norm and len(local_norm) > 50:
+        mismatch.append(title)
+
+print(f'内容不一致: {len(mismatch)}')
+if mismatch:
+    for t in mismatch[:5]:
+        print(f'  - {t}')
+print(f'frontmatter泄漏: {len(frontmatter_leak)}')
+if frontmatter_leak:
+    for t in frontmatter_leak[:5]:
+        print(f'  - {t}')
+
+if not mismatch and not frontmatter_leak and not only_in_wiki and not only_in_local:
+    print('\n✅ 本地对齐检查全部通过')
+else:
+    print('\n❌ 本地对齐检查发现问题，需修复后重新同步')
+PY
+```
+
+### 第三步：章节点模板符合性检查（必做）
 
 抽查全部章节点（会计课30个），验证五要素：
 
@@ -218,7 +337,7 @@ print(f'\n总体: {"✅ 全部章节点通过" if all_pass else "❌ 有章节�
 PY
 ```
 
-### 第三步：知识点篇结构检查（抽检）
+### 第四步：知识点篇结构检查（抽检）
 
 抽检 10-20% 知识点篇（每章至少1篇），验证四节结构：
 
@@ -282,14 +401,14 @@ if failed_nodes:
 PY
 ```
 
-### 第四步：链接验证（调用已有 SOP）
+### 第五步：链接验证（调用已有 SOP）
 
 按 [wiki-link-verification-sop.md](./wiki-link-verification-sop.md) 执行三层链接验证：
 - 第一层：课程总览页 16 cite
 - 第二层：章 README 知识点目录 cite
 - 第三层：知识点详解关联知识点 cite
 
-### 第五步：人工抽检（必做）
+### 第六步：人工抽检（必做）
 
 自动化检查通过后，人工抽检：
 - [ ] 随机打开 3-5 个章节点，确认五要素完整、内容专业
