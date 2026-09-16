@@ -168,11 +168,15 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--min-free-gb", type=float, default=50)
+    ap.add_argument("--reverse", action="store_true", help="按路径倒序压（从后往前）")
+    ap.add_argument("--jobs", type=int, default=0, help="x265 pools 线程数，0=全部逻辑核（本机穿插低负载时调小）")
     args = ap.parse_args()
 
     courses = args.course or DEFAULT_COURSES
     files = collect(courses)
-    log(f"课程顺序 {courses}；扫描到 *_video.mp4 共 {len(files)}")
+    if args.reverse:
+        files.reverse()
+    log(f"课程顺序 {courses}{'（倒序）' if args.reverse else ''}；扫描到 *_video.mp4 共 {len(files)}")
 
     if args.report or args.dry_run:
         report(files)
@@ -187,7 +191,8 @@ def main():
         log("❌ 已有一个压缩实例在跑（compress.lock 被占），退出。")
         sys.exit(2)
 
-    cores = os.cpu_count() or 8
+    cores = args.jobs if args.jobs and args.jobs > 0 else (os.cpu_count() or 8)
+    log(f"x265 pools={cores}（逻辑核 {os.cpu_count()}）")
     done = fail = skip = 0
     t0 = time.time()
     processed = 0

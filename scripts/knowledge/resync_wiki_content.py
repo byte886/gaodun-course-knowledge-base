@@ -101,10 +101,12 @@ def update_one(title, path, obj):
     if "](" + "./" in resolved:
         print(f"    [警告] {title} resolver 后仍残留 ./ 相对链接（cite 未生效，检查 WIKI_MAP 是否传对）", flush=True)
     last = ""
-    # 单篇只做 3 次快速重试（3/8/15s，共约 26s）扛瞬时网关抖动；
-    # 持续 invalid_response / 账号写窗口由 main 的「连续失败全局冷却」处理，
-    # 不在单篇内长退避空转（持续撞窗口反而给窗口"续命"、延缓恢复）
-    for attempt in range(3):
+    # 重试策略（2026-09-16 修复）：
+    # - invalid_response（代理层限流/parse temporary token fail）：立即失败，不重试！
+    #   原因：单篇内重试会在同一进程内继续累积代理层计数，反而加剧限流；
+    #   应由外层调度器停止当前批、等待一段时间后重启新进程（代理层计数清零）。
+    # - 其他错误（参数/编码/瞬时网关抖动）：最多重试1次（间隔3秒），扛瞬时抖动。
+    for attempt in range(2):
         proc = subprocess.run(
             ["lark-cli", "docs", "+update", "--doc", obj, "--command", "overwrite",
              "--doc-format", "markdown", "--content", "-", "--as", "user", "--format", "json"],
@@ -114,8 +116,14 @@ def update_one(title, path, obj):
         if '"ok":true' in last.replace(" ", "") or '"ok": true' in last:
             return True, ""
         # 诊断：每次失败立即把原始返回打到日志，便于区分限流/参数/编码
-        print(f"    [attempt {attempt+1}/3 未成功 rc={proc.returncode}] {last[:240]!r}", flush=True)
-        time.sleep([3, 8, 15][attempt])
+        print(f"    [attempt {attempt+1}/2 未成功 rc={proc.returncode}] {last[:240]!r}", flush=True)
+        # 检测到 invalid_response（代理层限流）：立即失败，不重试
+        if "invalid_response" in last or "parse temporary token" in last:
+            print(f"    ⚠️  检测到代理层限流(invalid_response)，立即失败不重试，交外层调度器处理", flush=True)
+            return False, last[:300]
+        # 其他错误：第1次失败后等待3秒重试第2次
+        if attempt == 0:
+            time.sleep(3)
     return False, last[:300]
 
 
