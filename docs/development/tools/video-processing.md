@@ -111,6 +111,38 @@ node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --ou
 - 实测样本（财管·关键绩效指标法 37min）：938MB/3540kbps → 73MB/179kbps（**约 1/13**），1080P 与时长零损失，课件印刷字/红蓝重点/手写批注清晰，达标"能看清视频中文字"。单实例 speed≈6.3x，1281h 内容约需 8 天连续，属超长后台任务，**期间可与知识详解生成（LLM/网络）、非视频网盘上传（IO）并行**（资源不重叠）。
 - 与网盘衔接：阶段④只传**重压后**视频；某课全部 hevc 后再对该课 `sync_ep3_ready.sh ... videos`。
 
+### 名师课双机并行重压与常驻保活（2026-09-16，ADR-022）
+
+六科约 2062 个 h264 1080P（约 1TB）单机压约 8 天，故用两台 mac **科目零重叠**并行。决策见 [ADR-022](../../project-management/decisions/ADR-022-名师课双机并行H265重压与整科门控网盘覆盖.md)，记忆 concept `workflow-video-hevc-compression`。
+
+**① 分工（零重叠，避免同文件双写分叉）**
+
+| 机器 | 负责科目 | 说明 |
+|------|----------|------|
+| 本机（20 逻辑核，项目主存储、git 仓） | 审计、战略、经济法、税法 | 目标机成品 rsync 回传后本机为唯一主存储 |
+| 目标机（16 逻辑核，外置机械盘 `/Volumes/backup`，HFS+） | 会计、财管 | 外置盘 IO 是瓶颈，jobs 上限约 11 |
+
+**② 数据迁移（代码走 git，数据走 rsync）**：目标机 `git clone` 公有仓拿代码/文档；课程数据 gitignore，由本机 `rsync -az -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" <本机数据根>/ chenwenjie@<目标IP>:<目标机项目根>/data/高顿/CPA/...` 推到**完全同构的相对路径**。脚本一律相对路径。目标机 ffmpeg/ffprobe 在 `/usr/local/bin`、python 用 `/usr/local/bin/python3`，远程命令先 `export PATH=/usr/local/bin:$PATH`。SSH 免密用 ed25519 公钥且必须显式 `-i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes`（目标机 config 未指定 IdentityFile）；IP 随 WiFi/有线切换，以现场 `ping` 为准（曾用 .14 WiFi、.8 有线）。
+
+**③ 常驻保活（裸 nohup 会随 Doubao 会话关闭被连带 KILL，曾夜间停摆约 6h）**
+- **本机 launchd 总管**：`scripts/ep3_local_supervisor.sh` + `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + `KeepAlive{SuccessfulExit=false}`），每 120s 巡检：无压缩进程且仍有 h264 就拉起压缩，按门控拉起上传，全部 hevc 且上传成功后 `exit 0`（正常完成不重启、异常被杀自愈）。launchd 的 PATH 只有系统目录，脚本内已 `export PATH=/usr/local/bin:$PATH`。
+- **目标机（不跑 Doubao）两个 nohup 看门**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）、`nohup caffeinate -dimsu bash logs/target_netdisk_watch.sh`（全 hevc 后限速上云，见 [finalize-sop.md](../guides/finalize-sop.md) 步骤 1）。看门为过程件、在 `logs/` 不入库。
+- 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠；**全部任务结束后恢复默认**（`sudo pmset -a disablesleep 0` 并把 sleep/disksleep 改回）。
+
+**④ `--jobs` 档位与改档**：`--jobs N` 控 x265 `pools=N`，`--reverse` 倒序遍历（两台从两端推进）。参考档（易变、以现场负载为准）：本机 20 核白天 8 / 闲时 12–13 / 夜间 17；目标机 16 核 + 外置 IO 白天 6 / 闲时 9–11（再高受 IO 瓶颈收益小）。改档＝改脚本顶部 `JOBS` → 本机 `launchctl unload <plist> && sleep 3 && find data/高顿/CPA -name '.compress_tmp__*' -delete && launchctl load -w <plist>`；目标机 kill 看门与压缩（PGID 排除法，见⑥）→ 删 `.compress_tmp` → 重启看门。**只中断当前一个文件、幂等续压；重启后约 2–4 分钟（全量 ffprobe probe）才重新拉起压缩，是正常自愈，不要在这段时间反复 reload 观察。** 压缩在跑时不要为观察而 `launchctl unload`——会连坐杀死它拉起的压缩子进程。
+
+**⑤ 进度统计口径（必须排除临时文件）**：用 python subprocess + 线程池并发 ffprobe 读 `v:0 codec_name`，遍历 `rglob('*_video.mp4')` 后**排除含 `.compress_tmp` 的路径**——临时名 `.compress_tmp__<老师>_video.mp4` 以 `_video.mp4` 结尾会被多算（会计 607 曾误报 608）。不要用 `xargs -I{}` 批量 ffprobe 中文超长路径（command line too long 误报）。进度一律现算，不抄 done/记忆计数。
+
+**⑥ 进程清理（禁 pkill -f）**：`pkill -f` / `pgrep -f <脚本> | xargs kill` 的模式串会匹配命令自身命令行导致自杀（exit 137）。可靠做法按进程组排除当前 shell：
+```bash
+PGID=$(ps -o pgid= -p $$ | tr -d ' ')
+ps -axo pid,pgid,command | awk -v g="$PGID" '$2!=g && /x265|VIPCPA|高顿/{print $1}'   # 先看再杀
+```
+
+**⑦ 目标机 bash 3.2 兼容**：`"$JOBS"` 后紧跟中文全角括号（如 `JOBS（当前）`）会被 shell 吞进变量名、在 `set -u` 下触发 unbound variable；一律用 `${JOBS}` 定界，看门日志文案用 ASCII。
+
+**⑧ 闭环**：目标机会计/财管压完全 hevc 后，`rsync` 回传本机 `data/高顿/CPA/` 同名覆盖留档（避免本机留 h264、目标机留 hevc 的分叉），跑终态核验（见 [netdisk-final-verification-sop.md](../guides/netdisk-final-verification-sop.md)）后再删目标机已回传文件滚动腾空间。
+
 ### 多科目节流调度（白天防风控 + 给前台/豆包留资源，2026-09-10）
 
 **为什么需要**：多路消费者齐发 × 每路 64 分片并发会把网络/磁盘打满，挤掉豆包与后端通信（表现为豆包卡死不回答）；业务网关取 key 接口密度过高也有账号风控风险。注意区分：视频 ts 分片走 CDN，下载带宽大小（如 14MB/s）本身不是风控点；真正敏感的是 apigateway.gaodun.com 取 key/学习接口的调用频率，以及高并发连接的"爬虫化"密度。

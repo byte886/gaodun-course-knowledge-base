@@ -4,6 +4,10 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-16
+
+- **Add**：新增链路 concept `workflow-video-hevc-compression`（六科名师课 h264→hevc 的双机科目零重叠并行：本机压审计/战略/经济法/税法、目标机压会计/财管，rsync 同构相对路径迁移不走 git，`--jobs` 按忙闲调档/`--reverse`，本机 launchd LaunchAgent 常驻总管抗会话清理、目标机 nohup caffeinate 看门衔接，ffprobe 幂等 skip + `.compress_tmp` 原子替换 + flock 单实例，压完 rsync 回传闭环）与 `workflow-netdisk-hevc-sync`（整科全 hevc 且压缩结束才上传的门控、清视频 done 保 notes + rtype=3 覆盖早期 h264、双机各并发 1 限速 1000k、verify_netdisk_final 按集合+字节大小核验为准不信 done、网盘靠 hevc 小/h264 大的大小差识别旧版），在 index 链路类登记；对应新增 ADR-022，操作细则落到 video-processing.md 与 netdisk-setup.md 新增小节。来源：双机压缩/上云实战（审计 257、战略 129 已 hevc 上云终态核验 rc=0 零差异；目标机 961 个视频与本机源 diff 一致、ffprobe 全可解析；夜间 nohup 随会话被 KILL 停摆 6h 后改 launchd；log_done 误判"失败讲"标题恒假卡死上传、战略漏在总管循环外靠一次性补传等定位）。AI 编译，未标 verified。
+
 ## 2026-09-14
 
 - **Update（architecture-storage-layout）**：按新增 ADR-021 去桌面软链——`data/高顿` 由指向 `~/Desktop/高顿` 的符号链接改为项目内**实体目录**（同 APFS 卷 rename 秒换、迁移前后 12401 条目/10448 文件/935G 零丢失、整体 gitignore）；删除"`find data/高顿` 必须带 `-L`、换机用 setup_data_symlink 重建软链"旧结论，改为"实体目录直接遍历无需 `-L`、换机把数据放回 `data/高顿/`（网盘镜像拉回）"；本地大文件目录载体由 `~/Desktop/高顿` 改记 `data/高顿`。配套：`course_config.COURSE_DESKTOP_ROOT` 保留变量名、值=COURSE_LOCAL_ROOT（下游 4 脚本零改动）；`setup_data_symlink.sh` 退役；百度网盘远端结构与四地分工不变。另清退 15 个写死桌面绝对路径、0 现役引用的一次性知识详解清洗脚本（fix_p*/fix_error*/count/assess，移废纸篓），现役 `batch_ocr.sh`/`watch_stage_done.sh` 改 data 相对路径保留。AI 编译，未标 verified。

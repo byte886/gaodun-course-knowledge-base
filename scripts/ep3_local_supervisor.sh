@@ -16,7 +16,7 @@ SD="$(cd "$(dirname "$0")" && pwd)"; RR="$(dirname "$SD")"; cd "$RR" || exit 1
 export PATH=/usr/local/bin:$PATH
 export BAIDU_ENC_PASS=lover123
 export BAIDU_UPLOAD_RATE=1000k
-JOBS=12  # 闲时档（20核留8核）；白天交付高峰用8，夜间满档17
+JOBS=13  # 闲时偏高档（20核留7核）；白天交付高峰用8，夜间满档17
 FLAGDIR="data/_workspace/_account/ep3/supervisor"; mkdir -p "$FLAGDIR" logs
 comp_running(){ pgrep -f compress_ep3_videos.py >/dev/null 2>&1; }
 up_running(){ pgrep -f 'sync_ep3_ready.sh ' >/dev/null 2>&1; }

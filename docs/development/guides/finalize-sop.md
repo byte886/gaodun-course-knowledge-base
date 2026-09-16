@@ -49,6 +49,24 @@
 
 5. 传后核对本地↔网盘**文件数与大小**一致，且要**逐讲核对到文件类型**：videos 每讲必须同时有 `video.mp4` 和 `transcript.md`（不能只核 mp4 数量，本课程曾出现单讲漏传 transcript.md）；papers/user-notes 按文件名集合 diff；改名走 rename 级联、不重传。
 
+#### 名师课视频：hevc 整科门控覆盖与双机限速（2026-09-16，ADR-022）
+
+名师课（ep3）视频先离线重压为 hevc（见 [video-processing.md](../tools/video-processing.md) 双机小节），再整科覆盖网盘早期传过的 h264。这是对上面步骤 1 第 4 条的特化，**优先级高于"传了就行"**：
+
+1. **整科门控（防 h264 混传，最重要）**：一门课必须**全部** `*_video.mp4` 经 ffprobe 为 hevc（非 hevc 计数=0）**且压缩进程已结束**，才允许上传该科视频；压缩在跑时绝不探测/上传。`scripts/sync_ep3_ready.sh <profile> 1 videos` 的 ready_filter 只挑"完整讲"（meta 与非空视频齐备）、**不判编码**，编码门控必须在调用方实现（本机 `scripts/ep3_local_supervisor.sh`、目标机 `logs/target_netdisk_watch.sh`）。链路：`sync_ep3_ready.sh` → `sync_course_netdisk.sh`（xargs -P 派生）→ `upload_course.sh`（讲内串行）→ `baidu_upload.py`。
+
+2. **清视频 done + rtype=3 覆盖**：早期 h264 已传并留 done，sync 见 done 会跳过。某科全 hevc **首次**上传前执行 `reset_videos_done_once`：删 `data/_workspace/<profile>/logs/netdisk_done/` 下所有**非 `notes__` 前缀**的视频 `.done`（**保留 `notes__` 讲义标记**），强制 hevc 全量重传、precreate/create 都传 `rtype=3` 同名覆盖；每科只清一次（标志 `data/_workspace/_account/ep3/supervisor/<prof>.videoreset`，目标机在 `netdisk_watch/`）。注意 done 文件名前缀是**阶段名**（如"全面精讲"），不是字面"videos"，仅讲义那次前缀是 `notes__`。
+
+3. **双机各自限速**：两台分别上传自己负责的科目（本机审计/战略/经济法/税法，目标机会计/财管；目标机的 done 与看门在目标机本地）。每台**讲并发=1**、`BAIDU_UPLOAD_RATE=1000k`（只给分片 curl 加 `--limit-rate`，list/mkdir 小请求不限），两台加总 ≤2MB/s，不占满上行、不挤其它应用。
+
+4. **失败判定别看错**：`sync_course_netdisk.sh` 无论成败都固定打印"失败讲（无 done 标记且本次匹配）:"标题，**真正失败行才是行首恰好 3 个空格 + `- `**。一轮成功的判据是 `grep -q "本轮结束" && ! grep -qE '^[[:space:]]{3}- '`；只 grep"失败讲"标题恒为假，会导致看门每轮空转重拉、永不 mark_done、并卡死后续科目（实战踩过）。
+
+5. **孤儿进程分层清理**：`sync_course_netdisk.sh` 的 xargs 父 bash 被杀后，上传子进程会成孤儿被 launchd 收养继续派生。停上传须分层：①杀顶层 sync_ep3_ready/sync_course →②按 upload_one 匹配杀孤儿 xargs 与 `bash -c` →③杀 upload_course/baidu_upload →④`pgrep -x curl`；全程用进程组 PGID 排除当前 shell（禁 `pkill -f`，模式串会匹配自身命令行自杀，详见 video-processing.md 双机小节⑥），连续两轮计数 0 才算根除。
+
+6. **自动覆盖清单必须含全部负责科目**：本机总管上传循环曾只列审计/税法/经济法而漏掉战略，战略实际靠一次性补传才传齐 hevc（终态核验零差异）；新增/调整负责科目时，必须同步进自动覆盖清单，不能依赖人工补传。
+
+7. **传完以终态核验为准、不信 done**：done 只证明"某次上传动作完成"，不证明网盘当前是 hevc。务必按 [netdisk-final-verification-sop.md](netdisk-final-verification-sop.md) 跑 `verify_netdisk_final.py`，rc=0 且无"网盘旧大版"才算完成。
+
 ### 步骤 2　飞书知识库统一同步（只同步 "知识详解" 成品）
 
 > 任何飞书写操作前先读 lark-wiki /lark-doc 的 SKILL；本地是源头，

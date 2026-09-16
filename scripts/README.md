@@ -107,9 +107,19 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | ep3 链路 `-c copy` 原样封装的是 H.264 1080P（单讲常达数百 MB~1GB）；本脚本把仍是 H.264 的 `*_video.mp4` 用与 `compress.sh` 一致参数（libx265/CRF30/preset fast/AAC96k/hvc1/faststart）重压为 H.265，已是 hevc 的自动跳过；断点落 `data/_workspace/_account/ep3/compress_state.jsonl` |
-| **用法** | `nohup python3 scripts/compress_ep3_videos.py > logs/compress_run.nohup.log 2>&1 & disown`（长跑走守护、勿用会被回收的 run_in_background） |
-| **相关文档** | `docs/development/tools/video-processing.md`、`compress.sh` |
+| **用途** | ep3 链路 `-c copy` 原样封装的是 H.264 1080P（单讲常达数百 MB~1GB）；本脚本把仍是 H.264 的 `*_video.mp4` 用与 `compress.sh` 一致参数（libx265/CRF30/preset fast/AAC96k/hvc1/faststart）重压为 H.265，已是 hevc 的自动跳过；断点落 `data/_workspace/_account/ep3/compress_state.jsonl`。参数：`--jobs N`（x265 `pools=N` 线程池，按机器核数与忙闲调档）、`--reverse`（倒序遍历，双机从两端推进）、`--course <名> --crf N`、`--dry-run/--limit N/--report`；写 `.compress_tmp__` 验证通过才同名替换，flock 占 `compress.lock` 保证单实例 |
+| **用法** | 单机直跑：`nohup python3 scripts/compress_ep3_videos.py --jobs 12 > logs/compress_run.nohup.log 2>&1 & disown`；双机并行/常驻保活优先用 launchd 总管（见下 `ep3_local_supervisor.sh`），勿用会被回收的 run_in_background |
+| **相关文档** | `docs/development/tools/video-processing.md`（双机并行/保活/调档小节）、ADR-022、`compress.sh` |
+
+---
+
+### `ep3_local_supervisor.sh` — 本机名师课 H.265 重压 + 整科门控上云的 launchd 常驻总管
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 每 120s 巡检：无压缩进程且仍有 h264 就按顶部 `JOBS` 拉起 `compress_ep3_videos.py`；某科全 hevc 且压缩结束后，清该科视频 done（保 notes__）并按讲并发 1 + `BAIDU_UPLOAD_RATE=1000k` 限速整科覆盖上云；全部 hevc 且上传成功后 `exit 0`。替代裸 nohup（会随 Doubao 会话关闭被连带 KILL，曾夜间停摆约 6h）。失败判定只认真失败行（行首 3 空格+`- `），不被恒打印的"失败讲:"标题误导 |
+| **用法** | 由 `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + KeepAlive{SuccessfulExit=false}）托管：`launchctl load -w <plist>` 启动、`launchctl unload <plist>` 停；改档改顶部 `JOBS` 后 unload→删 `.compress_tmp__*`→load（约 2–4 分钟 probe 后才拉起压缩，勿反复 reload；压缩在跑时 unload 会连坐杀子进程）。脚本内已 `export PATH=/usr/local/bin:$PATH` |
+| **相关文档** | `docs/development/tools/video-processing.md` 双机小节、`docs/development/guides/finalize-sop.md` 步骤 1、ADR-022；目标机对应看门为过程件 `logs/target_compress_watch.sh`、`logs/target_netdisk_watch.sh`（nohup caffeinate，不入库） |
 
 ---
 
@@ -402,6 +412,16 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | **用途** | 递归对比本地课程目录与网盘目录的结构、文件数、文件名集合、文件大小，finalize 前三地一致性核验 |
 | **用法** | `BAIDU_ENC_PASS=<加密密码> python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根>` |
 | **相关文档** | `docs/development/guides/netdisk-final-verification-sop.md` |
+
+---
+
+### `netdisk_verify_summary.py` — 网盘终态核验日志分类汇总（只读）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 吃一份或多份 `verify_netdisk_final.py` 的核验日志，按类别汇总：讲义缺/不一致、视频缺、视频大小不一致（其中标注"网盘旧大版"=残留 h264，需清视频 done 后 rtype=3 覆盖）、缺讲目录、缺配套、垃圾分片；把 `知识详解`/.ep3cache/.DS_Store 归 noise、_work/.dec.ts 归 junk |
+| **用法** | `python3 scripts/netdisk_verify_summary.py <核验日志...>` |
+| **相关文档** | `docs/development/guides/netdisk-final-verification-sop.md` §2.1.1、ADR-022 |
 
 ---
 
