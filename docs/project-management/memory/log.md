@@ -4,6 +4,10 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-17
+
+- **Update（workflow-netdisk-hevc-sync / workflow-video-hevc-compression）**：网盘门控由"整科全 hevc 且压缩进程结束才传"放宽为**按科滚动**（某科全 hevc 且没在压该科即传、可与他科压缩并行、整机一次一科；本机以该科 videos 下无 `.compress_tmp` 判"没在压"，目标机按 `--course` 进程判）；上传限速经 `networkQuality -s` 实测（两台共享上行 34.6Mbps、满载响应 Low：延迟 1.5s/40RPM）由 1000k 定值 **1100k**（两台各 1100k、同时传最坏合计占上行 ~52%，留约一半给豆包）；总管/看门在跑检测改为只匹配带 `python3`/`bash` 前缀的真进程，根除裸 `pgrep -f 脚本名` 误匹配 grep/外层 shell 的漏拉。对应 ADR-022 文末"演进注记（2026-09-17）"，finalize-sop 步骤 1、video-processing、scripts/README 同步；经济法已在税法压缩中按科先行上传。AI 编译，未标 verified。
+
 ## 2026-09-16
 
 - **Add**：新增链路 concept `workflow-video-hevc-compression`（六科名师课 h264→hevc 的双机科目零重叠并行：本机压审计/战略/经济法/税法、目标机压会计/财管，rsync 同构相对路径迁移不走 git，`--jobs` 按忙闲调档/`--reverse`，本机 launchd LaunchAgent 常驻总管抗会话清理、目标机 nohup caffeinate 看门衔接，ffprobe 幂等 skip + `.compress_tmp` 原子替换 + flock 单实例，压完 rsync 回传闭环）与 `workflow-netdisk-hevc-sync`（整科全 hevc 且压缩结束才上传的门控、清视频 done 保 notes + rtype=3 覆盖早期 h264、双机各并发 1 限速 1000k、verify_netdisk_final 按集合+字节大小核验为准不信 done、网盘靠 hevc 小/h264 大的大小差识别旧版），在 index 链路类登记；对应新增 ADR-022，操作细则落到 video-processing.md 与 netdisk-setup.md 新增小节。来源：双机压缩/上云实战（审计 257、战略 129 已 hevc 上云终态核验 rc=0 零差异；目标机 961 个视频与本机源 diff 一致、ffprobe 全可解析；夜间 nohup 随会话被 KILL 停摆 6h 后改 launchd；log_done 误判"失败讲"标题恒假卡死上传、战略漏在总管循环外靠一次性补传等定位）。AI 编译，未标 verified。

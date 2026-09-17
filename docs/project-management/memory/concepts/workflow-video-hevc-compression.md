@@ -43,7 +43,7 @@ status: stable
 
 - 裸 `nohup` 只挡 SIGHUP，启动它的 Doubao 会话关闭时会被进程组连带 KILL（曾夜间静默停摆约 6h）。
 - **本机**：launchd LaunchAgent `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + `KeepAlive{SuccessfulExit=false}`）跑 `scripts/ep3_local_supervisor.sh`，每 120s 巡检压缩+上传，全完成 `exit 0` 不重启、异常被杀才自愈；launchd 的 PATH 只有系统目录，脚本内必须 `export PATH=/usr/local/bin:$PATH`。
-- **目标机（不跑 Doubao）**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）与 `target_netdisk_watch.sh`（全 hevc 后限速上云）。
+- **目标机（不跑 Doubao）**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）与 `target_netdisk_watch.sh`（按科滚动限速上云：某科全 hevc 即传、可与他科压缩并行）。
 - 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠，**任务结束要恢复默认**。
 
 ## 踩坑（勿重犯）

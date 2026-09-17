@@ -2,8 +2,11 @@
 # 本机名师课「压缩 + 网盘上传」常驻保活总管（由 launchd LaunchAgent 托管，抗 Doubao 会话清理）。
 # 每 120 秒巡检：
 #  - 压缩：无 compress 进程且 税法/经济法 仍有 h264 → 起压缩（倒序 jobs17，flock 单实例不双开）；
-#  - 上传：整机无 sync 进程时，审计（已全hevc）优先传；审计传完且压缩结束后，再传税法、经济法；
-#          上传一律 并发1 + BAIDU_UPLOAD_RATE=1000k，整机一次只传一科；
+#  - 上传：整机无 sync 进程时，审计（已全hevc）优先传；其余科目【按科滚动】——某科全 hevc 且
+#          当前没在压该科（该科 videos 下无 .compress_tmp 临时文件）即可传该科，不等其它科压缩结束
+#          （上传走网络/限速、压缩吃 CPU，目录按 profile 隔离，可与另一科压缩并行）；
+#          上传一律 并发1 + BAIDU_UPLOAD_RATE=1100k（实测上行34.6Mbps、满载延迟1.5s，两台各1100k
+#          最坏合计占上行~52%，留余量给豆包/交互），整机一次只传一科；
 #          科目全 hevc 首次上传前自动清“视频阶段”旧 done（保留讲义标记），强制 hevc 覆盖网盘旧 h264；
 #  - 全部科目 hevc 且三科上传成功结束 → exit 0（launchd 配 SuccessfulExit=false，正常完成不重启、异常被杀才自愈）。
 # 已在跑的同类 nohup 进程会被识别并跳过，不重复拉起，可平滑接管。
@@ -15,11 +18,23 @@ set -u
 SD="$(cd "$(dirname "$0")" && pwd)"; RR="$(dirname "$SD")"; cd "$RR" || exit 1
 export PATH=/usr/local/bin:$PATH
 export BAIDU_ENC_PASS=lover123
-export BAIDU_UPLOAD_RATE=1000k
+export BAIDU_UPLOAD_RATE=1100k   # 单路上行≤约1.1MB/s；两台同时传最坏合计占上行~52%（上行34.6Mbps，留余量给豆包）
 JOBS=13  # 闲时偏高档（20核留7核）；白天交付高峰用8，夜间满档17
 FLAGDIR="data/_workspace/_account/ep3/supervisor"; mkdir -p "$FLAGDIR" logs
-comp_running(){ pgrep -f compress_ep3_videos.py >/dev/null 2>&1; }
-up_running(){ pgrep -f 'sync_ep3_ready.sh ' >/dev/null 2>&1; }
+# 只认真正的执行进程（命令行带解释器前缀 python3/bash）；不要裸 pgrep -f 脚本名，
+# 否则会匹配到仅在命令行里出现该脚本名字面的 grep/外层 shell，误判“在跑”而漏拉（2026-09-17 踩过）。
+comp_running(){ pgrep -f 'python3 .*compress_ep3_videos\.py' >/dev/null 2>&1; }
+up_running(){ pgrep -f 'bash .*sync_ep3_ready\.sh' >/dev/null 2>&1; }
+# 某科是否正在被压缩写：该科 videos 下存在 .compress_tmp* 临时文件即视为在压（按科滚动上传用）。
+# 一个 compress 进程可能同时带 --course 税法 --course 经济法，不能用进程名判断某科，只认真实临时文件。
+compressing_course(){
+  local d
+  for d in data/高顿/CPA/*"名师专业课"*"$1"*/原始资源/videos; do
+    [ -d "$d" ] || continue
+    find "$d" -name '.compress_tmp*' -print -quit 2>/dev/null | grep -q . && return 0
+  done
+  return 1
+}
 up_done(){ [ -f "$FLAGDIR/$1.done" ]; }
 mark_done(){ date > "$FLAGDIR/$1.done"; echo "[$(date '+%F %T')] $1 标记上传完成"; }
 nothevc(){ # 压缩在跑时不调用（结果不可能已全hevc）；$1=科目
@@ -45,7 +60,7 @@ start_compress(){
   nohup nice -n 20 caffeinate -dimsu python3 scripts/compress_ep3_videos.py --course 税法 --course 经济法 --reverse --jobs "$JOBS" >> data/_workspace/_account/ep3/logs/compress_ep3.log 2>&1 &
   echo "[$(date '+%F %T')] 已拉起压缩(税法+经济法 倒序 jobs=$JOBS)"; sleep 15
 }
-start_upload(){ nohup caffeinate -dimsu bash scripts/sync_ep3_ready.sh "$1" 1 videos >> "logs/netdisk_$1.log" 2>&1 & echo "[$(date '+%F %T')] 已拉起上传 $1（限速1000k/并发1）"; sleep 10; }
+start_upload(){ nohup caffeinate -dimsu bash scripts/sync_ep3_ready.sh "$1" 1 videos >> "logs/netdisk_$1.log" 2>&1 & echo "[$(date '+%F %T')] 已拉起上传 $1（限速1100k/并发1）"; sleep 10; }
 # 科目已全 hevc、首次上传前：清“视频阶段”旧 done（保留 notes__ 讲义标记），强制所有视频以 hevc
 # 重传并 rtype=3 覆盖网盘旧 h264；每科只清一次（<prof>.videoreset 标志）。done 名前缀是阶段名（非字面 videos）。
 reset_videos_done_once(){
@@ -66,17 +81,20 @@ while :; do
     nt=$(nothevc 税法); ne=$(nothevc 经济法)
     if [ "$nt" != "0" ] || [ "$ne" != "0" ]; then start_compress; fi
   fi
-  # —— 上传（整机互斥；审计优先，税法/经济法等压缩结束且全hevc）——
+  # —— 上传（整机互斥一次一科；审计优先；税法/经济法按科滚动，不等全局压缩结束）——
   if ! up_running; then
     if ! up_done ep3-audit-2026; then
       if log_done logs/netdisk_audit_videos.log || log_done logs/netdisk_ep3-audit-2026.log; then mark_done ep3-audit-2026
       else start_upload ep3-audit-2026; fi
-    elif ! comp_running; then
+    else
+      # 按科：该科全 hevc 且 当前没在压该科（无临时文件）即可传，可与另一科压缩并行
       for pair in ep3-tax-2026:税法 ep3-econlaw-2026:经济法; do
         prof="${pair%%:*}"; kw="${pair##*:}"
         if up_done "$prof"; then continue; fi
         if log_done "logs/netdisk_${prof}.log"; then mark_done "$prof"; continue; fi
-        if [ "$(nothevc "$kw")" = "0" ]; then reset_videos_done_once "$prof"; start_upload "$prof"; break; fi
+        if [ "$(nothevc "$kw")" = "0" ] && ! compressing_course "$kw"; then
+          reset_videos_done_once "$prof"; start_upload "$prof"; break
+        fi
       done
     fi
   fi

@@ -126,7 +126,7 @@ node scripts/cdp/ep3_download_videos.js --learning-url "<ep3 learning URL>" --ou
 
 **③ 常驻保活（裸 nohup 会随 Doubao 会话关闭被连带 KILL，曾夜间停摆约 6h）**
 - **本机 launchd 总管**：`scripts/ep3_local_supervisor.sh` + `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + `KeepAlive{SuccessfulExit=false}`），每 120s 巡检：无压缩进程且仍有 h264 就拉起压缩，按门控拉起上传，全部 hevc 且上传成功后 `exit 0`（正常完成不重启、异常被杀自愈）。launchd 的 PATH 只有系统目录，脚本内已 `export PATH=/usr/local/bin:$PATH`。
-- **目标机（不跑 Doubao）两个 nohup 看门**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）、`nohup caffeinate -dimsu bash logs/target_netdisk_watch.sh`（全 hevc 后限速上云，见 [finalize-sop.md](../guides/finalize-sop.md) 步骤 1）。看门为过程件、在 `logs/` 不入库。
+- **目标机（不跑 Doubao）两个 nohup 看门**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）、`nohup caffeinate -dimsu bash logs/target_netdisk_watch.sh`（**按科滚动**限速上云：某科全 hevc 且没在压该科即传、可与另一科压缩并行，整机一次一科，见 [finalize-sop.md](../guides/finalize-sop.md) 步骤 1）。看门为过程件、在 `logs/` 不入库。
 - 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠；**全部任务结束后恢复默认**（`sudo pmset -a disablesleep 0` 并把 sleep/disksleep 改回）。
 
 **④ `--jobs` 档位与改档**：`--jobs N` 控 x265 `pools=N`，`--reverse` 倒序遍历（两台从两端推进）。参考档（易变、以现场负载为准）：本机 20 核白天 8 / 闲时 12–13 / 夜间 17；目标机 16 核 + 外置 IO 白天 6 / 闲时 9–11（再高受 IO 瓶颈收益小）。改档＝改脚本顶部 `JOBS` → 本机 `launchctl unload <plist> && sleep 3 && find data/高顿/CPA -name '.compress_tmp__*' -delete && launchctl load -w <plist>`；目标机 kill 看门与压缩（PGID 排除法，见⑥）→ 删 `.compress_tmp` → 重启看门。**只中断当前一个文件、幂等续压；重启后约 2–4 分钟（全量 ffprobe probe）才重新拉起压缩，是正常自愈，不要在这段时间反复 reload 观察。** 压缩在跑时不要为观察而 `launchctl unload`——会连坐杀死它拉起的压缩子进程。

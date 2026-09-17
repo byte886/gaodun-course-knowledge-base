@@ -113,11 +113,11 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-### `ep3_local_supervisor.sh` — 本机名师课 H.265 重压 + 整科门控上云的 launchd 常驻总管
+### `ep3_local_supervisor.sh` — 本机名师课 H.265 重压 + 按科滚动门控上云的 launchd 常驻总管
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 每 120s 巡检：无压缩进程且仍有 h264 就按顶部 `JOBS` 拉起 `compress_ep3_videos.py`；某科全 hevc 且压缩结束后，清该科视频 done（保 notes__）并按讲并发 1 + `BAIDU_UPLOAD_RATE=1000k` 限速整科覆盖上云；全部 hevc 且上传成功后 `exit 0`。替代裸 nohup（会随 Doubao 会话关闭被连带 KILL，曾夜间停摆约 6h）。失败判定只认真失败行（行首 3 空格+`- `），不被恒打印的"失败讲:"标题误导 |
+| **用途** | 每 120s 巡检：无压缩进程且仍有 h264 就按顶部 `JOBS` 拉起 `compress_ep3_videos.py`；某科全 hevc 且当前没在压该科（该科 videos 无 `.compress_tmp`）即按科滚动覆盖上云（可与他科压缩并行、整机一次一科），清该科视频 done（保 notes__）、讲并发 1 + `BAIDU_UPLOAD_RATE=1100k`；全部 hevc 且上传成功后 `exit 0`。替代裸 nohup（会随 Doubao 会话关闭被连带 KILL，曾夜间停摆约 6h）。失败判定只认真失败行（行首 3 空格+`- `），不被恒打印的"失败讲:"标题误导 |
 | **用法** | 由 `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + KeepAlive{SuccessfulExit=false}）托管：`launchctl load -w <plist>` 启动、`launchctl unload <plist>` 停；改档改顶部 `JOBS` 后 unload→删 `.compress_tmp__*`→load（约 2–4 分钟 probe 后才拉起压缩，勿反复 reload；压缩在跑时 unload 会连坐杀子进程）。脚本内已 `export PATH=/usr/local/bin:$PATH` |
 | **相关文档** | `docs/development/tools/video-processing.md` 双机小节、`docs/development/guides/finalize-sop.md` 步骤 1、ADR-022；目标机对应看门为过程件 `logs/target_compress_watch.sh`、`logs/target_netdisk_watch.sh`（nohup caffeinate，不入库） |
 

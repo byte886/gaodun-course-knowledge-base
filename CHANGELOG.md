@@ -14,6 +14,9 @@
 
 > 自最近一次版本结算以来、尚未定版本的变更先累积于此；结算时把本块整体改名为 `[版本号] - 日期`，并在上方另开一个空的 [未发布]。
 
+### 变更
+- 名师课双机 hevc 上云机制微调（2026-09-17，ADR-022 文末演进注记）：①网盘门控由"整科全 hevc 且压缩进程结束才传"放宽为**按科滚动**——某科全 hevc 且当前没在压该科（本机看该科 videos 无 `.compress_tmp`、目标机按 `--course` 进程判）即传，可与他科压缩并行、整机一次一科（经济法已在税法仍压缩时先行上传）；②上传限速经 `networkQuality -s` 实测（两台共享上行 34.6Mbps、满载响应 Low：延迟 1.5s/40RPM）由 `1000k` 科学定值为 `1100k`（两台同时传最坏合计占上行 ~52%、留约一半给豆包/交互）；③总管/看门在跑检测改为只匹配带 `python3`/`bash` 解释器前缀的真进程，根除裸 `pgrep -f 脚本名` 误匹配 grep/外层 shell 导致的漏拉。入库脚本 `scripts/ep3_local_supervisor.sh`；目标机看门 `logs/target_netdisk_watch.sh` 为过程件（不入库，已 rsync 并重启）；finalize-sop 步骤1、video-processing、两篇 OKF concept、scripts/README 同步。
+
 ### 新增
 - 浏览器自动化连接通道选型与落地（「自动做作业」接口化改造前置，决策见 ADR-010）：实测确定用 puppeteer-core 经 Chrome 144+ 运行时远程调试通道连接用户日常 Chrome（默认 Profile、复用登录态、免重启免重登），macOS AX 的 AXPress 自动点授权并内置 403 退避重试；Playwright 连接层在该通道不稳定故弃用、扩展模式保留为 UI 兜底，chrome-devtools-mcp 不进运行时
 - 新增 `scripts/cdp/`：connectBrowser.js（读 DevToolsActivePort 带 UUID 端点、Chrome 没开自动拉起[按 Local State 选上次/首个 Profile]、串行自动授权、重试、找页、安全断开、可自检）、press_allow.applescript（只查授权 sheet、跳过网页 AXWebArea 的元素级代点，多屏可靠）、sniff_demo.js（抓请求/响应落 data/cdp-sniff JSONL）；新增仓库根 package.json/package-lock.json 声明 puppeteer-core（node_modules 不入库，新环境 npm install 自补足）
