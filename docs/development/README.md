@@ -44,7 +44,7 @@ docs/development/
 │   └── knowledge-base-sources.md       # 知识库来源清单、优先级与冲突处理
 └── templates/                   # 模板
     ├── KNOWLEDGE_BASE_TEMPLATE.md  # 知识点单篇4节/组父/课程全局模板
-    ├── PARENT_NODE_TEMPLATE.md     # 知识库父节点内容模板
+    ├── KNOWLEDGE_BASE_TEMPLATE.md  # 知识库内容模板（含知识点单篇、父节点、课程根等全部模板）
     ├── REPORT_TEMPLATE.md          # 任务报告模板
     └── VERIFICATION_TEMPLATE.md    # 通用验证模板（视频/转写专项质检按需）
 ```

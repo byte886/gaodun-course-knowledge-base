@@ -13,8 +13,7 @@
 
 | 模板文件 | 用途 | 适用场景 |
 |---------|------|---------|
-| `KNOWLEDGE_BASE_TEMPLATE.md` | 知识库内容模板 | 生成知识拆解和考试指导文档时 |
-| `PARENT_NODE_TEMPLATE.md` | 知识库父节点模板 | 生成章节父节点页面（含子节点链接）时 |
+| `KNOWLEDGE_BASE_TEMPLATE.md` | 知识库内容模板（含知识点单篇、模块组父节点、课程根节点、全局篇等全部模板） | 生成知识拆解、考试指导、章节父节点等所有知识库文档时 |
 | `REPORT_TEMPLATE.md` | 任务报告模板 | 生成任务完成报告时 |
 | `VERIFICATION_TEMPLATE.md` | 通用验证模板 | 视频/转写/OCR 等专项质检、确需独立留痕时（验证默认不单独成文） |
 | `REFACTOR_PLAN_TEMPLATE.md` | 批量整改清单模板 | 批量重命名/结构整改，出全量清单与回归核对时（配合结构维护 SOP） |
@@ -35,7 +34,7 @@
 
 ### 知识库模板（2个）
 - `KNOWLEDGE_BASE_TEMPLATE.md`：知识拆解 + 考试指导
-- `PARENT_NODE_TEMPLATE.md`：章节父节点（含子节点链接）
+- `KNOWLEDGE_BASE_TEMPLATE.md`：章节父节点（含子节点链接）
 
 ### 报告模板（1个）
 - `REPORT_TEMPLATE.md`：任务完成报告

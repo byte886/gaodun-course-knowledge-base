@@ -18,7 +18,7 @@
 
 1. **本地文件校验通过**：
    - `python3 scripts/okf_validate.py <知识详解目录>` 硬错误 E=0
-   - 章 README 符合 [PARENT_NODE_TEMPLATE.md](../templates/PARENT_NODE_TEMPLATE.md) 五要素
+   - 章 README 符合 [KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md) 五要素
    - 知识点篇四节结构完整
 
 2. **配置正确**：
@@ -384,5 +384,5 @@ wc -l data/_workspace/<profile>/logs/wiki_node_map.tsv
 - 内容同步脚本：`scripts/knowledge/resync_wiki_content.py`
 - 链接验证 SOP：[wiki-link-verification-sop.md](./wiki-link-verification-sop.md)
 - 内容验证 SOP：[wiki-content-verification-sop.md](./wiki-content-verification-sop.md)
-- 章节点模板：[PARENT_NODE_TEMPLATE.md](../templates/PARENT_NODE_TEMPLATE.md)
+- 章节点模板：[KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md)
 - 知识生成 SOP：[knowledge-base-organization.md](../knowledge/knowledge-base-organization.md)

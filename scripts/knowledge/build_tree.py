@@ -96,18 +96,7 @@ def build_course(profile, parent_token, course_dir):
         log(f"  [错误] 知识详解目录不存在: {knowledge_dir}")
         return False
 
-    # 1. 创建全局篇（知识详解根目录下的.md文件）
-    log("--- 全局篇 ---")
-    for md_file in sorted(knowledge_dir.glob("*.md")):
-        title = md_file.stem
-        if title in existing_map:
-            log(f"  [跳过] {title}")
-            continue
-        node_token, obj_token = create_node(parent_token, title, md_file)
-        if node_token:
-            save_map(title, node_token, obj_token, parent_token)
-
-    # 2. 创建章节点和知识点
+    # 1. 先创建章节点和知识点（这样全局篇会在最下面）
     log("--- 章节点 ---")
     for group_dir in sorted(knowledge_dir.iterdir()):
         if not group_dir.is_dir():
@@ -138,6 +127,17 @@ def build_course(profile, parent_token, course_dir):
             point_node = create_node(group_node[0], title, md_file)
             if point_node[0]:
                 save_map(title, point_node[0], point_node[1], group_node[0])
+
+    # 2. 最后创建全局篇（知识详解根目录下的.md文件），这样会在最下面
+    log("--- 全局篇（放在最下面）---")
+    for md_file in sorted(knowledge_dir.glob("*.md")):
+        title = md_file.stem
+        if title in existing_map:
+            log(f"  [跳过] {title}")
+            continue
+        node_token, obj_token = create_node(parent_token, title, md_file)
+        if node_token:
+            save_map(title, node_token, obj_token, parent_token)
 
     log(f"========== 建树完成: {profile}，共 {len(existing_map)} 个节点 ==========")
     return True

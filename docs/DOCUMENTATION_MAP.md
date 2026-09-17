@@ -152,7 +152,7 @@
 | 文档 | 路径 | 用途 |
 |------|------|------|
 | 知识库模板 | `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` | 层级树、知识点单篇 4 节、组父/课程全局/导航模板 |
-| 父节点模板 | `docs/development/templates/PARENT_NODE_TEMPLATE.md` | 知识库父节点内容模板 |
+| 父节点模板 | `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` | 知识库父节点内容模板 |
 | 命名规范 | `docs/project-management/standards/NAMING_CONVENTION.md` | 文件、目录、变量命名 |
 | 文档同步清单 | `docs/project-management/standards/DOC_SYNC_CHECKLIST.md` | 同步时机、更新内容 |
 | 状态查询协议 | `docs/project-management/standards/PROJECT_STATUS_QUERY.md` | 意图分类、模糊表达映射、标准响应格式 |
@@ -245,7 +245,7 @@
 - `docs/project-management/decisions/ADR-012-三层解耦与按知识点聚合.md`
 - 四阶段 SOP：`resource-collection-sop.md` / `paper-manifest-sop.md` / `knowledge-detail-build-sop.md` / `finalize-sop.md`
 
-**重写**：WORKFLOW（四阶段总纲）、knowledge-base-organization、KNOWLEDGE_BASE_TEMPLATE、DIRECTORY_STRUCTURE、NAMING_CONVENTION 数据段、knowledge-base-sources、PARENT_NODE_TEMPLATE。
+**重写**：WORKFLOW（四阶段总纲）、knowledge-base-organization、KNOWLEDGE_BASE_TEMPLATE、DIRECTORY_STRUCTURE、NAMING_CONVENTION 数据段、knowledge-base-sources。
 
 **废弃（加头部指引、正文留作追溯，勿据此执行）**：
 - `lecture-knowledge-build-sop.md` → 被 `knowledge-detail-build-sop.md` 替代

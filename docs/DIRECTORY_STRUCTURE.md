@@ -40,7 +40,7 @@ gaodun-course-knowledge-base/
 │   │   ├── guides/                # 阶段 SOP 与操作指南（resource-collection / paper-manifest /
 │   │   │                          #   knowledge-detail-build / finalize / exam-workflow 等）
 │   │   ├── knowledge/             # 知识库方法论（organization 组织规范 / sources 来源清单）
-│   │   ├── templates/             # 模板（KNOWLEDGE_BASE_TEMPLATE / PARENT_NODE_TEMPLATE / REPORT_TEMPLATE）
+│   │   ├── templates/             # 模板（KNOWLEDGE_BASE_TEMPLATE / REPORT_TEMPLATE / VERIFICATION_TEMPLATE等）
 │   │   ├── methodology/           # 通用方法论（调试/并发/任务规划等，课程无关）
 │   │   ├── performance/           # 性能/并行
 │   │   └── tools/                 # 工具文档（video-processing/transcription/ocr/document-download/browser-cdp）

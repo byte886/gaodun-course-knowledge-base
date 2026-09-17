@@ -25,7 +25,7 @@
 
 ## 章节点（模块组父节点）验证标准
 
-基于 [PARENT_NODE_TEMPLATE.md](../templates/PARENT_NODE_TEMPLATE.md)，章节点必须包含**五要素**：
+基于 [KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md)，章节点必须包含**五要素**：
 
 ### 要素1：信息块
 - [ ] 包含"覆盖知识点：N 个"（数量与该章实际知识点数一致）
@@ -82,7 +82,7 @@
 
 ## 课程根节点（总览页）验证标准
 
-基于 [PARENT_NODE_TEMPLATE.md 第二节](../templates/PARENT_NODE_TEMPLATE.md#二课程根节点模板)：
+基于 [KNOWLEDGE_BASE_TEMPLATE.md 第二节](../templates/KNOWLEDGE_BASE_TEMPLATE.md#二课程根节点模板)：
 
 - [ ] 包含考季、科目、主讲信息
 - [ ] 包含"章节列表"表格，行数与章数一致（会计课30行）
@@ -444,7 +444,7 @@ PY
 
 ## 参考
 
-- 章节点模板：[PARENT_NODE_TEMPLATE.md](../templates/PARENT_NODE_TEMPLATE.md)
+- 章节点模板：[KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md)
 - 知识库模板：[KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md)
 - 知识生成 SOP：[knowledge-base-organization.md](../knowledge/knowledge-base-organization.md)
 - 链接验证 SOP：[wiki-link-verification-sop.md](./wiki-link-verification-sop.md)

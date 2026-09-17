@@ -55,10 +55,17 @@ for course in "${COURSES[@]}"; do
         
         exit_code=${PIPESTATUS[0]}
         
-        # 统计本轮结果
-        ok_count=$(grep -c "✓" "/tmp/resync_${course}_round${round}.log" 2>/dev/null || echo 0)
-        fail_count=$(grep -c "✗" "/tmp/resync_${course}_round${round}.log" 2>/dev/null || echo 0)
-        skip_count=$(grep -c "· 已同步跳过" "/tmp/resync_${course}_round${round}.log" 2>/dev/null || echo 0)
+        # 统计本轮结果（grep -c无匹配时返回非零，用; true避免双输出）
+        ok_count=$(grep -c "✓" "/tmp/resync_${course}_round${round}.log" 2>/dev/null; true)
+        fail_count=$(grep -c "✗" "/tmp/resync_${course}_round${round}.log" 2>/dev/null; true)
+        skip_count=$(grep -c "· 已同步跳过" "/tmp/resync_${course}_round${round}.log" 2>/dev/null; true)
+        # 确保是纯数字（取最后一行，去除可能的空行）
+        ok_count=$(echo "$ok_count" | tail -1 | tr -d '[:space:]')
+        fail_count=$(echo "$fail_count" | tail -1 | tr -d '[:space:]')
+        skip_count=$(echo "$skip_count" | tail -1 | tr -d '[:space:]')
+        [ -z "$ok_count" ] && ok_count=0
+        [ -z "$fail_count" ] && fail_count=0
+        [ -z "$skip_count" ] && skip_count=0
         
         echo "本轮结果: 成功$ok_count, 失败$fail_count, 已跳过$skip_count"
         
