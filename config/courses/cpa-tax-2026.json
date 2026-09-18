@@ -15,7 +15,7 @@
   "teacher": "蔡俊峻",
   "primaryCourse": {
     "role": "主采集源（与现有 glivepro 工具链同构，默认走这条）",
-    "name": "【VIPCPA专享】名师专业课-税法",
+    "name": "【26考季】VIPCPA系列-税法（蔡俊峻老师）",
     "vcourseId": 96834,
     "saasCourseId": 42660,
     "syllabusId": 75181,
@@ -164,7 +164,7 @@
     ]
   },
   "paths": {
-    "localRoot": "data/高顿/CPA/【VIPCPA专享】名师专业课-税法",
+    "localRoot": "data/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）",
     "remoteRoot": "/apps/CPA课程归档/会计知识库/高顿/CPA/【26考季】VIPCPA系列-税法（蔡俊峻老师）"
   }
 }
