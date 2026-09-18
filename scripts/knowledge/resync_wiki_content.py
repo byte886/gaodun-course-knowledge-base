@@ -10,9 +10,10 @@
 - 不写 done_flag、不追加 map，避免映射表重复膨胀。
 
 用法：
-  python3 scripts/knowledge/resync_wiki_content.py            # 全量重同步
-  python3 scripts/knowledge/resync_wiki_content.py --only 01  # 只重跑路径含 01 的文件（dry 过滤）
-  python3 scripts/knowledge/resync_wiki_content.py --dry-run  # 只列出将同步的文件，不写飞书
+  python3 scripts/knowledge/resync_wiki_content.py                  # 全量重同步（默认用 profile.paths.localRoot）
+  python3 scripts/knowledge/resync_wiki_content.py --only 01        # 只重跑路径含 01 的文件（dry 过滤）
+  python3 scripts/knowledge/resync_wiki_content.py --dry-run         # 只列出将同步的文件，不写飞书
+  python3 scripts/knowledge/resync_wiki_content.py --course-dir <dir> --map <tsv>  # 显式指定目录和映射（一卡一课，不靠手改 json）
 """
 import argparse
 import glob
@@ -132,8 +133,20 @@ def main():
     ap.add_argument("--only", help="只同步路径中包含该片段的文件")
     ap.add_argument("--dry-run", action="store_true", help="只列文件，不写飞书")
     ap.add_argument("--force", action="store_true", help="忽略 done 标记全量重刷")
+    ap.add_argument("--course-dir", help="显式指定知识详解目录（默认回退 profile.paths.localRoot/知识详解）")
+    ap.add_argument("--map", dest="map_file", help="显式指定 wiki_node_map.tsv 路径（默认回退 data/_workspace/<profile>/logs/wiki_node_map.tsv）")
     args = ap.parse_args()
 
+    # 一卡一课：显式参数覆盖 profile 默认值，从此不靠手改 json 切换正课/名师课
+    global MAP_FILE, COURSE_DIR, DONE_DIR
+    if args.map_file:
+        MAP_FILE = args.map_file if os.path.isabs(args.map_file) else os.path.join(REPO, args.map_file)
+    if args.course_dir:
+        COURSE_DIR = args.course_dir if os.path.isabs(args.course_dir) else os.path.join(REPO, args.course_dir)
+    DONE_DIR = os.path.join(os.path.dirname(MAP_FILE), "resync_done")
+
+    print(f"[配置] course_dir={COURSE_DIR}")
+    print(f"[配置] map_file={MAP_FILE}")
     title2obj = load_title2obj()
     items = collect_files()
     if args.only:

@@ -1,20 +1,22 @@
 #!/bin/bash
-# 全课程知识详解重同步调度器
-# 功能：循环处理所有6个课程，每批新写20篇后主动退出换新进程（解决代理层限流/token过期）
+# 全课程知识详解重同步调度器（名师六科专用）
+# 功能：循环处理名师课六科，每批新写20篇后主动退出换新进程（解决代理层限流/token过期）
 # 用法：bash scripts/knowledge/resync_all_courses.sh
 # 依赖：scripts/knowledge/resync_wiki_content.py（已含frontmatter剥离/章节点同步/链接解析/断点续跑）
+# 注意：本调度器只处理名师六科（ep3-*）；正课（罗翔会计/蔡俊峻税法，cpa-*）不进批量器，
+#       需要刷时用 cpa-* 卡单独运行 resync_wiki_content.py（一卡一课，配置卡已各归各位）。
 
 set -u
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"
 
-# 6个课程的profile key
+# 名师课六科的profile key（正课 cpa-accounting/cpa-tax 不进批量器，单独运行）
 COURSES=(
-    "cpa-accounting-2026"
+    "ep3-accounting-2026"
     "ep3-audit-2026"
     "ep3-finance-2026"
-    "cpa-tax-2026"
+    "ep3-tax-2026"
     "ep3-econlaw-2026"
     "ep3-strategy-2026"
 )
