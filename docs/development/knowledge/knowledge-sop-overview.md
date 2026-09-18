@@ -16,7 +16,7 @@
 |------|-----------|-----------|
 | **① 写什么** | 知识库怎么组织？分几章？每个知识点放哪里？ | → [组织规范](./knowledge-base-organization.md) |
 | **② 怎么写** | 正文怎么写？结构怎么排？题答格式是什么？ | → [写作风格指南](./knowledge-writing-style-guide.md) |
-| **③ 怎么生成** | 多智能体怎么协作？生成→检查→整改循环怎么走？ | → [生成SOP](../guides/knowledge-detail-build-sop.md) |
+| **③ 怎么生成** | 多智能体怎么协作？生成→检查→整改循环怎么走？**重做一门已有课**怎么走？ | → [生成SOP](../guides/knowledge-detail-build-sop.md)（§三多智能体、**§六重生成既有课程**） |
 | **④ 怎么同步** | 本地怎么同步到飞书？建树、批量同步、限流处理？ | → [飞书同步SOP](../guides/wiki-sync-sop.md) |
 | **⑤ 怎么验证** | 同步后怎么检查内容对不对、链接好不好？ | → [内容验证SOP](../guides/wiki-content-verification-sop.md)<br>→ [链接验证SOP](../guides/wiki-link-verification-sop.md) |
 | **⑥ 查模板** | 章README怎么写？知识点篇怎么写？全局篇怎么写？ | → [知识库模板库](../templates/KNOWLEDGE_BASE_TEMPLATE.md) |
