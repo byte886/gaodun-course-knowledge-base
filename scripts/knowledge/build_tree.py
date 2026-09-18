@@ -131,6 +131,10 @@ def build_course(profile, parent_token, course_dir):
     # 2. 最后创建全局篇（知识详解根目录下的.md文件），这样会在最下面
     log("--- 全局篇（放在最下面）---")
     for md_file in sorted(knowledge_dir.glob("*.md")):
+        # 根目录下的 README.md 是课程首页，直接对应根节点本身，不作为子节点创建
+        if md_file.name == "README.md":
+            log(f"  [跳过] README.md（课程首页，直接对应根节点）")
+            continue
         title = md_file.stem
         if title in existing_map:
             log(f"  [跳过] {title}")

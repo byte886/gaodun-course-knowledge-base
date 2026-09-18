@@ -71,6 +71,9 @@ def collect_files():
     """返回 [(标题, 本地路径)]，覆盖 2 全局篇 + 14 章 README + 92 知识点篇。"""
     items = []
     for path in sorted(glob.glob(os.path.join(COURSE_DIR, "*.md"))):  # 全局篇
+        # 根目录下的 README.md 是课程首页，直接对应根节点本身，不作为子节点同步
+        if os.path.basename(path) == "README.md":
+            continue
         items.append((os.path.basename(path)[:-3], path))
     for group in sorted(glob.glob(os.path.join(COURSE_DIR, "[0-9]*/"))):
         gname = os.path.basename(group.rstrip(os.sep))
