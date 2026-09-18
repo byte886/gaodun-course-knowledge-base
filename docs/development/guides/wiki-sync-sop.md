@@ -21,10 +21,11 @@
    - 章 README 符合 [KNOWLEDGE_BASE_TEMPLATE.md](../templates/KNOWLEDGE_BASE_TEMPLATE.md) 五要素
    - 知识点篇四节结构完整
 
-2. **配置正确**：
-   - `config/courses/<profile>.json` 的 `paths.localRoot` 指向正确的名师课目录
-   - `primaryCourse.name` 与实际目录一致
-   - ⚠️ **常见错误**：localRoot 指向旧正课目录（如 `【26考季】VIPCPA系列-会计（罗翔老师）`），导致同步内容为空。必须指向名师课目录（`【VIPCPA专享】名师专业课-会计`）
+2. **配置正确（一卡一课原则，2026-09-18 根治）**：
+   - `config/courses/<profile>.json` 的 `paths.localRoot` 必须与该 profile 对应的课程一致
+   - `primaryCourse.name` 与实际目录一致，name/localRoot/remoteRoot 三者自洽
+   - ⚠️ **一卡一课（强制）**：正课用 `cpa-*` 卡（罗翔会计/蔡俊峻税法），名师课用 `ep3-*` 卡（名师六科），**禁止手改 cpa 卡的 localRoot 来切换正课/名师课**。历史上 f0b408a"正课卡借指名师"的临时做法已作废（见 ISSUES I-016）。
+   - ⚠️ **映射文件分离（强制）**：每棵飞书树的 `wiki_node_map.tsv` 按 profile 独立存放，互不覆盖。切换课程时**必须同时**确认配置卡和映射文件都对应同一棵树，不能只改一个。
 
 3. **lark-cli 可用**：
    - `lark-cli auth status` 显示已登录
@@ -34,6 +35,57 @@
 4. **单进程原则**：
    - ⚠️ **禁止多进程并行写入同一知识空间**，会导致 API 限流加剧和冲突
    - 同步前确认无其他 resync 进程：`ps aux | grep resync_wiki | grep -v grep`
+
+## 一卡一课与映射分离（强制，2026-09-18 根治）
+
+### 背景与根因
+
+会计、税法各有两套独立知识详解和两棵飞书树（正课 vs 名师课）。历史上曾用"一卡两用"方式：手改 `cpa-*` 卡的 `paths.localRoot` 来切换正课/名师课，导致两套共用一个 `wiki_node_map.tsv`，后建覆盖先建。2026-09-18 根治为"一卡一课+脚本显式化"（见 ISSUES I-016）。
+
+### 四棵树的配置卡与映射归属（长期有效）
+
+| 课程 | 配置卡 profile | 本地目录 | 映射文件 | 飞书父节点 token |
+|------|---------------|---------|---------|-----------------|
+| 罗翔正课会计（169篇） | `cpa-accounting-2026` | `【26考季】VIPCPA系列-会计（罗翔老师）` | `data/_workspace/cpa-accounting-2026/logs/wiki_node_map.tsv` | `J2ngwTGZAiYkH6kJYYHcXMPsnke` |
+| 名师会计（176篇） | `ep3-accounting-2026` | `【VIPCPA专享】名师专业课-会计` | `data/_workspace/ep3-accounting-2026/logs/wiki_node_map.tsv` | `NCpTwvMqEi0bHzkUzyCcyGcinxr` |
+| 蔡俊峻正课税法（108篇） | `cpa-tax-2026` | `【26考季】VIPCPA系列-税法（蔡俊峻老师）` | `data/_workspace/cpa-tax-2026/logs/wiki_node_map.tsv` | `UM6bwW23tiYkCVk3nXtc3TpBnGe` |
+| 名师税法（107篇） | `ep3-tax-2026` | `【VIPCPA专享】名师专业课-税法` | `data/_workspace/ep3-tax-2026/logs/wiki_node_map.tsv` | `LjLGw2smPiLFtGkEOrGcAK55n8Z` |
+
+### 切换课程的正确方法（禁止手改配置卡）
+
+**正课（罗翔会计/蔡俊峻税法）**：用 `cpa-*` 卡，默认回退 `paths.localRoot`，无需显式参数：
+```bash
+GAODUN_COURSE_PROFILE=cpa-accounting-2026 python3 scripts/knowledge/resync_wiki_content.py --dry-run
+```
+
+**名师课（六科）**：用 `ep3-*` 卡，或用 `resync_all_courses.sh` 批量调度（只含名师六科）：
+```bash
+GAODUN_COURSE_PROFILE=ep3-accounting-2026 python3 scripts/knowledge/resync_wiki_content.py --dry-run
+# 或批量：
+bash scripts/knowledge/resync_all_courses.sh
+```
+
+**显式指定目录和映射（高级用法，推荐用于跨卡验证）**：
+```bash
+python3 scripts/knowledge/resync_wiki_content.py \
+  --course-dir "data/高顿/CPA/【VIPCPA专享】名师专业课-会计/知识详解" \
+  --map "data/_workspace/ep3-accounting-2026/logs/wiki_node_map.tsv" \
+  --dry-run
+```
+
+### 映射文件备份与恢复规范
+
+- **建树前必须备份现有映射**：`cp wiki_node_map.tsv wiki_node_map.tsv.bak.<timestamp>`
+- **映射丢失时的恢复优先级**：① 最近的 `.bak` 备份 → ② 从 `.bak` 中按本地标题过滤提取 → ③ 重新 `build_tree`（需确认父节点 token 正确且 lark-cli 可用）
+- **禁止删除任何 `.bak` 映射文件**，除非确认已归位到正确的 profile 工作区且验证通过
+
+### 验证清单（切换课程后必做）
+
+1. 配置卡 `name/localRoot/remoteRoot` 三者自洽，指向同一课程
+2. 映射文件行数 = 本地知识详解文件数（`find <知识详解目录> -name "*.md" | wc -l`）
+3. 映射文件中所有条目的 `parent_token`（第4列）= 该课程的飞书父节点 token
+4. `--dry-run` 验证：`待处理文件 N 个（map 共 N 个标题）`，N 一致且无"无映射"项
+5. 确认无其他 resync 进程在运行（单进程原则）
 
 ## 同步流程
 
