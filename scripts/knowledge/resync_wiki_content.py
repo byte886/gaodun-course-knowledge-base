@@ -25,17 +25,43 @@ import time
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "scripts", "knowledge"))
 from course_profile import load_profile  # noqa: E402
-_profile = load_profile()
-# 标题→obj_token 映射随 profile 走（建树脚本 sync_wiki_new.sh 产出），可用 WIKI_MAP 覆盖
-MAP_FILE = os.environ.get(
-    "WIKI_MAP",
-    os.path.join(REPO, "data", "_workspace", _profile["key"], "logs", "wiki_node_map.tsv"),
-)
+
+HOMEPAGE_KEY = "__COURSE_HOMEPAGE__"  # 课程首页 done 标记名（对应课程容器本身，非 map 子页面）
+
+
+def _load_default_profile():
+    """默认 profile 加载容错：显式传 --course-dir/--map 时允许最小卡/无卡运行。"""
+    try:
+        return load_profile()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_profile = _load_default_profile()
+if _profile:
+    _key = _profile["key"]
+    _local_root = _profile["paths"]["localRoot"]
+else:
+    _key = os.environ.get("GAODUN_COURSE_PROFILE", "")
+    _local_root = ""
+# 标题→obj_token 映射随 profile 走（建树脚本 build_tree.py 产出），可用 WIKI_MAP/--map 覆盖
+MAP_FILE = os.environ.get("WIKI_MAP") or (
+    os.path.join(REPO, "data", "_workspace", _key, "logs", "wiki_node_map.tsv") if _key else "")
 RESOLVER = os.path.join(REPO, "scripts", "wiki_link_resolve.py")
-COURSE_DIR = os.path.join(REPO, _profile["paths"]["localRoot"], "知识详解")
+COURSE_DIR = os.path.join(REPO, _local_root, "知识详解") if _local_root else ""
 # 断点续跑：每篇成功落 done，重跑时零 API 跳过（与建树 wiki_done 同范式），
 # 多轮保守批次只补未成功篇、不重复消耗账号写配额；--force 可全量重刷
-DONE_DIR = os.path.join(os.path.dirname(MAP_FILE), "resync_done")
+DONE_DIR = os.path.join(os.path.dirname(MAP_FILE), "resync_done") if MAP_FILE else ""
+
+
+def load_raw_config(key):
+    """只读原始配置卡（不做必填校验），用于取 wiki.courseObjToken 等。"""
+    import json
+    fp = os.path.join(REPO, "config", "courses", f"{key}.json")
+    if key and os.path.isfile(fp):
+        with open(fp, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
 
 def safe_name(title):
@@ -136,22 +162,42 @@ def main():
     ap.add_argument("--only", help="只同步路径中包含该片段的文件")
     ap.add_argument("--dry-run", action="store_true", help="只列文件，不写飞书")
     ap.add_argument("--force", action="store_true", help="忽略 done 标记全量重刷")
+    ap.add_argument("--profile", help="课程 profile key（默认环境变量或 cpa-tax）；决定 map/目录/课程容器")
     ap.add_argument("--course-dir", help="显式指定知识详解目录（默认回退 profile.paths.localRoot/知识详解）")
     ap.add_argument("--map", dest="map_file", help="显式指定 wiki_node_map.tsv 路径（默认回退 data/_workspace/<profile>/logs/wiki_node_map.tsv）")
+    ap.add_argument("--course-obj", dest="course_obj", help="课程容器 obj_token（课程首页写入目标，默认读配置卡 wiki.courseObjToken）")
+    ap.add_argument("--no-homepage", action="store_true", help="不同步课程首页（知识详解根 README.md → 课程容器）")
     args = ap.parse_args()
 
     # 一卡一课：显式参数覆盖 profile 默认值，从此不靠手改 json 切换正课/名师课
     global MAP_FILE, COURSE_DIR, DONE_DIR
+    if args.profile:
+        p = load_profile(args.profile)  # 合法卡；缺字段直接抛清晰错误
+        MAP_FILE = os.path.join(REPO, "data", "_workspace", p["key"], "logs", "wiki_node_map.tsv")
+        COURSE_DIR = os.path.join(REPO, p["paths"]["localRoot"], "知识详解")
     if args.map_file:
         MAP_FILE = args.map_file if os.path.isabs(args.map_file) else os.path.join(REPO, args.map_file)
     if args.course_dir:
         COURSE_DIR = args.course_dir if os.path.isabs(args.course_dir) else os.path.join(REPO, args.course_dir)
+    if not MAP_FILE or not COURSE_DIR:
+        ap.error("无法确定 map/course-dir：请用 --profile 指定合法配置卡，或同时显式传 --map 与 --course-dir")
     DONE_DIR = os.path.join(os.path.dirname(MAP_FILE), "resync_done")
 
     print(f"[配置] course_dir={COURSE_DIR}")
     print(f"[配置] map_file={MAP_FILE}")
     title2obj = load_title2obj()
-    items = collect_files()
+    items = [(t, path, None) for t, path in collect_files()]
+
+    # 课程首页：知识详解根 README.md 写入课程容器本身（不是 map 里的子页面）
+    cfg = load_raw_config(args.profile or _key)
+    course_obj = args.course_obj or (cfg.get("wiki") or {}).get("courseObjToken")
+    homepage = os.path.join(COURSE_DIR, "README.md")
+    if not args.no_homepage and course_obj and os.path.isfile(homepage):
+        items.append((HOMEPAGE_KEY, homepage, course_obj))
+        print(f"[配置] 课程首页 {os.path.basename(homepage)} -> 容器 {course_obj}")
+    elif not args.no_homepage and not course_obj:
+        print("[提示] 未取到 wiki.courseObjToken，跳过课程首页（先跑 build_tree.py 建容器并回写配置卡）")
+
     if args.only:
         items = [it for it in items if args.only in it[1]]
 
@@ -164,8 +210,8 @@ def main():
     consec_fail = 0  # 连续失败计数：达阈值判定代理层累计限流，全局长冷却
     window_level = 0  # 连续撞窗的层级：冷却时长递增，成功一篇即归零（深窗不反复续命）
     print(f"待处理文件 {len(items)} 个（map 共 {len(title2obj)} 个标题）")
-    for i, (title, path) in enumerate(items, 1):
-        obj = title2obj.get(title)
+    for i, (title, path, obj_override) in enumerate(items, 1):
+        obj = obj_override or title2obj.get(title)
         rel = os.path.relpath(path, REPO)
         if not obj:
             missing.append((title, rel))

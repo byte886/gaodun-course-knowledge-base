@@ -356,7 +356,7 @@
 | 文档下载 | `docs/WORKFLOW.md` 第3节 | - |
 | 百度网盘同步 | `docs/WORKFLOW.md` 第4节 | `docs/development/api/netdisk-setup.md` |
 | 视频转文字 | `docs/WORKFLOW.md` 第5节 | `docs/development/tools/transcription.md` |
-| 知识库生成 | `docs/WORKFLOW.md` 第6节 | `docs/development/knowledge/knowledge-base-organization.md` |
+| 知识库生成 | `docs/development/knowledge/knowledge-sop-overview.md`（总览入口） | `docs/WORKFLOW.md` 第6节 |
 | **做题验证** | `docs/WORKFLOW.md` 第7节 | **`docs/development/guides/exam-workflow.md`** |
 | 任务报告（过程件，不入库） | `docs/WORKFLOW.md` 第8节 | 模板 `docs/development/templates/REPORT_TEMPLATE.md`，产出落 `data/_workspace/<course>/task-reports/` |
 | Git操作 | `docs/development/guides/git-workflow.md` | - |

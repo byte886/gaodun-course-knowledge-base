@@ -144,12 +144,13 @@
 
 | 同步时机 | 同步内容 |
 |---------|---------|
-| 课程知识详解全部生成、四阶段校验门通过后 | 按 14 组（父节点）→ 92 知识点篇（子页面）整体同步，含课程两全局篇 |
+| 课程知识详解全部生成、四阶段校验门通过后 | 按新空间 8 课模型整体同步：课程库→全称课程容器（=课程首页）→ 章/全局篇 → 知识点 |
 | 冲刺模考完成后（最终一次） | 冲刺题/答/解析并入的知识点更新 + 更新后的考试指导速查手册 |
 
-- 飞书结构与本地 `知识详解/` **同构**：14 组＝父节点、知识点篇＝子页面。
+- 飞书结构与本地 `知识详解/` **同构**：课程容器下章＝父节点、知识点篇＝子页面、根 README＝容器首页。
+- 现役链路（配置驱动、一门一验收）：`scripts/knowledge/build_tree.py` 建树 → `run_resync_batches.sh`/`resync_wiki_content.py` 分批同步正文（含首页）→ `verify_wiki_tree.py` + `verify_wiki_content.py` 只读双验收；完整步骤、8 课坐标、限流处置见 **[wiki-sync-sop.md](development/guides/wiki-sync-sop.md)**。
 - 先本地生成、校验通过再同步；同步后做结构检查：节点层级、重复节点、空节点、父节点链接。
-- 必须用 API 同步，禁止直接在飞书编辑（紧急修复除外）；连续失败 3 次以上暂停并报告。
+- 必须用 API 同步，禁止直接在飞书编辑（紧急修复除外）；同一空间同一时刻只允许一个写进程；连续失败 3 次以上暂停并报告。
 - 飞书写操作前先读 lark-wiki / lark-doc 相关 Skill。
 
 ### 数据分层与统一工作区管理（必须遵守）
@@ -264,6 +265,7 @@
 
 ### 参考文档
 
+- **总览入口（先看这个）**：[知识详解SOP总览](development/knowledge/knowledge-sop-overview.md)（按工作流串联所有知识详解相关文档）
 - 配套阶段 SOP：[知识详解生成 SOP（核心）](development/guides/knowledge-detail-build-sop.md)（已替代旧 lecture-knowledge-build-sop）
 - [knowledge-base-organization.md](development/knowledge/knowledge-base-organization.md)、[knowledge-base-sources.md](development/knowledge/knowledge-base-sources.md)、[KNOWLEDGE_BASE_TEMPLATE.md](development/templates/KNOWLEDGE_BASE_TEMPLATE.md)
 
@@ -279,7 +281,7 @@
 
 1. **校验先行**：92 篇成品齐全且自检通过、原始资源齐全（过阶段①③门）。
 2. **备份百度网盘**（在同步飞书前）：上传原始资源（压缩视频、讲义、转写、OCR）与知识详解成品、课程全局篇；**不传原始未压缩视频、不传 工作区**；分片上传后 list 校验大小一致。应用 `CPA课程归档`(AppID 124199604)，凭证 `.secrets/baidu_credentials.enc`，国内直连不走代理，路径含 `高顿/` 层且与本地一致。
-3. **统一同步飞书**：按"飞书同步策略"整体同步 14 组→知识点，同步后做结构校验。
+3. **统一同步飞书**：按"飞书同步策略"与 [wiki-sync-sop.md](development/guides/wiki-sync-sop.md) 走新空间 8 课模型（建树→分批正文→双验收），同步后做结构校验。
 4. **分层清理工作区**：按"数据分层与统一工作区管理"的清理时序执行；`notes-raw` 必须确认全吸收、归位后才删。
 5. 清理前确认：永久层已传网盘、成品已同步飞书、待删件确实不在使用。
 

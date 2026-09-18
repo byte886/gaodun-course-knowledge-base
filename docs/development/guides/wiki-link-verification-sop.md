@@ -179,7 +179,7 @@ PY
 - 链接解析：`scripts/wiki_link_resolve.py`（相对链接 → cite，stdin/stdout 过滤器）
 - 总览页生成：`scripts/knowledge/build_course_overview.py`（`--format xml` 飞书 / `--format markdown` 本地源）
 - 内容重同步：`scripts/knowledge/resync_wiki_content.py`（只覆盖内容、不建节点，`--dry-run` 预检；写入前自动剥离知识详解顶部 OKF frontmatter，飞书不显示 YAML）
-- 首次建节点同步：`scripts/sync_wiki_new.sh`
+- 首次建树（课程容器→章/全局篇→知识点）：`scripts/knowledge/build_tree.py <profile>`（配置驱动，新 8 课模型，见 [wiki-sync-sop.md](wiki-sync-sop.md)）
 - 飞书 API：`lark-cli docs +fetch`（回读）、`lark-cli docs +update --command overwrite`（覆盖）
 - 打开方式佐证：lark-cli issue #2399（docsLink 同文档跳转尚未实现）
 - 相关 ADR：[ADR-012](../../project-management/decisions/ADR-012-三层解耦与按知识点聚合.md)（飞书与本地同构）

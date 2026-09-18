@@ -23,7 +23,7 @@ RESYNC_BATCH_PAUSE=${4:-10} # 每15篇暂停秒数，默认10
 BATCH_REST=${5:-30}        # 批间休息秒数，默认30（给代理层计数清零的时间）
 ERROR_REST=120               # 异常退出后等待秒数（2026-09-16 从60增加到120，给代理层更多时间清零）
 
-REPO="/Users/wenjiechen/Doubao/chats/2026-08-26/new-chat/gaodun-course-knowledge-base"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WORKSPACE="$REPO/data/_workspace/$PROFILE"
 LOG_DIR="$WORKSPACE/logs"
 RESYNC_DONE="$LOG_DIR/resync_done"
@@ -42,9 +42,11 @@ echo "开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================"
 echo ""
 
-# 统计总文件数（从wiki_node_map获取）
-TOTAL_FILES=$(wc -l < "$LOG_DIR/wiki_node_map.tsv" 2>/dev/null || echo 0)
-echo "总文件数: $TOTAL_FILES"
+# 统计总文件数（map 子页面 + 课程首页 __COURSE_HOMEPAGE__）
+MAP_LINES=$(wc -l < "$LOG_DIR/wiki_node_map.tsv" 2>/dev/null | tr -d ' ')
+MAP_LINES=${MAP_LINES:-0}
+TOTAL_FILES=$((MAP_LINES + 1))
+echo "总文件数: $TOTAL_FILES（map $MAP_LINES + 课程首页 1）"
 
 BATCH=0
 TOTAL_ERRORS=0
@@ -76,7 +78,7 @@ while true; do
     RESYNC_MAX_NEW="$MAX_NEW" \
     RESYNC_INTERVAL="$RESYNC_INTERVAL" \
     RESYNC_BATCH_PAUSE="$RESYNC_BATCH_PAUSE" \
-    python3 scripts/knowledge/resync_wiki_content.py 2>&1 | tee -a "$LOG_DIR/sync_restart.log"
+    python3 scripts/knowledge/resync_wiki_content.py --profile "$PROFILE" 2>&1 | tee -a "$LOG_DIR/sync_restart.log"
 
     EXIT_CODE=${PIPESTATUS[0]}
 

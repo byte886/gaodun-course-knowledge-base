@@ -4,6 +4,10 @@
 > 业务与代码的完整变更时间线看仓库根 `CHANGELOG.md`；本页不重复业务流水。
 > 规则：日期标题 `## YYYY-MM-DD`，最新在最上（倒序）。
 
+## 2026-09-19
+
+- **Update（workflow-feishu-sync）**：飞书同步范式由旧"四棵树/课程根→组→点"切换为**新空间 8 课模型**——新空间「CPA备考知识库」`7686897234545249236`、根「课程库」`K4IcwWg6HidyY6k6Z8hcdmGFnth`，层级＝课程库→全称课程容器（容器本身=课程首页）→章/全局篇→知识点；标题/space/root 全读配置卡。链路配置驱动：`build_tree.py`（幂等建容器+回写 courseNodeToken/courseObjToken+内容器建树）→`resync_wiki_content.py`（根 README 写入容器首页 `__COURSE_HOMEPAGE__.done`、frontmatter 剥离）→只读双验收 `verify_wiki_tree.py`/`verify_wiki_content.py`（动态计数、--refill）。固化易踩：换空间重建先归档旧 map（否则按标题幂等复用老 token）；标题以本地目录名/frontmatter 为准（会计第 17 章目录截断 `17_收入` 已改全称、token 不变）；限流真因＝豆包转发代理按单进程累计请求（换新进程即恢复、外层约 3 轮换新 shell、单进程 20 篇 0 失败），旧"简单逐个脚本最可靠"结论证伪；同一空间唯一写进程、服务端异步任务 OS kill 不停。退役 sync_wiki_new.sh/auto_sync_all.*/verify_sync_completeness 入 .trash。会计已闭环（169 子页+首页、双验收 0 差异），其余 7 课待建。权威 SOP＝wiki-sync-sop.md。AI 编译，未标 verified。
+
 ## 2026-09-18
 
 - **Update（workflow-netdisk-hevc-sync）**：上云完成判定口径修正为**只判日志最后一轮**（总管 `log_done`、目标机看门；跨轮 `>>` 累积日志里早期轮次的瞬时失败行不得永久卡住 done，经济法 189 讲已齐却被历史失败行卡住反复重拉即此）；终态核验 `verify_netdisk_final.py` 默认排除点开头隐藏/缓存（修 `os.walk` 未原地剪枝致 `.ep3cache/keycache.json` 误报缺失），新增 `-x/--exclude` 供原始资源阶段显式排除尚在生成的 `知识详解`（定稿两层全量核验时不带 -x，不硬编码抹掉知识详解）。经济法 314 hevc 上云课程根 `-x 知识详解` 核验 rc=0（205 目录/1348 文件）。finalize-sop 步骤1、scripts/README、CHANGELOG 同步。AI 编译，未标 verified。

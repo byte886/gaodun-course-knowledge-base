@@ -824,18 +824,51 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 ---
 
-## 十、飞书知识库同步（3个）
+## 十、飞书知识库同步（新空间 8 课模型，脚本位于 `scripts/knowledge/`）
 
-> 飞书同步现役脚本。同步以 `finalize-sop.md` 与 lark-cli（lark-wiki/lark-doc skill）为准；知识详解批量同步现役为 `knowledge/resync_wiki_content.py`（由 `knowledge/run_resync_batches.sh` 分批驱动）。
+> 现役权威链路（2026-09-19 重构，替代旧 `scripts/sync_wiki_new.sh`、`auto_sync_all.*`、`verify_sync_completeness.py`，旧件已移入 `.trash/`）。
+> **树模型**：知识空间「CPA备考知识库」→ 根「课程库」→ **全称课程容器**（容器本身=课程首页）→ 章 / 全局篇 → 知识点。
+> 一门课一张配置卡 `config/courses/<profile>.json`（`wiki.spaceId` / `rootParentNodeToken` / `courseNodeToken` / `courseObjToken`），全程 `--profile` 驱动，换课只换卡不改代码。完整 SOP 见 `docs/development/guides/wiki-sync-sop.md`。
 
-### `sync_wiki_new.sh` — 新结构(课程根→组→知识点)同步飞书【现役】
+### `knowledge/build_tree.py` — 建课程容器 + 树结构（只建结构、不写正文）
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 阶段④门禁现役脚本：按「课程根 → 14 组节点(写 README) → 组下 92 个知识点文档 + 课程全局篇」三层把本地知识详解同步到飞书知识库。断点续传（`logs/wiki_done/<标题>.done` 记 node_token/obj_token，`logs/wiki_node_map.tsv` 记标题→token），同名节点复用不重建，写入 3 次重试；正文经 stdin `cat f \| lark-cli docs +update --content -` 绕开 @file allowlist |
-| **用法** | `bash scripts/sync_wiki_new.sh`（课程根/space_id/父节点已内置，换课时改脚本头部常量；可反复续跑） |
-| **可靠性** | ✅ 高（已用于税法课 107/107：14 组+92 点+课程全局篇，回读逐组对平） |
-| **相关文档** | finalize-sop.md、lark-wiki/lark-doc skill、long-task-supervisor-guide.md |
+| **用途** | 按配置卡 `primaryCourse.name` 在「课程库」根下幂等确保全称课程容器（按标题复用），回写 `wiki.courseNodeToken/courseObjToken` 到配置卡，再在内容器建章（章目录名，写章 README 节点）+ 章下知识点 + 知识详解根目录全局篇；根 `README.md` 是课程首页、不建子节点。映射追加 `data/_workspace/<profile>/logs/wiki_node_map.tsv`（title/node/obj/parent），按 map 幂等可重跑 |
+| **用法** | `python3 scripts/knowledge/build_tree.py <profile>`（推荐，全自动）；显式课程目录可加第 2 参；旧用法 `<profile> <parent_token> <course_dir>` 直接在指定父节点下建树、不建容器 |
+| **前置坑** | 换空间重建前，先把旧空间遗留的 `data/_workspace/<profile>/logs/wiki_node_map.tsv` 归档改名（如 `.oldspace.tsv`），否则按标题幂等会复用老空间 token |
+| **相关** | wiki-sync-sop.md、course_profile.py、lark-cli `wiki +node-list/+node-create` |
+
+---
+
+### `knowledge/resync_wiki_content.py` — 正文覆盖（含课程首页，只写内容不建节点）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 把本地知识详解 markdown 覆盖写入 map 对应飞书文档；**课程首页**（知识详解根 `README.md`）写入课程容器 obj（done 名 `__COURSE_HOMEPAGE__.done`）。写入前自动剥离顶部 OKF frontmatter，相对链接经 `wiki_link_resolve.py` 转 `<cite>`；每篇成功落 `logs/resync_done/<safe标题>.done` 断点续跑，`--dry-run` 预检、`--force` 全量重刷 |
+| **用法** | `python3 scripts/knowledge/resync_wiki_content.py --profile <profile> [--dry-run] [--only 片段] [--no-homepage] [--course-obj <obj>]`；也支持 `--course-dir/--map` 显式指定（无合法卡时用） |
+| **限流** | 检测到转发代理 `invalid_response` 立即失败交外层换新进程；`RESYNC_MAX_NEW` 控制单进程新写上限（实测每进程 20 篇 0 失败） |
+| **相关** | run_resync_batches.sh、sync_with_restart.sh、wiki_link_resolve.py、feishu-api.md |
+
+---
+
+### `knowledge/run_resync_batches.sh` / `knowledge/sync_with_restart.sh` — 分批换新进程驱动（绕转发代理两层限流）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 外层循环每轮拉起**全新** python 进程（新代理会话），`RESYNC_MAX_NEW` 满即退出、轮间休眠；`run_resync_batches.sh` 另有 `MAX_ROUNDS`（默认 3）在外层 shell 凭证老化前主动退出、由全新 shell 重拉。总篇数自动 = map 行数 + 1（课程首页），done 断点任意中断/重入 |
+| **用法** | `bash scripts/knowledge/run_resync_batches.sh <profile> [每轮新写] [轮间休眠] [总篇数] [退避封顶] [单外层轮数]`；`bash scripts/knowledge/sync_with_restart.sh <profile> [max_new] [interval] [batch_pause] [batch_rest]` |
+| **相关** | resync_wiki_content.py、feishu-api.md（限流根因与参数） |
+
+---
+
+### `knowledge/verify_wiki_tree.py` / `knowledge/verify_wiki_content.py` — 只读双验收（一门一验收）
+
+| 项目 | 说明 |
+|------|------|
+| **用途** | 树核验：本地知识详解 / 飞书容器树 / map 三方标题集合、node、parent 完全一致，计数动态推导（不写死 169/32），无重复/错挂/顶层异常；正文回读：逐篇全新进程 `docs +fetch`，判级 OK/THIN(<300)/EMPTY(<100)/FETCH_FAIL，出 `logs/content_readback.tsv`，`--refill` 只补拉非 OK 篇 |
+| **用法** | `python3 scripts/knowledge/verify_wiki_tree.py <profile>`；`python3 scripts/knowledge/verify_wiki_content.py <profile> [--refill]`（退出码非 0 即验收不通过） |
+| **相关** | wiki-sync-sop.md（验收门）、lark-cli `wiki +node-list` / `docs +fetch` |
 
 ---
 
@@ -843,19 +876,9 @@ python3 scripts/knowledge/collect_point_questions.py --all
 
 | 项目 | 说明 |
 |------|------|
-| **用途** | 把本地同目录相对链接 `[标题](./标题.md)` 解析为飞书内部文档引用 `<cite type="doc" doc-id="obj_token"/>`（由 obj_token 强绑定目标、可校验坏链）；管道过滤器，被 resync 同步链路调用 |
-| **用法** | `cat 正文.md | python3 scripts/wiki_link_resolve.py`（一般由同步脚本自动调用） |
+| **用途** | 把本地同目录相对链接 `[标题](./标题.md)` 解析为飞书内部文档引用 `<cite type="doc" doc-id="obj_token"/>`（obj_token 强绑定、可校验坏链）；管道过滤器，由 resync 同步链路调用（须显式传 `WIKI_MAP`） |
+| **用法** | `cat 正文.md | python3 scripts/wiki_link_resolve.py`（一般由 resync 自动调用） |
 | **相关文档** | `docs/development/guides/wiki-link-verification-sop.md` |
-
----
-
-### `knowledge/run_resync_batches.sh` — 分批换新进程跑 resync_wiki_content.py（绕转发代理限流）
-
-| 项目 | 说明 |
-|------|------|
-| **用途** | 规避豆包转发代理层两层限流：每轮新 python 进程只新写 MAX_NEW 篇即退出（绕单进程累计阈值），外层 nohup shell 最多跑 MAX_ROUNDS 后需全新登录 shell 重开；知识详解批量同步飞书的现役驱动 |
-| **用法** | `bash scripts/knowledge/run_resync_batches.sh`（MAX_NEW/MAX_ROUNDS 见脚本头） |
-| **相关文档** | `knowledge/resync_wiki_content.py`、`docs/development/api/feishu-api.md` |
 
 ---
 

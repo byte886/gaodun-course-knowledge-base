@@ -22,7 +22,7 @@ okf_version: "0.2"
 * [名师课 ep3 视频取流解密与平台字幕](concepts/workflow-ep3-vod-decryption.md) - saasType13 平台路由、讲次枚举/getVideoInfo、CDP Worker 截 key（前16 ASCII）、FHD-1080P、平台 VTT 字幕免转写
 * [名师课 H.265 重压的双机并行分工与常驻保活](concepts/workflow-video-hevc-compression.md) - 六科 h264 双机科目零重叠重压、rsync 同构迁移、--jobs 按忙闲调档/--reverse、本机 launchd 总管 vs 目标机 caffeinate 看门、.compress_tmp 原子替换、压完回传闭环
 * [名师课网盘 hevc 按科滚动门控覆盖同步与终态核验](concepts/workflow-netdisk-hevc-sync.md) - 某科全 hevc 且没在压该科即按科传（可与他科压缩并行、整机一次一科）、清视频 done（保 notes）+rtype=3 覆盖 h264、双机各并发1限速1100k（实测上行34.6Mbps满载延迟1.5s、留半给豆包）、verify_netdisk_final 大小核验为准不信 done
-* [飞书同步与单窗口导航](concepts/workflow-feishu-sync.md) - 本地是唯一源头、cite 结构化链接、跨文档必新开是平台事实、左侧目录树单窗口
+* [飞书同步与单窗口导航](concepts/workflow-feishu-sync.md) - 本地是唯一源头、cite 结构化链接、跨文档必新开是平台事实、左侧目录树单窗口；新空间 8 课模型（课程库→全称容器=首页→章/全局→点）配置驱动 build_tree/resync/双验收、转发代理按进程限流换新进程
 
 # 治理（Standard）
 

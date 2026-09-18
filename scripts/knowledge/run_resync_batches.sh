@@ -11,15 +11,19 @@
 # 断点：每篇成功落 resync_done/<safe>.done，换新进程/新外层秒跳过已完成，可任意中断/重入。
 #
 # 用法: bash run_resync_batches.sh [profile] [每轮新写上限] [轮间基础休眠秒] [总篇数] [零新增退避封顶秒] [单外层最多轮数]
+# 总篇数默认自动 = wiki_node_map 行数 + 1（课程首页 __COURSE_HOMEPAGE__.done）；不同步首页可用第4位参数覆盖。
 set -u
 PROFILE=${1:-cpa-accounting-2026}
 MAX_NEW=${2:-8}
 PAUSE=${3:-90}
-TOTAL=${4:-169}
 
 WS="data/_workspace/$PROFILE"
 DONE_DIR="$WS/logs/resync_done"
+MAP="$WS/logs/wiki_node_map.tsv"
 LOG="$WS/logs/resync_wiki.log"
+MAP_LINES=$(wc -l < "$MAP" 2>/dev/null | tr -d ' ')
+MAP_LINES=${MAP_LINES:-0}
+TOTAL=${4:-$((MAP_LINES + 1))}   # map 子页面 + 课程首页
 export GAODUN_COURSE_PROFILE="$PROFILE"
 
 round=0
@@ -41,7 +45,7 @@ while :; do
   RESYNC_INTERVAL=5 \
   RESYNC_BATCH_SIZE=10000 RESYNC_BATCH_PAUSE=0 \
   RESYNC_WINDOW_COOLDOWN=120 RESYNC_WINDOW_CAP=300 \
-    python3 scripts/knowledge/resync_wiki_content.py >> "$LOG" 2>&1
+    python3 scripts/knowledge/resync_wiki_content.py --profile "$PROFILE" >> "$LOG" 2>&1
   nd=$(ls "$DONE_DIR" 2>/dev/null | wc -l | tr -d ' ')
   gain=$((nd - d))
   echo "--------- 轮次 $round 止 done=$nd/$TOTAL 本轮新增$gain $(date '+%T') ---------" >> "$LOG"

@@ -10,6 +10,9 @@ sources:
   - id: link-sop
     resource: ../../../development/guides/wiki-link-verification-sop.md
     title: wiki-link-verification-sop 飞书链接三层验证 SOP
+  - id: wiki-sync-sop
+    resource: ../../../development/guides/wiki-sync-sop.md
+    title: wiki-sync-sop 飞书知识库同步 SOP（新空间 8 课模型）
 generated: { by: "doubao/okf-wiki", at: "2026-09-07T20:30:00+08:00" }
 status: stable
 ---
@@ -40,7 +43,18 @@ status: stable
 2. **打开方式**（点了怎么开）：仅在怀疑前端变化时，用真实 Chrome + puppeteer-core 的 `page.mouse.click()`（isTrusted=true）抽检；**禁止**用 DOM target 属性或合成事件下结论。
 3. 导航页校验"引导块存在"，内容页校验其"不存在"。
 
+## 新空间 8 课模型与配置驱动链路（2026-09-19 起现役）
+
+- **固定坐标**：新空间「CPA备考知识库」space `7686897234545249236`，根「课程库」node `K4IcwWg6HidyY6k6Z8hcdmGFnth`；层级＝**课程库 → 全称课程容器（容器本身=课程首页）→ 章/全局篇 → 知识点**。老空间 `7678261729456852192` 仅留 CPA 级《通用做题思路解析》，新课勿写。容器标题/space/root 全部读配置卡 `config/courses/<profile>.json`（`primaryCourse.name` + `wiki` 块），不在命令里手填。
+- **链路（一门课一闭环、一门一验收）**：`build_tree.py <profile>`（幂等建全称容器并回写 `courseNodeToken/courseObjToken`，再在内容器建章→点→全局篇；根 README 不建子节点）→ `resync_wiki_content.py --profile` 分批写正文（**根 README 写入容器=课程首页**，done 名 `__COURSE_HOMEPAGE__.done`；frontmatter 自动剥离）→ 只读双验收 `verify_wiki_tree.py`（本地/map/飞书容器树三方一致，动态计数）+ `verify_wiki_content.py`（逐篇 docs +fetch，EMPTY<100/THIN<300/FETCH_FAIL，`--refill` 补非 OK）。数量口径：map 行数+1（首页）= done 数 = 回读篇数。
+- **换空间重建先归档旧 map**：老空间遗留 `wiki_node_map.tsv` 不改名，build_tree 会按标题幂等命中老 token、新容器为空；先改名 `.oldspace.tsv` 再建。
+- **标题以本地目录名/frontmatter title 为准**：会计第 17 章本地目录曾被截断成 `17_收入`（飞书/frontmatter 为全称），修法是改本地目录名+跨章相对链接+map 标题键（token 不变），不迁就错误短名。
+- **限流是豆包转发代理按"单进程累计请求"计，不是飞书账号/token/内容问题**：`invalid_response`/`parse temporary token`/rc=5 → 换新 python 进程即恢复；外层 shell 凭证约 3 轮老化，`run_resync_batches.sh <p> 20 75` 满 3 轮主动退出、用全新交互 shell 重拉（done 断点续）；单进程新写 20 篇实测 0 失败；回读 FETCH_FAIL 冷却约 8 分钟 `--refill`。旧"简单逐个脚本最可靠、复杂批量不行"结论已证伪（真因即代理累计限流）。
+- **同一空间同一时刻只允许一个写进程**；豆包"工作任务"是服务端异步、OS kill/重启都停不掉，停止须在该任务对话内，开长任务前先确认无同目标 run。
+- 已退役（入 `.trash/*.20260919`）：`sync_wiki_new.sh`（老"课程根→组→点"建树器）、`auto_sync_all.py/.sh`（硬编码老空间）、`verify_sync_completeness.py`（老六科硬编码）。权威步骤见 wiki-sync-sop。
+
 ## 来源与下钻
 - [ADR-015 飞书内部链接打开方式与单窗口导航方案](../../decisions/ADR-015-飞书内部链接打开方式与单窗口导航方案.md)（五种写法实测表、方案取舍、教训）
 - [wiki-link-verification-sop](../../../development/guides/wiki-link-verification-sop.md)（三层链接验证流程）
+- [wiki-sync-sop 新空间 8 课模型](../../../development/guides/wiki-sync-sop.md)（建树/分批正文/双验收完整步骤、8 课坐标、限流处置）
 - 可信点击能力见 [浏览器自动化连接通道](workflow-browser-cdp.md)；本地源头与成品结构见 [三层解耦](architecture-knowledge-paradigm.md)。

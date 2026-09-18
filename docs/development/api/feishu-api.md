@@ -227,7 +227,7 @@ lark-cli wiki +node-delete --node-token "<URL>" --yes
 
 **原因与识别（别误判）**：这是飞书账号级滑动窗口频控，不是 token 失效、不是权限 scope、不是内容问题（响应里没有 `Authorization failed` / 登录超时类错误，且窗口前的同类调用绝大多数成功）。固定步进 sleep、25 秒级短休眠都不足以恢复，需要 60-90 秒级冷却。排查先怀疑调用节奏，不要一失败就判定登录失效让用户重新登录。
 
-**最佳实践（四件套，已固化进 `scripts/sync_wiki_new.sh`，会计课从零多轮收敛到 169/169）**：
+**最佳实践（建树四件套，已固化进 `scripts/knowledge/build_tree.py`，会计课从零多轮收敛到 169/169）**：
 
 1. **组级缓存砍查询量**：进一个父节点只 `node-list` 一次、把全部直接子节点拉成本地 TSV，之后查重走本地（awk）不调网络；node-list 调用量从"每节点一次"（=节点数）降到"每组一次"（=组数，169 降到约 31）。
 2. **写操作指数退避重试**：`node-create` / `docs +update` 失败不立即放弃，按 4s/8s/12s 退避重试 3 次扛瞬时抖动；只对限流类现象重试，`invalid_parameters`/`not_found` 不用同参重复。
