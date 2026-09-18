@@ -15,6 +15,7 @@
 > 自最近一次版本结算以来、尚未定版本的变更先累积于此；结算时把本块整体改名为 `[版本号] - 日期`，并在上方另开一个空的 [未发布]。
 
 ### 变更
+- 名师课 hevc 上云两个完成判定/核验 bug 修复（2026-09-18）：①`scripts/ep3_local_supervisor.sh` 的 `log_done`（及目标机看门 `logs/target_netdisk_watch.sh` 同名判定）改为**只判日志最后一轮**（`awk` 从最后一个 `[ep3-ready] profile=` 截取到文件尾，再判"本轮结束"+无行首 3 空格 `- ` 失败行；无 profile 标记的旧日志退化全文）——日志跨轮 `>>` 累积，早期轮次瞬时失败（后已重传成功）会让扫全文的判定永久卡住、已传齐却每 2 分钟空转重拉且不写 done（经济法 189 讲已齐被第 345-347 行历史失败卡住即此，止血手动写 `ep3-econlaw-2026.done`）；②`scripts/verify_netdisk_final.py` 修 `os.walk` 未原地剪枝（`dirnames[:]`）仍递归进 `.ep3cache` 把 `keycache.json` 误报缺失，并新增 `-x/--exclude`（默认只排除点开头隐藏/缓存；知识详解等半成品阶段目录显式 `-x 知识详解`，定稿两层全量核验时不带 -x，**不硬编码抹掉知识详解**）。经济法 hevc 上云终态 rc=0（课程根 `-x 知识详解`：205 目录/1348 文件本地=网盘、视频 0 缺/0 大小不一致/0 旧大版）；目标机看门已 rsync 重启，会计上传孤儿进程与财管压缩均未受影响。入库脚本上述 2 个；目标机看门为 gitignore 过程件不入库；finalize-sop 步骤1、OKF concept workflow-netdisk-hevc-sync、scripts/README 同步。
 - 名师课双机 hevc 上云机制微调（2026-09-17，ADR-022 文末演进注记）：①网盘门控由"整科全 hevc 且压缩进程结束才传"放宽为**按科滚动**——某科全 hevc 且当前没在压该科（本机看该科 videos 无 `.compress_tmp`、目标机按 `--course` 进程判）即传，可与他科压缩并行、整机一次一科（经济法已在税法仍压缩时先行上传）；②上传限速经 `networkQuality -s` 实测（两台共享上行 34.6Mbps、满载响应 Low：延迟 1.5s/40RPM）由 `1000k` 科学定值为 `1100k`（两台同时传最坏合计占上行 ~52%、留约一半给豆包/交互）；③总管/看门在跑检测改为只匹配带 `python3`/`bash` 解释器前缀的真进程，根除裸 `pgrep -f 脚本名` 误匹配 grep/外层 shell 导致的漏拉。入库脚本 `scripts/ep3_local_supervisor.sh`；目标机看门 `logs/target_netdisk_watch.sh` 为过程件（不入库，已 rsync 并重启）；finalize-sop 步骤1、video-processing、两篇 OKF concept、scripts/README 同步。
 
 ### 新增

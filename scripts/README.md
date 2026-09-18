@@ -410,7 +410,7 @@ python3 scripts/knowledge/collect_point_questions.py --all
 | 项目 | 说明 |
 |------|------|
 | **用途** | 递归对比本地课程目录与网盘目录的结构、文件数、文件名集合、文件大小，finalize 前三地一致性核验 |
-| **用法** | `BAIDU_ENC_PASS=<加密密码> python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根>` |
+| **用法** | `BAIDU_ENC_PASS=<加密密码> python3 scripts/verify_netdisk_final.py <本地课程根> <网盘课程根> [-x 知识详解]`；默认排除点开头隐藏/缓存（`.ep3cache` 等），`-x/--exclude` 可重复、按目录名排除任意层级——原始资源滚动备份阶段排尚在生成的 `知识详解`，课程完整 finalize、知识详解定稿传云后做两层全量核验时不带 `-x` |
 | **相关文档** | `docs/development/guides/netdisk-final-verification-sop.md` |
 
 ---

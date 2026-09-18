@@ -51,10 +51,16 @@ with cf.ThreadPoolExecutor(12) as ex: c=list(ex.map(cc,v))
 print(sum(1 for x in c if x!="hevc"))
 PY
 }
-log_done(){ # $1=日志路径；存在“本轮结束”且无失败清单行返回0。
-  # 下层 sync_course_netdisk.sh 恒打印“失败讲（…）:”标题（无失败也打印），真正失败行才是行首“   - 讲名”，
-  # 故不能用 grep“失败讲”判失败（否则恒为假、总管无限空转重拉且永不 mark_done）。
-  [ -f "$1" ] && grep -q "本轮结束" "$1" && ! grep -qE '^[[:space:]]{3}- ' "$1";
+log_done(){ # $1=日志路径；只认【最后一轮】（最后一个 “[ep3-ready] profile=” 到文件尾）：
+  # 该区间含“本轮结束”且无真失败行（行首恰好 3 空格+“- 讲名”）才返回 0。日志是跨轮 >> 累积，早期轮次的
+  # 瞬时失败（后来已重传成功）会留在文件前部；若扫整份日志会被这些历史失败行永久卡住、永不 mark_done 并每轮
+  # 空转重拉（2026-09-18 经济法 189 讲已齐、却因第 345-347 行历史失败反复重拉的教训）。无 profile 标记的旧日志退化全文判断。
+  [ -f "$1" ] || return 1
+  local seg
+  seg="$(awk '/\[ep3-ready\] profile=/{buf=""} {buf=buf $0 ORS} END{print buf}' "$1")"
+  printf '%s\n' "$seg" | grep -q "本轮结束" || return 1
+  if printf '%s\n' "$seg" | grep -qE '^[[:space:]]{3}- '; then return 1; fi
+  return 0
 }
 start_compress(){
   nohup nice -n 20 caffeinate -dimsu python3 scripts/compress_ep3_videos.py --course 税法 --course 经济法 --reverse --jobs "$JOBS" >> data/_workspace/_account/ep3/logs/compress_ep3.log 2>&1 &

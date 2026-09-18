@@ -11,24 +11,36 @@
         "$COURSE_LOCAL_ROOT" "$COURSE_REMOTE_ROOT"
 
 退出码：0=通过，1=有差异，2=参数/环境错误
+
+比对口径：默认排除点开头隐藏/缓存目录（.ep3cache/.DS_Store 等——非学习资产，同步脚本从不上传）；
+其他“本阶段不比对”的目录用 -x/--exclude 显式指定（可重复、任意层级）。名师课原始资源滚动备份阶段，
+知识详解尚在生成、走飞书，不应拿半成品卡视频备份的完成判定，用 `-x 知识详解`；待课程完整 finalize、
+知识详解定稿并按 finalize-sop 步骤1 传云后，再跑一次不带 -x 的两层（原始资源+知识详解）全量核验。
 """
 
 import os
 import sys
+import argparse
 import contextlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from baidu_upload import get_token, list_files
 
 
-def scan_local(local_root):
-    """递归扫描本地目录，返回 {相对路径: {'dirs': set, 'files': {name: size}}}"""
+def scan_local(local_root, excludes=frozenset()):
+    """递归扫描本地目录，返回 {相对路径: {'dirs': set, 'files': {name: size}}}。
+    excludes: 调用方显式不比对的目录名（任意层级），如原始资源阶段传 {'知识详解'}。"""
     result = {}
     for dirpath, dirnames, filenames in os.walk(local_root):
+        # 剪枝：点开头隐藏/缓存（.ep3cache 下载密钥缓存等）默认排除，excludes 显式排除。必须“原地”
+        # 改写 dirnames[:] 才能让 os.walk 真正不递归；只在结果集过滤仍会走进 .ep3cache、把
+        # keycache.json 误报为网盘缺失（2026-09-18 经济法核验唯一假差异即此）。
+        dirnames[:] = [d for d in dirnames
+                       if not d.startswith('.') and d not in excludes]
         rel = os.path.relpath(dirpath, local_root)
         if rel == '.':
             rel = ''
-        dirs = set(d for d in dirnames if not d.startswith('.'))
+        dirs = set(dirnames)
         files = {}
         for f in filenames:
             if f.startswith('.'):
@@ -42,8 +54,9 @@ def scan_local(local_root):
     return result
 
 
-def scan_netdisk(netdisk_root, token):
-    """递归扫描网盘目录，返回 {相对路径: {'dirs': set, 'files': {name: size}}}"""
+def scan_netdisk(netdisk_root, token, excludes=frozenset()):
+    """递归扫描网盘目录，返回 {相对路径: {'dirs': set, 'files': {name: size}}}。
+    excludes 与 scan_local 对称，命中的网盘目录既不收录也不递归。"""
     result = {}
 
     def _scan(rel_path):
@@ -59,6 +72,7 @@ def scan_netdisk(netdisk_root, token):
                 dirs.add(name)
             else:
                 files[name] = item.get('size', 0)
+        dirs = {d for d in dirs if d not in excludes}
         result[rel_path] = {'dirs': dirs, 'files': files}
         for d in sorted(dirs):
             next_rel = rel_path + '/' + d if rel_path else d
@@ -107,12 +121,17 @@ def compare(local_data, netdisk_data):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print(__doc__)
-        sys.exit(2)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('local_root', help='本地课程根（或要比对的子目录，如 原始资源/videos）')
+    ap.add_argument('netdisk_root', help='网盘对应课程根（或子目录）')
+    ap.add_argument('-x', '--exclude', action='append', default=[], metavar='DIR',
+                    help='额外排除的目录名，可重复、任意层级（如原始资源阶段传 -x 知识详解）')
+    a = ap.parse_args()
 
-    local_root = sys.argv[1]
-    netdisk_root = sys.argv[2].rstrip('/')
+    local_root = a.local_root
+    netdisk_root = a.netdisk_root.rstrip('/')
+    excludes = frozenset(a.exclude)
 
     if not os.path.isdir(local_root):
         print(f"错误：本地目录不存在: {local_root}")
@@ -132,15 +151,15 @@ def main():
 
     # 扫描本地
     print("扫描本地目录...")
-    local_data = scan_local(local_root)
+    local_data = scan_local(local_root, excludes)
     local_dirs = len(local_data)
     local_files = sum(len(v['files']) for v in local_data.values())
-    print(f"  本地: {local_dirs} 个目录, {local_files} 个文件")
+    print(f"  本地: {local_dirs} 个目录, {local_files} 个文件（已排除点开头隐藏/缓存{('、' + '、'.join(sorted(excludes))) if excludes else ''}）")
     print()
 
     # 扫描网盘
     print("扫描网盘目录（递归，每个目录一次 API 调用，约需 1-2 分钟）...")
-    netdisk_data = scan_netdisk(netdisk_root, token)
+    netdisk_data = scan_netdisk(netdisk_root, token, excludes)
     netdisk_dirs = len(netdisk_data)
     netdisk_files = sum(len(v['files']) for v in netdisk_data.values())
     print(f"  网盘: {netdisk_dirs} 个目录, {netdisk_files} 个文件")

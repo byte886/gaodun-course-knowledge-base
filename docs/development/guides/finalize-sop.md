@@ -59,13 +59,13 @@
 
 3. **双机各自限速（科学定值）**：两台分别上传自己负责的科目（本机审计/战略/经济法/税法，目标机会计/财管；目标机的 done 与看门在目标机本地）。每台**讲并发=1**、`BAIDU_UPLOAD_RATE=1100k`（只给分片 curl 加 `--limit-rate`，list/mkdir 小请求不限）。依据：`networkQuality -s` 实测共享出口上行 34.6 Mbps（≈4.3 MB/s）、满载响应 Low（延迟 1.5s、40 RPM）；持续上传合计压在上行约 50% 留余量给豆包/交互，两台对等各 1100k（≈1.1 MB/s），同时传最坏合计占上行 ~52%，再高会重现秒级卡顿。
 
-4. **失败判定别看错**：`sync_course_netdisk.sh` 无论成败都固定打印"失败讲（无 done 标记且本次匹配）:"标题，**真正失败行才是行首恰好 3 个空格 + `- `**。一轮成功的判据是 `grep -q "本轮结束" && ! grep -qE '^[[:space:]]{3}- '`；只 grep"失败讲"标题恒为假，会导致看门每轮空转重拉、永不 mark_done、并卡死后续科目（实战踩过）。
+4. **失败判定别看错**：`sync_course_netdisk.sh` 无论成败都固定打印"失败讲（无 done 标记且本次匹配）:"标题，**真正失败行才是行首恰好 3 个空格 + `- `**。一轮成功的判据是 `grep -q "本轮结束" && ! grep -qE '^[[:space:]]{3}- '`；只 grep"失败讲"标题恒为假，会导致看门每轮空转重拉、永不 mark_done、并卡死后续科目（实战踩过）。**该判定只扫日志最后一轮**（最后一个 `[ep3-ready] profile=` 到文件尾）：日志跨轮 `>>` 累积，早期轮次瞬时失败（后已重传成功）会让扫全文的判定永久卡住（2026-09-18 经济法 189 讲已齐却被历史失败行卡住反复重拉，总管/看门已修）。
 
 5. **孤儿进程分层清理**：`sync_course_netdisk.sh` 的 xargs 父 bash 被杀后，上传子进程会成孤儿被 launchd 收养继续派生。停上传须分层：①杀顶层 sync_ep3_ready/sync_course →②按 upload_one 匹配杀孤儿 xargs 与 `bash -c` →③杀 upload_course/baidu_upload →④`pgrep -x curl`；全程用进程组 PGID 排除当前 shell（禁 `pkill -f`，模式串会匹配自身命令行自杀，详见 video-processing.md 双机小节⑥），连续两轮计数 0 才算根除。
 
 6. **自动覆盖清单必须含全部负责科目**：本机总管上传循环曾只列审计/税法/经济法而漏掉战略，战略实际靠一次性补传才传齐 hevc（终态核验零差异）；新增/调整负责科目时，必须同步进自动覆盖清单，不能依赖人工补传。
 
-7. **传完以终态核验为准、不信 done**：done 只证明"某次上传动作完成"，不证明网盘当前是 hevc。务必按 [netdisk-final-verification-sop.md](netdisk-final-verification-sop.md) 跑 `verify_netdisk_final.py`，rc=0 且无"网盘旧大版"才算完成。
+7. **传完以终态核验为准、不信 done**：done 只证明"某次上传动作完成"，不证明网盘当前是 hevc。务必按 [netdisk-final-verification-sop.md](netdisk-final-verification-sop.md) 跑 `verify_netdisk_final.py`，rc=0 且无"网盘旧大版"才算完成。核验脚本默认排除点开头隐藏/缓存（`.ep3cache`）；**原始资源滚动备份阶段**知识详解尚在生成/走飞书，命令加 `-x 知识详解`，不拿半成品卡视频备份的完成判定；待课程完整 finalize、知识详解定稿并按本步骤传云后，再跑一次**不带 `-x`** 的两层（原始资源+知识详解）全量核验。
 
 ### 步骤 2　飞书知识库统一同步（只同步 "知识详解" 成品）
 
