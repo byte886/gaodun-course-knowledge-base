@@ -46,6 +46,7 @@
 3. `docs/development/knowledge/knowledge-base-organization.md` — 三层架构与"按官方组/知识点聚合"组织原则
 4. `docs/development/knowledge/knowledge-base-sources.md` — 来源清单与优先级
 5. `docs/development/templates/KNOWLEDGE_BASE_TEMPLATE.md` — 知识点单篇 4 节/组父/课程全局模板
+6. `docs/development/knowledge/knowledge-writing-style-guide.md` — 写作风格指南（可读性五原则、标签白名单、frontmatter规范、同主题分篇边界、难点对比表强制要求、质量审核标准）
 
 ### 百度网盘同步
 1. `docs/WORKFLOW.md` 第4节
