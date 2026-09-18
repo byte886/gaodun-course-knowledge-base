@@ -41,6 +41,7 @@
 3. `scripts/transcribe_pipeline.py` — 转写管道
 
 ### 知识系统构建（四阶段）
+**总览入口（先看这个）**：`docs/development/knowledge/knowledge-sop-overview.md` — 知识详解全流程 SOP 统一入口，按 写什么/怎么写/怎么生成/怎么同步/怎么验证/模板/来源 串联下列文档。
 1. `docs/WORKFLOW.md` — 四阶段总纲与校验门
 2. 四阶段 SOP（`docs/development/guides/`）：resource-collection-sop（①采集）→ paper-manifest-sop（②做题/manifest）→ knowledge-detail-build-sop（③知识详解，核心）→ finalize-sop（④网盘/飞书/清理）
 3. `docs/development/knowledge/knowledge-base-organization.md` — 三层架构与"按官方组/知识点聚合"组织原则
