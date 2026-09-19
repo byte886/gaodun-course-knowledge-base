@@ -29,7 +29,7 @@ status: stable
 - **目标机（16 逻辑核，数据在外置机械盘 `/Volumes/backup`，HFS+）**：会计、财管。
 - 代码/文档目标机 `git clone` 公有仓；**课程数据不走 git（gitignore）**，本机 `rsync -az` 推到目标机**同构相对路径** `data/高顿/CPA/【VIPCPA专享】名师专业课-<科>/...`，脚本全用相对路径。
 - 目标机 ffmpeg/ffprobe 在 `/usr/local/bin`、python 用 `/usr/local/bin/python3`，远程命令先 `export PATH=/usr/local/bin:$PATH`。
-- **闭环**：目标机压完的 hevc 要 rsync 回传本机主存储同名覆盖留档（防双机 h264/hevc 分叉），回传核验后再删目标机文件滚动腾空间。
+- **闭环**：目标机压完的 hevc 要 rsync 回传本机主存储同名覆盖留档（防双机 h264/hevc 分叉），回传核验后再删目标机文件滚动腾空间。回传实操（2026-09-19 会计37G+财管27G 共 64G 已闭环）：①先 `rsync -ani --itemize-changes` dry-run 确认变更面——`>f` 才是传内容（实测全是 `_video.mp4`）、`.d..t` 仅目录时间戳、字幕等 size+mtime 一致不动；②macOS 自带 **openrsync（protocol 29）**，大文件经 ssh 偶发 `hash does not match, will redo`，是单文件校验失败自动重传、可自愈（本次 10 次、两科终 rc=0），非致命；③**回传后必须全量 ffprobe 双保险**——verify_netdisk_final 只比字节大小、不验可解码，回传覆盖后用 python 线程池并发 ffprobe 逐个确认 `codec_name=hevc` 且可解析（961 视频 0 异常才算闭环）；④含讲义整科网盘 rc0 只能在回传后的本机做（见 netdisk concept 跨机口径）。
 
 ## 压缩驱动与档位
 
@@ -44,7 +44,8 @@ status: stable
 - 裸 `nohup` 只挡 SIGHUP，启动它的 Doubao 会话关闭时会被进程组连带 KILL（曾夜间静默停摆约 6h）。
 - **本机**：launchd LaunchAgent `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + `KeepAlive{SuccessfulExit=false}`）跑 `scripts/ep3_local_supervisor.sh`，每 120s 巡检压缩+上传，全完成 `exit 0` 不重启、异常被杀才自愈；launchd 的 PATH 只有系统目录，脚本内必须 `export PATH=/usr/local/bin:$PATH`。
 - **目标机（不跑 Doubao）**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）与 `target_netdisk_watch.sh`（按科滚动限速上云：某科全 hevc 即传、可与他科压缩并行）。
-- 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠，**任务结束要恢复默认**。
+- 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠，**任务结束要恢复默认**（2026-09-19 收尾实测：`sudo pmset -a disablesleep 0 disksleep 10 displaysleep 10`，台式 sleep 保持 0；恢复后 pmset 不再显示 SleepDisabled 行）。
+- **任务终态收尾清单**：①本机 `launchctl unload ~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist` 停总管开机自启（plist 文件保留、未来 load 复用），确认两台无 sync/看门/compress/ffmpeg/caffeinate 残留；②目标机本地适配若上游已含等价功能（如 compress `--jobs/--reverse`），`git stash` 留存后 `git pull --ff-only` 取权威版，**不在目标机维护代码分叉**；③目标机会计/财管 hevc 副本（64G）在回传+整科 rc0 后是冗余第三份，是否删看磁盘紧张度（本次目标机尚空、保留几天作备份）。
 
 ## 踩坑（勿重犯）
 

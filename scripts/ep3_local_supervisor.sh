@@ -57,16 +57,19 @@ log_done(){ # $1=日志路径；只认【最后一轮】（最后一个 “[ep3-
   # 空转重拉（2026-09-18 经济法 189 讲已齐、却因第 345-347 行历史失败反复重拉的教训）。无 profile 标记的旧日志退化全文判断。
   [ -f "$1" ] || return 1
   local seg
-  seg="$(awk '/\[ep3-ready\] profile=/{buf=""} {buf=buf $0 ORS} END{print buf}' "$1")"
-  printf '%s\n' "$seg" | grep -q "本轮结束" || return 1
-  if printf '%s\n' "$seg" | grep -qE '^[[:space:]]{3}- '; then return 1; fi
+  # LC_ALL=C：日志里混入 GBK/坏字节中文时，awk/grep 在 UTF-8 区域会报 multibyte/towc 警告，
+  # 强制 C 区域按字节处理，保证"最后一轮"切分与失败行判定稳定（目标机看门 2026-09-18 已加，本机补齐）。
+  seg="$(LC_ALL=C awk '/\[ep3-ready\] profile=/{buf=""} {buf=buf $0 ORS} END{print buf}' "$1")"
+  printf '%s\n' "$seg" | LC_ALL=C grep -q "本轮结束" || return 1
+  if printf '%s\n' "$seg" | LC_ALL=C grep -qE '^[[:space:]]{3}- '; then return 1; fi
   return 0
 }
 start_compress(){
+  mkdir -p logs data/_workspace/_account/ep3/logs   # 拉起前重建日志目录：运行中 logs/ 若被（跨窗口清理）删掉，>> 重定向会静默失败、子进程不起（2026-09-19 税法因此空转 3.5h）
   nohup nice -n 20 caffeinate -dimsu python3 scripts/compress_ep3_videos.py --course 税法 --course 经济法 --reverse --jobs "$JOBS" >> data/_workspace/_account/ep3/logs/compress_ep3.log 2>&1 &
   echo "[$(date '+%F %T')] 已拉起压缩(税法+经济法 倒序 jobs=$JOBS)"; sleep 15
 }
-start_upload(){ nohup caffeinate -dimsu bash scripts/sync_ep3_ready.sh "$1" 1 videos >> "logs/netdisk_$1.log" 2>&1 & echo "[$(date '+%F %T')] 已拉起上传 $1（限速1100k/并发1）"; sleep 10; }
+start_upload(){ mkdir -p logs; nohup caffeinate -dimsu bash scripts/sync_ep3_ready.sh "$1" 1 videos >> "logs/netdisk_$1.log" 2>&1 & echo "[$(date '+%F %T')] 已拉起上传 $1（限速1100k/并发1）"; sleep 10; }
 # 科目已全 hevc、首次上传前：清“视频阶段”旧 done（保留 notes__ 讲义标记），强制所有视频以 hevc
 # 重传并 rtype=3 覆盖网盘旧 h264；每科只清一次（<prof>.videoreset 标志）。done 名前缀是阶段名（非字面 videos）。
 reset_videos_done_once(){
@@ -82,6 +85,7 @@ reset_videos_done_once(){
 
 echo "[$(date '+%F %T')] 本机supervisor启动"
 while :; do
+  mkdir -p logs "$FLAGDIR"   # 每轮巡检确保日志目录在：运行中 logs/ 被删后，>> 重定向会静默失败致上传空转
   # —— 压缩 ——
   if ! comp_running; then
     nt=$(nothevc 税法); ne=$(nothevc 经济法)
