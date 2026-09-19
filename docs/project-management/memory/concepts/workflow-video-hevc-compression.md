@@ -45,7 +45,7 @@ status: stable
 - **本机**：launchd LaunchAgent `~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist`（RunAtLoad + `KeepAlive{SuccessfulExit=false}`）跑 `scripts/ep3_local_supervisor.sh`，每 120s 巡检压缩+上传，全完成 `exit 0` 不重启、异常被杀才自愈；launchd 的 PATH 只有系统目录，脚本内必须 `export PATH=/usr/local/bin:$PATH`。
 - **目标机（不跑 Doubao）**：`nohup caffeinate -dimsu bash logs/target_compress_watch.sh`（会计→财管压缩衔接）与 `target_netdisk_watch.sh`（按科滚动限速上云：某科全 hevc 即传、可与他科压缩并行）。
 - 两台均 `sudo pmset -a sleep 0 disksleep 0 disablesleep 1` 防睡眠，**任务结束要恢复默认**（2026-09-19 收尾实测：`sudo pmset -a disablesleep 0 disksleep 10 displaysleep 10`，台式 sleep 保持 0；恢复后 pmset 不再显示 SleepDisabled 行）。
-- **任务终态收尾清单**：①本机 `launchctl unload ~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist` 停总管开机自启（plist 文件保留、未来 load 复用），确认两台无 sync/看门/compress/ffmpeg/caffeinate 残留；②目标机本地适配若上游已含等价功能（如 compress `--jobs/--reverse`），`git stash` 留存后 `git pull --ff-only` 取权威版，**不在目标机维护代码分叉**；③目标机会计/财管 hevc 副本（64G）在回传+整科 rc0 后是冗余第三份，是否删看磁盘紧张度（本次目标机尚空、保留几天作备份）。
+- **任务终态收尾清单**：①本机 `launchctl unload ~/Library/LaunchAgents/com.gaodun.ep3-local-supervisor.plist` 停总管开机自启（plist 文件保留、未来 load 复用），确认两台无 sync/看门/compress/ffmpeg/caffeinate 残留；②目标机本地适配若上游已含等价功能（如 compress `--jobs/--reverse`），`git stash` 留存后 `git pull --ff-only` 取权威版，**不在目标机维护代码分叉**；③目标机会计/财管 hevc 副本（64G）在回传+整科 rc0 后是冗余第三份；**删前必须 rsync 干跑（目标机→本机）确认 itemize 0 差异**——讲目录里除 `*_video.mp4` 还有每讲 `_subtitle.vtt`/`_transcript.md`/`_meta.json` 与 `.ep3cache`，不能只数视频，要确认本机连字幕/文稿/元数据也一份不缺。本次 2026-09-19 干跑两科均 0 差异、叠加网盘两科整科 rc0 后已提前删除（会计 2435 文件/37G、财管 1417 文件/27G），外置盘可用 601G→664G；data 在 gitignore，删除不影响 git 仓。
 
 ## 踩坑（勿重犯）
 
